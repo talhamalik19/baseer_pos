@@ -1,0 +1,120 @@
+@use "../../styles/variable.scss" as style;
+
+.header{
+    padding: 45px 0px 0px 70px; background-color: style.$backgroundColor;
+}
+.footer{
+    @include style.flex(space-between, center, 0); padding: 40px 70px; background-color: #1A2432; color: style.$whiteColor; box-sizing: border-box;
+    & > div{
+        @include style.flex(flex-start, center, 20px); width: max-content; font-size: 16px; line-height: 24px; font-weight: normal; color: #B1BBC9;
+        p{
+          a{  padding-left: 5px;}
+        }
+        span{
+            color: #D1DAF4
+        }
+        ul{
+            @include style.flex(flex-start, center, 20px);
+        }
+    }
+    a{
+        color: #B1BBC9;
+    }
+}
+  
+.form{
+    height: calc(100vh - 207px); display: flex; align-items: center; justify-content: center; background-color: style.$backgroundColor; text-align: left;
+    .title {
+      font-size: 26px; font-weight: 600; font-weight: 600; line-height: 36px; margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #667085; font-size: 17px; line-height: 24px; font-weight: 480; margin-bottom: 40px;
+    }
+    .form_block{
+        max-width: 450px; width: 100%;
+    }
+    .login_form{
+        border-bottom: 1px solid #D0D5DD; padding-bottom: 40px;
+    }
+    .forgotPassword{
+        margin-top: 40px; 
+        a{
+            color: #475467; font-size: 16px; line-height: 24px; font-weight: 500;
+        }
+    }
+}
+  
+  
+ /* INPUT FIELDS */
+.input_box {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin: 20px 0;
+    .label, svg {
+        position: absolute; top: 50%;  left: 20px; transform: translateY(-50%); color: #535354; transition: 0.2s; cursor: text;
+    }
+    .label{
+        left: 50px;
+    }
+  }
+  
+  .input_field {
+   height: 64px; font-size: 16px; color: #000; padding: 0 20px 0px 50px; border: 2px solid #D8DCE2; transition: 0.3s; background-color: style.$whiteColor; border-radius: 10px;
+    &:focus{
+        background-color: unset; border: 2px solid style.$PrimaryColor; border-radius: 10px; outline: none;
+    }
+    &:focus, &:valid{
+        & ~ .label{
+            top: 0; font-size: 15px; color: #3C4071; font-weight: 500;background-color: style.$backgroundColor; color: #0d1936;  padding: 0 10px;
+        }
+    }
+}
+
+.submit_btn{
+    @include style.flex(flex-end, center, 0px); color: style.$whiteColor; width: 100%;
+}
+  
+  .btn_submit {
+   padding: 15px;
+    background-color: style.$PrimaryColor;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 500;
+    border: none;
+    line-height: 28px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+    max-width: 110px;
+    width: 100%;
+    &:disabled{
+        opacity: 0.6;
+    }
+  }
+
+@media screen and (min-width: 200px) and (max-width: 1024px) {
+    .header{
+        padding: 20px;
+        img{
+            width: 144px; height: 40px;
+        }
+    }
+    .form{
+        padding: 20px;
+    }
+    .footer{
+        flex-direction: column; gap: 20px; padding-inline: 20px;
+        @media screen and (max-width: 400px){
+        & > div{
+        flex-direction: column; gap: 10px;
+        }
+    }
+    }
+}
+  
+@media screen and (min-width: 767px) and (max-width: 1024px) {
+    .footer{
+        flex-direction: row; padding-inline: 20px;
+    }
+}

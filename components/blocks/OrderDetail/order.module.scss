@@ -1,0 +1,212 @@
+.totalHeader {
+  margin-bottom: 20px;
+}
+
+.totalHeaderText {
+  font-size: 18px;
+  font-weight: normal;
+}
+
+.totalAmount {
+  font-weight: bold;
+}
+
+.receiptTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0px 20px;
+}
+
+.tableRow {
+  vertical-align: top;
+}
+
+.sectionCell {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  width: 50%;
+  box-sizing: border-box;
+}
+
+.innerTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.innerTableRow {
+  padding: 4px 0;
+}
+
+.sectionTitle {
+  font-size: 16px;
+  margin: 0 0 10px 0;
+  font-weight: 500;
+}
+
+.labelCell {
+  font-weight: 500;
+  color: #666;
+  padding: 4px 0;
+}
+
+.valueCell {
+  padding: 4px 0;
+}
+
+.amountCell {
+  text-align: right;
+  font-weight: 500;
+  padding: 4px 0;
+}
+
+.buttonRow {
+  padding-top: 10px; display: flex;
+}
+
+.button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  margin-right: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.completeButton {
+  background-color: #5bc0de;
+  color: white;
+}
+
+.editButton {
+  background-color: #f0ad4e;
+  color: white;
+}
+
+.itemDetailsCell {
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.itemPriceCell {
+  text-align: right;
+  width: 30%;
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.itemName {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.itemSku {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.itemDetails {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.itemQuantity {
+  display: inline-block;
+}
+
+.priceTotal {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.priceDetail {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.paymentMethodCell {
+  padding: 4px 0;
+}
+
+.shippingMethodCell {
+  padding: 4px 0;
+}
+
+.paidTag {
+  background-color: #5cb85c;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.totalCell {
+  font-weight: bold;
+  font-size: 16px;
+  text-align: right;
+  padding-top: 8px;
+}
+
+.addressBox {
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.addressLine {
+  margin: 0 0 5px 0;
+}
+
+.actionButtonsRow {
+  border: none;
+  padding: 0;
+  background-color: transparent;
+  text-align: center;
+  display: flex;
+}
+
+.actionButton {
+  background-color: #5bc0de;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  margin: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: center;
+}
+
+// Responsive adjustments
+@media (max-width: 1024px) {
+  .receiptTable {
+    border-spacing: 0 10px;
+  }
+  
+  .tableRow {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sectionCell {
+    width: 100%;
+    display: block;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  
+  .actionButtonsRow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .actionButtonsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -1,0 +1,317 @@
+@use "../../../styles/variable.scss" as style;
+
+.statistics{
+    background-color: style.$whiteColor; border-radius: 10px;
+}
+.stat_cards{
+    border-right: 1px solid #E6E6E6; @include style.flex(space-between, stretch, 20px); padding: 25px 40px;
+    .text{
+        font-size: 15px; line-height: 25px; font-weight: 500; color: style.$SecondaryColor; padding-bottom: 15px; text-transform: uppercase;
+    }
+    .amount{
+        font-size: 24px; line-height: 34px; color: style.$SecondaryColor; font-weight: 700; padding-bottom: 15px;
+    }
+    span{
+        padding: 3px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; color: style.$whiteColor;
+    }
+    .success{
+        background-color: style.$successColor; 
+    }
+    .error{
+        background-color: style.$errorColor;
+    }
+    .stat_card_icon{
+        @include style.flex(space-between, flex-start, 0); flex-direction: column;
+        a{
+            font-size: 13px; line-height: 20px; text-decoration: underline; color: style.$PrimaryColor; font-weight: normal;
+        }
+        span{
+            background-color: style.$backgroundColor; padding: 10px; border-radius: 50%; height: 25px; width: 25px;
+        }
+    }
+}
+
+.chart{
+    // @include style.flex(flex-start, 'flex-start', 20px);
+    display: flex; gap: 20px; box-sizing: border-box;
+.chartContainer {
+    width: 70%; background-color: style.$whiteColor; border-radius: 10px; padding: 20px; box-sizing: border-box;
+.chart_head{
+    @include style.flex(space-between, center, 0px);
+    .chartTitle {
+      font-size: 20px; font-weight: 500; padding-bottom: 25px; color: style.$SecondaryColor;
+    }
+    button{
+        background-color: unset; color: #939393;
+    }
+}
+    .legend {
+      display: flex; gap: 15px; margin: 10px 0;
+      .legend_active{
+        color: style.$PrimaryColor;
+      }
+    }
+    .legendItem {
+        font-size: 14px;
+      }
+  }  
+}
+
+.orders { 
+    background: style.$whiteColor; padding: 20px; border-radius: 10px; overflow-x: auto;
+    .order_head { 
+       @include style.flex(space-between, center, 0px);
+        .title{
+            font-size: 20px; font-weight: 500; color: style.$SecondaryColor;
+        }
+        a{
+            font-size: 14px; line-height: 24px; font-weight: 500; color: style.$PrimaryColor;
+        }
+        @media screen and (max-width: 767px) {
+          flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 20px;
+          
+        }
+    }
+    .status_td{
+      width: 100px; padding-right: 30px;
+      .status{
+        width: 70px; display: inline-block; text-align: center;
+      }
+    }
+}
+
+.block{
+    width: calc(100% - 300px);
+}
+.table_block{
+//     overflow-x: scroll;
+// width: 100%;   
+white-space: nowrap;
+table{
+    border-collapse: separate;
+    border-spacing: 0 35px;
+    // min-width: 800px;
+    width: 100%;
+    thead{
+        tr{
+        text-align: left; 
+        th{
+            font-size: 16px; line-height: 23px; font-weight: 500; color: style.$SecondaryColor; padding-right: 20px;
+            &:last-child{
+              width: 150px;
+            }
+        }
+        }
+    }
+    tbody{
+        tr{
+            td{
+           font-size: 15px; line-height: 23px; font-weight: 400; color: style.$SecondaryColor;     white-space: normal;
+           max-width: 9rem; min-width: 8rem;
+            &.name{
+                font-weight: 500;
+            }
+            &.amount{
+                color: #383838;
+            }
+            .viewDetailBtn{
+                   background: #4FACB8;
+    color: #ffffff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
+    width: 85px;
+    display: block;
+    text-align: center;
+    height: 20px;
+    text-align: center;
+
+                &:hover{
+                  background-color: #369BA8;
+                }
+                @media screen and (max-width: 1024px) {
+                  width: 75px; display: block;
+                }
+            }
+            &:last-child{
+              width: 150px;
+            }
+            }
+        }
+        .status { padding: 3px 10px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; color: white; text-transform: capitalize; }
+        .complete { background-color: style.$successColor; }
+        .cancelled { background-color: style.$errorColor; }
+        .pending{background-color: rgb(191, 129, 12);}
+        .actions{  display: flex;
+            gap: 8px;
+            color: #4FACB8;}
+    }
+    &.recent_orders{
+      border: unset; padding-bottom: 0px;
+    }
+
+    @media screen and (min-width: 200px) and (max-width: 767px) {
+      thead{
+        tr{
+          th{ font-size: 15px;}
+        }
+      }
+      tbody{
+        tr{
+          td{
+            font-size: 14px;
+          }
+        }
+      }
+    }
+}
+}
+
+@media screen and (max-width: 767px) {
+    .statistics{
+        background-color: unset;
+        .stat_cards{
+            background-color: style.$whiteColor; border: unset; border-radius: 10px; padding-inline: 20px;
+        }
+    }
+    .chart{
+        flex-direction: column; box-sizing: border-box;
+        .chartContainer{
+            width: 100%; box-sizing: border-box;
+            .chart_head{
+                flex-direction: column; align-items: flex-start;
+                .chartTitle{
+                    padding-bottom: 0px;
+                }
+            }
+        }
+    }
+}
+
+.salesMap {
+    width: 30%;
+    background: white;
+    border-radius: 10px;
+    padding: 20px; box-sizing: border-box;
+    
+    .salesMapTitle {
+      font-size: 20px;
+      font-weight: 500;
+      padding-bottom: 35px;
+      color: #333;
+    }
+  
+    .mapContainer {
+      width: 100%;
+      height: 295px; // Fixed height for map
+      position: relative;
+      margin-bottom: 20px;
+    
+  
+      .vectorMap {
+        width: 100%;
+        height: 100%;
+        
+        .jvectormap-container {
+          width: 100%;
+          height: 100%;
+        }
+      }
+    }
+  
+    .mapTooltip {
+      background: white;
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+      line-height: 1.4;
+      
+      strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #333;
+      }
+    }
+  
+    .countryStats {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      overflow-y: auto;
+    height: 70px;
+  
+      .countryStat {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        
+        h4 {
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 4px;
+          color: #333;
+        }
+        
+        p {
+          font-size: 13px;
+          color: #666;
+          margin: 0;
+        }
+      }
+    }
+  
+    .noData {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+  }
+  
+  // Responsive adjustments
+  @media (max-width: 1200px) {
+    .chart{
+        flex-direction: column;
+        .chartContainer{
+            width: 100%;
+        }
+    }
+    .salesMap {
+      width: 100%;
+      
+      .mapContainer {
+        height: unset;
+        &:nth-child(1){
+          height: 170px;
+        }
+      }
+      
+      .countryStats {
+        grid-template-columns: repeat(2, 1fr);
+        height: unset;
+      }
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .salesMap {
+      .countryStats {
+        grid-template-columns: 1fr;
+      }
+      
+      .mapContainer {
+        height: 250px;
+        & > div{
+          height: 140px;
+        }
+      }
+    }
+  }
+
+    .employee_button{margin-bottom: 20px; padding: 15px 20px !important;}
+
+    .download_orders{
+      background-color: style.$TextColor !important;
+    }

@@ -1,0 +1,53 @@
+@use "../../../styles/variable.scss" as style;
+
+.page_detail{min-height: calc(100vh - 223px); background-color: #f4f7f4; overflow-y: auto; text-align: left;}
+.feedback_container{
+ max-width: 720px; width: 100%; margin: auto; 
+ h2{
+    font-size: 26px; font-weight: 600; line-height: 36px; color: style.$blackColor; padding-bottom: 20px;
+ }
+}
+.feedback_section{max-height:40vh;overflow-y:auto;&::-webkit-scrollbar{width:4px;}&::-webkit-scrollbar-track{background:#f0f0f0;border-radius:4px;}&::-webkit-scrollbar-thumb{background:style.$PrimaryColor;border-radius:4px;transition:all 0.3s ease;}
+  .feedback_card{display:flex;gap:20px;justify-content:space-between;align-items:center;margin-bottom:20px;background-color:white;border:1px solid #E4F2E4;border-radius:8px;padding-block:15px;padding-inline:20px;&:last-child{margin-bottom:0;}}
+  .feedback_card_content{display:flex;gap:20px;align-items:center; width: 100%;}
+  .feedback_card_details{display:flex;gap:60px;font-size:15px;line-height:25px;font-weight:500;color:#363842; width: 100%;
+    @media screen and (max-width: 600px) {
+        flex-direction: column; gap: 10px;
+    }
+}
+  .feedback_card_info{flex:1;}
+  .feedback_card_price{font-size:18px;line-height:28px;color:#363842;font-weight:600;}
+  .feedback_card_rating p{font-size:12px;line-height:22px;color:#363842;font-weight:600;}
+}
+
+.feedback_overall_rating{
+    display: flex; align-items: center; gap: 20px; margin-block: 20px;
+    p{
+        font-size: 18px; line-height: 28px; font-weight: 600;
+    }
+    @media screen and (max-width: 767px) {
+        flex-direction: column; align-items: flex-start; gap: 0px;
+    }
+}
+
+.feedback_comment_section{
+    padding-bottom: 20px;
+    p{
+        font-size: 15px; line-height: 25px; font-weight: 500; padding-bottom: 10px;
+    }
+    .comment_input{
+        width: 100%; height: 70px; border: 1px solid #D8DCE2; border-radius: 8px; padding: 10px; box-sizing: border-box;
+    }
+}
+
+   .button{
+        width: 100%;
+    }
+
+@media screen and (max-width: 767px) {
+    .feedback_container{
+        h2{
+            font-size: 22px; line-height: 32px; padding-bottom: 15px;
+        }
+    }
+}

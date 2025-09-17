@@ -1,0 +1,15 @@
+"use client";
+import { useEffect } from "react";
+
+export default function ServiceWorkerRegister() {
+    useEffect(() => {
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker
+            .register("/service-worker.js")
+            .then(() => console.log("Service Worker registered"))
+            .catch((err) => console.error("Service Worker registration failed:", err));
+        }
+      }, []);
+
+  return null; // No UI needed, just runs the effect
+}

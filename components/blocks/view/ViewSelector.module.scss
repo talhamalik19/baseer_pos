@@ -1,0 +1,22 @@
+@use "../../../styles/variable.scss" as style;
+
+.viewSelector {
+  display: flex; gap: 25px; align-items: flex-start; justify-content: flex-start; flex-direction: column; border: 1px solid #ddd; border-radius: 8px; background-color: #f9f9f9;
+    .radioLabel {
+   display: flex; align-items: center; font-size: 16px; font-weight: 500; cursor: pointer; position: relative;
+      .radioInput {
+     opacity: 0; position: absolute; width: 0; height: 0;
+        &:checked + .customRadio {
+          background-color: style.$PrimaryColor;
+  
+          &::after {
+            content: ""; width: 10px; height: 10px; background: white; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+          }
+        }
+      }
+      .customRadio {
+       width: 18px; height: 18px; border: 2px solid style.$PrimaryColor; border-radius: 50%; display: inline-block; margin-right: 8px; position: relative;
+      }
+    }
+  }
+  

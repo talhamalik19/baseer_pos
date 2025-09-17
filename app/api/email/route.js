@@ -1,0 +1,139 @@
+import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
+import QRCode from "qrcode";
+import path from "path";
+import fs from "fs";
+
+export async function POST(req) {
+  try {
+    const { email, orderId, orderData, pdf, pdfResponse } = await req.json();
+
+    // Transporter
+    let transporter = nodemailer.createTransport({
+      host: process.env.NEXT_SMTP_HOST,
+      port: process.env.NEXT_SMTP_PORT || 587,
+      secure: process.env.NEXT_SMTP_PORT == 465,
+      auth: {
+        user: process.env.NEXT_SMTP_USER,
+        pass: process.env.NEXT_SMTP_PASS,
+      },
+    });
+
+    // ✅ Fallback config
+    const companyConfig = pdfResponse || {
+      title: "Receipt",
+      subtitle: "Thank You For Your Purchase",
+      logo: "cid:unique-logo", // cid reference
+      companyName: "Store",
+      footer: "Thank you for shopping with us!",
+      footerText: "Please come again",
+    };
+
+    // ✅ Generate QR code (Buffer for attachment)
+    const qrCodeDataURL = await QRCode.toDataURL(
+      `/feedback?id=${orderData?.order_key}`
+    );
+    const qrCodeBase64 = qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
+    const qrCodeBuffer = Buffer.from(qrCodeBase64, "base64");
+
+    // ✅ Build items table
+    const itemsHtml = orderData.items
+      .map(
+        (item) => `
+        <tr>
+          <td style="padding:10px; border:1px solid #ddd;">${item.product_name}</td>
+          <td style="padding:10px; border:1px solid #ddd;">${item.product_sku}</td>
+          <td style="padding:10px; border:1px solid #ddd; text-align:center;">${item.qty}</td>
+          <td style="padding:10px; border:1px solid #ddd; text-align:right;">$${item.price}</td>
+          <td style="padding:10px; border:1px solid #ddd; text-align:right;">$${item.row_total}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    // ✅ Styled HTML Template
+    const htmlTemplate = `
+      <div style="font-family: Arial, sans-serif; background:#f7f7f7; padding:30px; color:#333; line-height:1.6;">
+        <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+          
+          <!-- Header with Logo -->
+          <div style="background:#FEEEDF; padding:20px; text-align:center;">
+            <img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px;" />
+            <h1 style="color:#2c3e50; margin:0; font-size:22px;">${companyConfig.title}</h1>
+            <p style="color:#555; margin:5px 0 0;">${companyConfig.subtitle}</p>
+          </div>
+
+          <!-- Order Info -->
+          <div style="padding:20px;">
+            <h2 style="color:#2c3e50;">Invoice #${orderId}</h2>
+            <p><strong>Date:</strong> ${new Date(orderData.order_date).toLocaleDateString()}</p>
+            <p><strong>Customer Phone:</strong> ${orderData.customer_phone || "-"}</p>
+            <p><strong>Customer Email:</strong> ${orderData.customer_email || "-"}</p>
+
+            <h3 style="margin-top:20px; color:#2c3e50;">Items</h3>
+            <table style="width:100%; border-collapse:collapse; margin-top:10px; background:#FEEEDF;">
+              <thead style="background:#FEEEDF; color:#2c3e50;">
+                <tr>
+                  <th style="padding:10px; border:1px solid #ddd; text-align:left;">Item</th>
+                  <th style="padding:10px; border:1px solid #ddd; text-align:left;">SKU</th>
+                  <th style="padding:10px; border:1px solid #ddd; text-align:center;">Qty</th>
+                  <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
+                  <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <p style="margin-top:20px; text-align:right; font-size:16px; color:#2c3e50;">
+              <strong>Subtotal:</strong> $${orderData.order_subtotal}<br/>
+              <strong>Grand Total:</strong> $${orderData.order_grandtotal}
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="background:#FEEEDF; padding:20px; text-align:center; color:#2c3e50;">
+            <p style="margin:0;">${companyConfig.footer}</p>
+            <small style="color:#555;">${companyConfig.footerText}</small>
+
+            <!-- QR Code -->
+            <div style="margin-top:15px;">
+              <img src="cid:unique-qrcode" alt="QR Code" style="width:100px; height:100px;" />
+              <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
+                Scan the QR or click <a style="text-decoration: underline"; color: "#2c3e50" href='${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}'>Here</a> to give feedback
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    `;
+
+    // ✅ Attachments
+    const attachments = [
+      {
+        filename: `receipt-${orderId}.pdf`,
+        content: pdf,
+        encoding: "base64",
+      },
+    ];
+
+    await transporter.sendMail({
+      from: `"POS Receipt" <${process.env.NEXT_EMAIL_FROM}>`,
+      to: email,
+      subject: `Your Order Receipt - ${orderId}`,
+      text: `Hello, please find attached your receipt for order ${orderId}.`,
+      html: htmlTemplate,
+      attachments,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}

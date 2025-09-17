@@ -1,0 +1,34 @@
+{
+  "name": "grocery-pos",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3054",
+    "build": "next build",
+    "start": "next start -p 3054",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
+    "macaddress": "^0.5.3",
+    "next": "15.2.1",
+    "nodemailer": "^7.0.6",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-select": "^5.10.1",
+    "react-simple-maps": "^3.0.0",
+    "react-tooltip": "^5.29.1",
+    "recharts": "^2.15.1",
+    "sass": "^1.85.1",
+    "twilio": "^5.9.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.1"
+  }
+}
