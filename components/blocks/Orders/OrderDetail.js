@@ -106,9 +106,12 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   const handleEmailInvoice = async (id) => {
+    console.log(id)
     const res = await sendOrderInvoiceAction(id);
     if (res == true) {
       setResponseMessage("Email Sent");
+    } else {
+      setResponseMessage(res?.message)
     }
   };
 
@@ -377,7 +380,7 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
                   Download Invoice
                 </button>
                 <button
-                  className={styles.actionButton}
+                  className={`${styles.actionButton} loading_action`}
                   onClick={() =>
                     handleEmailInvoice(orderResponse?.invoice?.[0]?.invoice_id)
                   }

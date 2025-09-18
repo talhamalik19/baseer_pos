@@ -77,6 +77,7 @@ export default function RegisterPOS({
   const setSuccess = (msg) => setMessage({ type: "success", text: msg });
 
   const handleSubmit = async (e) => {
+    console.log("==")
     e.preventDefault();
 
     setMessage({ type: "", text: "" });

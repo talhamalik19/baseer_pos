@@ -108,46 +108,47 @@ export default function Categories({
   const loadProducts = useCallback(async () => {
     setIsLoading(true);
     try {
-      let productsData = [];
+      let productsData = productItems;
       let shouldUpdateIDB = false;
-
+       await saveProducts(productsData);
       // Try to get fresh data if online
-      if (isOnline) {
-        try {
-          const freshProducts = await fetchMagentoProducts({
-            id: "",
-            sort: "",
-            currency,
-          });
+      // if (isOnline) {
+      //   try {
+      //     const freshProducts = await fetchMagentoProducts({
+      //       id: "",
+      //       sort: "",
+      //       currency,
+      //     });
           
-          if (freshProducts?.length > 0) {
-            productsData = freshProducts;
-            shouldUpdateIDB = true;
-          }
-        } catch (onlineError) {
-          console.warn("Failed to fetch fresh products, falling back to offline data:", onlineError);
-        }
-      }
+      //     if (freshProducts?.length > 0) {
+      //       productsData = freshProducts;
+      //       shouldUpdateIDB = true;
+      //     }
+      //   } catch (onlineError) {
+      //     console.warn("Failed to fetch fresh products, falling back to offline data:", onlineError);
+      //   }
+      // }
 
       // If no fresh data or offline, use IndexedDB
       if (productsData.length === 0) {
         const offlineProducts = await getIDBProducts();
-        if (offlineProducts?.length > 0) {
+        // if (offlineProducts?.length > 0) {
           productsData = offlineProducts;
-        } else if (productItems?.length > 0) {
-          // Fallback to server props if IndexedDB is empty
-          productsData = productItems;
-          shouldUpdateIDB = true;
-        }
+        // } 
+        // else if (productItems?.length > 0) {
+        //   // Fallback to server props if IndexedDB is empty
+        //   productsData = productItems;
+        //   shouldUpdateIDB = true;
+        // }
       }
 
       // Update state and IndexedDB if needed
       setProducts(productsData);
       setInitialProducts(productsData);
       
-      if (shouldUpdateIDB) {
-        await saveProducts(productsData);
-      }
+      // if (shouldUpdateIDB) {
+      //   await saveProducts(productsData);
+      // }
     } catch (err) {
       console.error("Error loading products:", err);
     } finally {
@@ -158,95 +159,103 @@ export default function Categories({
   // Load categories with synchronization logic
   const loadCategories = useCallback(async () => {
     try {
-      let allCategories = [];
+      let allCategories = category;
       let shouldUpdateIDB = false;
 
       // Try to get fresh data if online
-      if (isOnline) {
+      // if (isOnline) {
         try {
-          const freshCategories = await fetchMagentoCategories();
-          if (freshCategories?.data?.length > 0) {
-            const normalized = normalizeCategories(freshCategories.data);
+          // const freshCategories = await fetchMagentoCategories();
+          if (allCategories?.data?.length > 0) {
+            const normalized = normalizeCategories(allCategories.data);
             allCategories = normalized.allCategories;
-            shouldUpdateIDB = true;
+            await saveCategories(allCategories)
+            // shouldUpdateIDB = true;
           }
         } catch (onlineError) {
           console.warn("Failed to fetch fresh categories, falling back to offline data:", onlineError);
         }
-      }
+      // }
 
       // If no fresh data or offline, use IndexedDB
       if (allCategories.length === 0) {
         const offlineCategories = await getIDBCategories();
         if (offlineCategories?.length > 0) {
           allCategories = offlineCategories;
-        } else if (category?.data?.length > 0) {
-          // Fallback to server props if IndexedDB is empty
-          const normalized = normalizeCategories(category.data);
-          allCategories = normalized.allCategories;
-          shouldUpdateIDB = true;
-        }
+        } 
+        // else if (category?.data?.length > 0) {
+        //   // Fallback to server props if IndexedDB is empty
+        //   const normalized = normalizeCategories(category.data);
+        //   allCategories = normalized.allCategories;
+        //   shouldUpdateIDB = true;
+        // }
       }
 
       // Update state and IndexedDB if needed
       const groupedCategories = groupCategories(allCategories);
       setCategories(groupedCategories);
       
-      if (shouldUpdateIDB) {
-        await saveCategories(allCategories);
-      }
+      // if (shouldUpdateIDB) {
+      //   await saveCategories(allCategories);
+      // }
     } catch (err) {
       console.error("Error loading categories:", err);
     }
   }, [category, groupCategories, isOnline]);
 
   // Full sync function
-  const performFullSync = useCallback(async () => {
-    if (!isOnline) return;
+  // const performFullSync = useCallback(async () => {
+  //   if (!isOnline) return;
     
-    try {
-      setIsLoading(true);
-      const [freshProducts, freshCategories] = await Promise.all([
-        fetchMagentoProducts({ id: "", sort: "", currency }),
-        fetchMagentoCategories(),
-      ]);
+  //   try {
+  //     setIsLoading(true);
+  //     const [freshProducts, freshCategories] = await Promise.all([
+  //       fetchMagentoProducts({ id: "", sort: "", currency }),
+  //       fetchMagentoCategories(),
+  //     ]);
 
-      if (freshProducts?.length > 0) {
-        await clearAllProducts();
-        await saveProducts(freshProducts);
-        setProducts(freshProducts);
-        setInitialProducts(freshProducts);
-      }
+  //     if (freshProducts?.length > 0) {
+  //       await clearAllProducts();
+  //       await saveProducts(freshProducts);
+  //       setProducts(freshProducts);
+  //       setInitialProducts(freshProducts);
+  //     }
 
-      if (freshCategories?.data?.length > 0) {
-        const normalized = normalizeCategories(freshCategories.data);
-        await clearCategories();
-        await saveCategories(normalized.allCategories);
-        setCategories(groupCategories(normalized.allCategories));
-      }
+  //     if (freshCategories?.data?.length > 0) {
+  //       const normalized = normalizeCategories(freshCategories.data);
+  //       await clearCategories();
+  //       await saveCategories(normalized.allCategories);
+  //       setCategories(groupCategories(normalized.allCategories));
+  //     }
 
-      setLastSyncTime(new Date());
-    } catch (err) {
-      console.error("Full sync failed:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currency, groupCategories, isOnline]);
+  //     setLastSyncTime(new Date());
+  //   } catch (err) {
+  //     console.error("Full sync failed:", err);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // }, [currency, groupCategories, isOnline]);
 
-  // Initial load and periodic sync
-  useEffect(() => {
+  // // Initial load and periodic sync
+  // useEffect(() => {
+  //   loadProducts();
+  //   loadCategories();
+
+  //   // Set up periodic sync (every 30 minutes)
+  //   const syncInterval = setInterval(() => {
+  //     if (isOnline) {
+  //       performFullSync();
+  //     }
+  //   }, 30 * 60 * 1000);
+
+  //   return () => clearInterval(syncInterval);
+  // }, [loadProducts, loadCategories, performFullSync, isOnline]);
+
+    useEffect(() => {
     loadProducts();
     loadCategories();
-
-    // Set up periodic sync (every 30 minutes)
-    const syncInterval = setInterval(() => {
-      if (isOnline) {
-        performFullSync();
-      }
-    }, 30 * 60 * 1000);
-
-    return () => clearInterval(syncInterval);
-  }, [loadProducts, loadCategories, performFullSync, isOnline]);
+    
+  }, []);
 
   const handleCategoryClick = useCallback(async (category) => {
     setSelectedItem(category);
@@ -286,7 +295,7 @@ export default function Categories({
   const handleAddToCart = useCallback(async (product, options, quantity) => {
     await addToCart(product, options, quantity);
   }, []);
-
+  console.log("categories", categories)
   return (
     <>
       <PageHead
@@ -356,7 +365,7 @@ export default function Categories({
             currency={currency}
             language={language}
             isLoading={isLoading}
-            onRefresh={performFullSync}
+            // onRefresh={performFullSync}
             lastSyncTime={lastSyncTime}
           />
         </div>

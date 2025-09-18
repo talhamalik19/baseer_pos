@@ -134,7 +134,7 @@ export default function OrderListing({ initialOrders, jwt, customerOrders, serve
       const magentoOrders = initialOrders?.data || [];
   
       if (customerOrders) {
-        const orders = customerOrders?.data?.[0]?.orders || [];
+        const orders = customerOrders?.data || [];
         setCombinedOrders(orders);
         setFilteredOrders(filterByCategory(orders, selectedCategory));
       } else {

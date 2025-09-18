@@ -590,7 +590,8 @@ export default function POSCartSummary({
             {(consentStatus === "yes" || consentStatus === "no") &&
               (email || phone) && (
                 <div className={styles.paymentDetailBlock}>
-                  <label className={styles.checkboxWrapper}>
+                   <p>This User has {consentStatus == "no" && 'not'} opted for E-receipt</p>
+                  {/* <label className={styles.checkboxWrapper}>
                     <input
                       type="checkbox"
                       className={styles.checkbox}
@@ -599,8 +600,8 @@ export default function POSCartSummary({
                     />
                     <span className={styles.customCheck}></span>
                     Do you want E-Receipt
-                  </label>
-                </div>
+                  </label> */}
+                 </div>
               )}
           </div>
 

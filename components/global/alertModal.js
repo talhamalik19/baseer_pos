@@ -1,5 +1,6 @@
 "use client";
 import styles from "@/components/blocks/Employees/employeeModal.module.scss";
+import { useEffect } from "react";
 export default function SimpleAlertModal({
   isOpen,
   onClose,
@@ -8,8 +9,19 @@ export default function SimpleAlertModal({
   consent,
   qrcode
 }) {
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = originalOverflow || "auto";
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow || "auto";
+    };
+  }, [isOpen]);
   if (!isOpen) return null;
-
+  
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

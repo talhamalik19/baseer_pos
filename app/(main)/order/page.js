@@ -30,7 +30,19 @@ export default async function Order({ searchParams }) {
   const from = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 24 hours ago
   const fromISOString = from.toISOString();
   if (params?.customer_email) {
-    customerResponse = await getCustomers(params?.customer_email);
+    customerResponse  = await getOrders({
+      email: params?.customer_email,
+      phone: "",
+      orderNumber: "",
+      billName: "",
+      status: "",
+      isPosOrder: null,
+      isMobOrder: null,
+      isWebOrder: null,
+      posCode: "",
+      dateFrom: "",
+      dateTo: "",
+    });
   } else {
     ordersResponse = await getOrders({
       email: "",
@@ -46,7 +58,7 @@ export default async function Order({ searchParams }) {
       dateTo: toISOString,
     });
   }
-
+  console.log(customerResponse)
   return (
     <>
       <PageHead

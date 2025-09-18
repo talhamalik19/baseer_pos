@@ -33,7 +33,6 @@ export async function POST(req) {
 
     // Then parse the JSON
     const result = await response.json();
-    
 
     if (!Array.isArray(result)) {
       throw new Error(`Unexpected response format from API. Expected array but got ${typeof result}`);
@@ -54,7 +53,7 @@ export async function POST(req) {
     // if (!saved) {
     //   throw new Error("Failed to save POS data locally.");
     // }
-
+    cookieStore.set("pos_code", payload?.posData?.pos_code)
     return new Response(
       JSON.stringify({ success: true, message: "POS registered successfully.", data: payload }),
       { status: 200 }

@@ -19,6 +19,7 @@ macaddress.one((err, mac) => {
 export default async function Sales() {
   const cookieStore = await cookies();
   const jwt = cookieStore.get("jwt")?.value || null;
+  const pos_code = cookieStore.get("pos_code")?.value || null
   let ordersResponse;
   // const data = await loadPosData();
 
@@ -29,7 +30,7 @@ export default async function Sales() {
     lastname?.charAt(0) || ""
   }`.toUpperCase();
 
-  const products = await getProducts({ id: "" });
+  const products = await getProducts({ id: "", pos_code: pos_code });
   // ordersResponse = await getOrders();
   const serverCurrency = await CurrencyProvider();
   const currencySymbol = cookieStore.get("currency_symbol")?.value;
