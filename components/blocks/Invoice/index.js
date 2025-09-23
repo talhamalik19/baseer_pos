@@ -6,6 +6,42 @@ import QRCode from "qrcode";
 
 export default function Invoice({ style, order, slug }) {
   const [pdfResponse, setPdfResponse] = useState({});
+  const [answers, setAnswers] = useState({});
+
+  const feedbackArr = [
+    [
+      {
+        id: "Q1",
+        text: "To what extent was the website easy to navigate?",
+        options: ["5", "4", "3", "2", "1"],
+      },
+      {
+        id: "Q2",
+        text: "To what extent was the freshness of the herbs bundle improved?",
+        options: ["5", "4", "3", "2", "1"],
+      },
+      {
+        id: "Q3",
+        text: "How secure was the packaging of the truffles?",
+        options: ["5", "4", "3", "2", "1"],
+      },
+      {
+        id: "Q4",
+        text: "How would you rate the authenticity of the caviar?",
+        options: ["5", "4", "3", "2", "1"],
+      },
+      {
+        id: "Q5",
+        text: "How satisfied were you with the delivery updates?",
+        options: ["5", "4", "3", "2", "1"],
+      },
+    ],
+    "generated_by_gemini",
+    {
+      source: "gemini",
+      avoided_recent_questions_count: 5,
+    },
+  ];
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -48,7 +84,9 @@ export default function Invoice({ style, order, slug }) {
 
     // 🔹 Company Info
     doc.setFontSize(14);
-    doc.text(companyConfig.companyName || "Store", 105, 30, { align: "center" });
+    doc.text(companyConfig.companyName || "Store", 105, 30, {
+      align: "center",
+    });
     doc.setFontSize(9);
 
     const addressParts = [];
@@ -126,6 +164,10 @@ export default function Invoice({ style, order, slug }) {
     doc.save(`order_${order.increment_id}.pdf`);
   };
 
+  const handleChange = (questionId, value) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+  };
+
   return (
     <div className={style.invoice_page}>
       <div className={`${style.invoice_container} ${style?.consent_container}`}>
@@ -168,6 +210,33 @@ export default function Invoice({ style, order, slug }) {
 
         <h3>Grand Total: ${order.order_grandtotal}</h3>
         <button onClick={handleDownload}>Download Slip</button>
+
+        <div className="feedback-form">
+          {Array.isArray(feedbackArr) &&
+            feedbackArr?.[0].map((item) => (
+              <div key={item.id} className="feedback-question">
+                <p className="question-text">{item.text}</p>
+                <div className="options">
+                  {item.options.map((opt) => (
+                    <label key={opt} className="option">
+                      <input
+                        type="radio"
+                        name={item.id}
+                        value={opt}
+                        checked={answers[item.id] === opt}
+                        onChange={() => handleChange(item.id, opt)}
+                      />
+                      <span className="circle">{opt}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+
+          <div className="result">
+            <pre>{JSON.stringify(answers, null, 2)}</pre>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -27,7 +27,13 @@ export default async function ConsentPage({ searchParams }) {
     expiresAt = exp;
   } catch (err) {
     console.error("Decryption failed:", err);
-    return <div>Invalid or tampered data</div>;
+    return (
+      <div className={style.consent_page}>
+        <div className={style.consent_container}>
+          <div>Invalid Link</div>
+        </div>{" "}
+      </div>
+    )
   }
 
   const consentValue = await getConsent(email, phone);
