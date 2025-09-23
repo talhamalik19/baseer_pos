@@ -5,25 +5,33 @@ import { getConsent } from "@/lib/Magento/restAPI";
 import { decryptData } from "@/lib/crypto";
 
 export default async function ConsentPage({ searchParams }) {
-  const encrypted = searchParams?.data;
+  const params =await searchParams;
+  const encrypted = params?.data;
   
   if (!encrypted) {
-    return <div>❌ Invalid link</div>;
+    return (
+      <div className={style.consent_page}>
+        <div className={style.consent_container}>
+          <div>Invalid Link</div>
+        </div>{" "}
+      </div>
+    )
   }
 
-  let sessionId, phone, email;
+  let sessionId, phone, email, expiresAt;
   try {
-    const { sessionId: s, phone: p, email: e } = decryptData(encrypted);
+    const { sessionId: s, phone: p, email: e, expiresAt: exp } = decryptData(encrypted);
     sessionId = s;
     phone = p;
     email = e;
+    expiresAt = exp;
   } catch (err) {
-    console.error("❌ Decryption failed:", err);
-    return <div>❌ Invalid or tampered data</div>;
+    console.error("Decryption failed:", err);
+    return <div>Invalid or tampered data</div>;
   }
-  console.log(sessionId, email, phone)
+
   const consentValue = await getConsent(email, phone);
-console.log("consentValue", consentValue)
+
   return (
     <div>
       <Consent
@@ -32,6 +40,7 @@ console.log("consentValue", consentValue)
         email={email}
         consentValue={consentValue}
         style={style}
+         expiresAt={expiresAt}
       />
     </div>
   );

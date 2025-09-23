@@ -269,6 +269,20 @@
     background-size: 12px 1px;
     background-repeat: repeat-x;
         }
+        &.paymentConsentBlock{
+          flex-direction: column; align-items: flex-start; 
+          button{
+                margin-top: 10px;
+    color: #4db6ac;
+    font-weight: 500;
+    text-decoration: underline;
+    padding-top: 20px;
+    cursor: pointer;
+    text-align: center;
+    background-color: unset;
+    padding: 0;    font-size: 15px;
+          }
+        }
         
         input, select{
           background: #EAF4EA; width: 50%; width: 100%; width: 170px; box-sizing: border-box; height: 50px; border-radius: 8px;

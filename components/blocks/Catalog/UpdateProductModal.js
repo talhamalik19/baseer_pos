@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import styles from "../../../styles/card.module.scss";
-import { updateProductAction } from "@/lib/Magento/actions";
+import { revalidateProducts, updateProductAction } from "@/lib/Magento/actions";
 import { updateProductInDB } from "@/lib/indexedDB";
 
 export default function UpdateProductModal({ item, onClose }) {
@@ -12,7 +12,7 @@ export default function UpdateProductModal({ item, onClose }) {
     price: item?.price?.regularPrice?.amount?.value || "",
     special_price: item?.special_price || "",
     image: item?.image?.url || item?.image_url || "",
-    inventory: item?.quantity || 0 // Direct inventory number
+    inventory: item?.quantity || 0
   });
 
   const [formData, setFormData] = useState(originalData);
@@ -103,7 +103,7 @@ const handleSubmit = async (e) => {
       quantity: parseInt(formData.inventory, 10),
       image: formData.image
     };
-    
+    await revalidateProducts()
     await updateProductInDB(originalData.uid, dbUpdate);
     onClose();
     window.location.reload(true);

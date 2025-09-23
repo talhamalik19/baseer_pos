@@ -58,7 +58,6 @@ export default async function Order({ searchParams }) {
       dateTo: toISOString,
     });
   }
-  console.log(customerResponse)
   return (
     <>
       <PageHead

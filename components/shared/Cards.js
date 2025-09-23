@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import style from "../../styles/card.module.scss";
 import Image from "next/image";
 import ProductOptionsModal from "../blocks/Catalog/ProductOptionsModal";
@@ -10,6 +10,7 @@ import {
 } from "@/lib/indexedDB";
 import UpdateProductModal from "../blocks/Catalog/UpdateProductModal";
 import { usePathname } from "next/navigation";
+import { revalidateProducts } from "@/lib/Magento/actions";
 
 export default function Cards({
   item,
@@ -41,7 +42,8 @@ export default function Cards({
   const priceShortDetail = getAttribute("price_short_detail");
 
   const [originalPrice, setOriginalPrice] = useState(null);
-  const [quantity, setQuantity] = useState(qtyIncrementStep); // Initialize with qtyIncrementStep
+  const [quantity, setQuantity] = useState(qtyIncrementStep);
+  const originalPriceRef = useRef(null); // Use ref to maintain original price
 
   useEffect(() => {
     if (item) {
@@ -49,8 +51,14 @@ export default function Cards({
         item?.price?.regularPrice?.amount?.value ||
         item?.price_range?.minimum_price?.regular_price?.value ||
         0;
+
       setPriceInput(initialPrice);
-      setOriginalPrice(initialPrice);
+
+      // Only set originalPrice once (when it's null)
+      if (originalPriceRef.current === null) {
+        originalPriceRef.current = initialPrice;
+        setOriginalPrice(initialPrice);
+      }
 
       // Set quantity from record or fallback to qtyIncrementStep
       setQuantity(record?.quantity ?? qtyIncrementStep);
@@ -89,30 +97,30 @@ export default function Cards({
     setErrorMessage("");
   };
 
-  const validateDiscount = () => {
-    const originalPrice =
-      item?.price?.regularPrice?.amount?.value ||
-      item?.price_range?.minimum_price?.regular_price?.value ||
-      0;
+  const validateDiscount = () => {    
+    const basePrice = originalPriceRef.current;
     const inputPrice = parseFloat(priceInput);
     const pos_discount_allowed = item?.is_pos_discount_allowed == 1;
     const maxDiscountPercent = item?.pos_discount_percent || 0;
 
-    if (!pos_discount_allowed && inputPrice !== originalPrice) {
+    if (!basePrice || basePrice <= 0) {
+      console.error("No valid original price found");
+      setErrorMessage("Unable to validate price - no original price found");
+      return false;
+    }
+
+    if (!pos_discount_allowed && inputPrice !== basePrice) {
       setErrorMessage("Price changes not allowed for this item");
       return false;
     }
 
-    if (pos_discount_allowed && inputPrice < originalPrice) {
-      const discountPercent =
-        ((originalPrice - inputPrice) / originalPrice) * 100;
+    if (pos_discount_allowed && inputPrice < basePrice) {
+      const discountPercent = ((basePrice - inputPrice) / basePrice) * 100;
+      
       if (discountPercent > maxDiscountPercent) {
-        const minAllowedPrice = (
-          originalPrice *
-          (1 - maxDiscountPercent / 100)
-        ).toFixed(2);
+        const minAllowedPrice = (basePrice * (1 - maxDiscountPercent / 100)).toFixed(2);
         setErrorMessage(
-          `Minimum allowed price is ${currencySymbol}${minAllowedPrice}`
+          `Minimum allowed price is ${currencySymbol}${minAllowedPrice} (based on original price ${currencySymbol}${basePrice.toFixed(2)})`
         );
         return false;
       }
@@ -121,35 +129,37 @@ export default function Cards({
     return true;
   };
 
-  const handleUpdatePrice = async () => {
-    if (!validateDiscount()) {
-      return;
-    }
+const handleUpdatePrice = async () => {
+  if (!validateDiscount()) {
+    return;
+  }
 
-    const updatedItem = {
-      ...record,
-      quantity: quantity,
-      product: {
-        ...item,
-        price: {
-          regularPrice: {
-            amount: {
-              value: parseFloat(priceInput) || 0,
-              currency: "USD",
-            },
+  const updatedItem = {
+    ...record,
+    quantity: quantity,
+    product: {
+      ...item,
+      price: {
+        regularPrice: {
+          amount: {
+            value: parseFloat(priceInput) || 0,
+            currency: "USD",
           },
         },
       },
-    };
-
-    await updateWholeProduct(item?.uid, record?.addedAt, updatedItem);
-
-    const updatedCart = await getCartItems();
-    setCartItems(updatedCart);
-
-    setIsHighlighted(true);
-    setTimeout(() => setIsHighlighted(false), 1000);
+    },
   };
+
+  await updateWholeProduct(item?.uid, record?.addedAt, updatedItem);
+
+  const updatedCart = await getCartItems();
+  setCartItems(updatedCart);
+
+
+  setIsHighlighted(true);
+  setTimeout(() => setIsHighlighted(false), 1000);
+};
+
 
   const isPriceDisabled = () => item?.is_pos_discount_allowed !== 1;
 

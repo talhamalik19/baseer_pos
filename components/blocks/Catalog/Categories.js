@@ -295,7 +295,6 @@ export default function Categories({
   const handleAddToCart = useCallback(async (product, options, quantity) => {
     await addToCart(product, options, quantity);
   }, []);
-  console.log("categories", categories)
   return (
     <>
       <PageHead

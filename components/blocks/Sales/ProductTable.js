@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   updateWholeProduct,
   getCartItems,
@@ -17,6 +17,7 @@ export default function ProductTable({
   const [inputs, setInputs] = useState([]);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [errorMessages, setErrorMessages] = useState([]);
+  const originalPricesRef = useRef([]); // Store original prices for each item
 
   // Helper function to get product attribute
   const getAttribute = (item, code) => {
@@ -29,15 +30,22 @@ export default function ProductTable({
 
   useEffect(() => {
     if (cartItems?.length) {
-      const initialInputs = cartItems.map((item) => {
+      const initialInputs = cartItems.map((item, index) => {
         const qtyStepAttr = getAttribute(item, "qty_increment_step");
         const initialQty = qtyStepAttr ? parseFloat(qtyStepAttr) : 1;
+        
+        const currentPrice = 
+          item?.product?.price?.regularPrice?.amount?.value ||
+          item?.product?.price_range?.minimum_price?.regular_price?.value ||
+          0;
+
+        // Only set original price if it hasn't been set for this index
+        if (!originalPricesRef.current[index]) {
+          originalPricesRef.current[index] = currentPrice;
+        }
 
         return {
-          price:
-            item?.product?.price?.regularPrice?.amount?.value ||
-            item?.product?.price_range?.minimum_price?.regular_price?.value ||
-            0,
+          price: currentPrice,
           quantity: item.quantity || initialQty,
           qtyIncrementStep: initialQty,
         };
@@ -70,14 +78,21 @@ export default function ProductTable({
 
   const validateDiscount = (index) => {
     const currentItem = cartItems[index];
-    const originalPrice =
-      currentItem?.product?.price?.regularPrice?.amount?.value ||
-      currentItem?.product?.price_range?.minimum_price?.regular_price?.value ||
-      0;
+    
+    // Use the preserved original price from ref
+    const originalPrice = originalPricesRef.current[index];
     const inputPrice = parseFloat(inputs[index].price);
     const pos_discount_allowed =
       currentItem?.product?.is_pos_discount_allowed == 1;
     const maxDiscountPercent = currentItem?.product?.pos_discount_percent || 0;
+
+    // Check if we have a valid original price
+    if (!originalPrice || originalPrice <= 0) {
+      const updatedErrors = [...errorMessages];
+      updatedErrors[index] = "Unable to validate price - no original price found";
+      setErrorMessages(updatedErrors);
+      return false;
+    }
 
     if (!pos_discount_allowed && inputPrice !== originalPrice) {
       const updatedErrors = [...errorMessages];
@@ -89,6 +104,7 @@ export default function ProductTable({
     if (pos_discount_allowed && inputPrice < originalPrice) {
       const discountPercent =
         ((originalPrice - inputPrice) / originalPrice) * 100;
+      
       if (discountPercent > maxDiscountPercent) {
         const minAllowedPrice = (
           originalPrice *
@@ -97,7 +113,7 @@ export default function ProductTable({
         const updatedErrors = [...errorMessages];
         updatedErrors[
           index
-        ] = `Maximum discount ${maxDiscountPercent}% allowed (min price: ${currencySymbol}${minAllowedPrice})`;
+        ] = `Maximum discount ${maxDiscountPercent}% allowed (min price: ${currencySymbol}${minAllowedPrice} based on original ${currencySymbol}${originalPrice.toFixed(2)})`;
         setErrorMessages(updatedErrors);
         return false;
       }
@@ -172,7 +188,6 @@ export default function ProductTable({
         <thead>
           <tr>
             <th>{serverLanguage?.id ?? "#"}</th>
-            {/* <th>{serverLanguage?.Delete ?? "Delete"}</th> */}
             <th>{serverLanguage?.Product ?? "Item #"}</th>
             <th>{serverLanguage?.Products ?? "Item Name"}</th>
             <th>{serverLanguage?.Price ?? "Price"}</th>
@@ -188,10 +203,9 @@ export default function ProductTable({
             const quantity = inputs[index]?.quantity ?? "";
             const isDisabled = isPriceDisabled(item);
             const displayValues = getDisplayValues(item);
-            const originalPrice =
-              item?.product?.price?.regularPrice?.amount?.value ||
-              item?.product?.price_range?.minimum_price?.regular_price?.value ||
-              0;
+            
+            // Get original price from ref for display purposes
+            const originalPrice = originalPricesRef.current[index] || 0;
             const specialPrice = item?.product?.special_price;
             const showDiscount = specialPrice && specialPrice < originalPrice;
 
@@ -201,33 +215,6 @@ export default function ProductTable({
                 className={highlightedIndex === index ? styles.highlight : ""}
               >
                 <td>{index + 1}</td>
-                {/* <td>
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={async () => {
-                      await deleteFromCart(item?.product?.uid);
-                      const updatedCart = await getCartItems();
-                      onCartChange(updatedCart);
-                    }}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className={styles.deleteIcon}
-                    >
-                      <path
-                        d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M4 7H20M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </td> */}
                 <td>{item?.product?.sku || "N/A"}</td>
                 <td>{item?.product?.name || "Unnamed"}</td>
                 <td>
@@ -285,7 +272,7 @@ export default function ProductTable({
                   ) : (
                     <span>
                       {currencySymbol}
-                      {(originalPrice * quantity).toFixed(2)}
+                      {(parseFloat(price || 0) * quantity).toFixed(2)}
                     </span>
                   )}
                 </td>
@@ -296,10 +283,12 @@ export default function ProductTable({
                   >
                     🔁
                   </button>
-                    <button
+                  <button
                     className={styles.deleteBtn}
                     onClick={async () => {
                       await deleteFromCart(item?.product?.uid);
+                      // Clear the original price for this item when deleted
+                      originalPricesRef.current.splice(index, 1);
                       const updatedCart = await getCartItems();
                       onCartChange(updatedCart);
                     }}

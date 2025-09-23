@@ -106,7 +106,6 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   const handleEmailInvoice = async (id) => {
-    console.log(id)
     const res = await sendOrderInvoiceAction(id);
     if (res == true) {
       setResponseMessage("Email Sent");

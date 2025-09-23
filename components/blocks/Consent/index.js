@@ -1,9 +1,16 @@
 "use client";
 import SimpleAlertModal from "@/components/global/alertModal";
 import { submitConsentAction } from "@/lib/Magento/actions";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-export default function Consent({ style, sessionId, email, phone, consentValue }) {
+export default function Consent({
+  style,
+  sessionId,
+  email,
+  phone,
+  consentValue,
+  expiresAt,
+}) {
   // Default checked based on consentValue
   const [checked, setChecked] = useState(
     consentValue
@@ -14,6 +21,28 @@ export default function Consent({ style, sessionId, email, phone, consentValue }
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(Number(expiresAt) - Date.now());
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const diff = Number(expiresAt) - Date.now();
+      setTimeLeft(diff > 0 ? diff : 0);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expiresAt]);
+
+  if (timeLeft <= 0) {
+    return (
+      <div className={style.consent_page}>
+        <div className={style.consent_container}>
+          <div>This consent link has expired</div>
+        </div>{" "}
+      </div>
+    );
+  }
+
+  const minutes = Math.floor(timeLeft / 60000);
+  const seconds = Math.floor((timeLeft % 60000) / 1000);
 
   const handleSubmit = async () => {
     // if (!checked) {
@@ -40,7 +69,6 @@ export default function Consent({ style, sessionId, email, phone, consentValue }
       consent: checked,
     };
     const res = await submitConsentAction(payload);
-    console.log("res", res);
     if (res?.[0]?.success) {
       setIsOpen(true);
       setIsSubmitting(false);
@@ -78,6 +106,9 @@ export default function Consent({ style, sessionId, email, phone, consentValue }
     <div className={style.consent_page}>
       <div className={style.consent_container}>
         <h2>Consent Certificate</h2>
+        <p style={{ fontWeight: "bold", color: "red" }}>
+          ⏳ Expires in {minutes}:{seconds.toString().padStart(2, "0")}
+        </p>
         <p>
           By signing/submitting this form, I confirm that the information
           provided is accurate and complete to the best of my knowledge.

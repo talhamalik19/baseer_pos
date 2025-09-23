@@ -31,7 +31,6 @@ export default async function InvoicePage({ searchParams }) {
 //     return false;
 //   }
 // };
-console.log("20250917_qpunlq2w", ordersResponse)
 
 return (
    <Invoice style={style} order={ordersResponse?.data} slug={slug}/>
