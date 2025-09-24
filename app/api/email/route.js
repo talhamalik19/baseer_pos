@@ -20,7 +20,7 @@ export async function POST(req) {
     });
 
     // Convert logo to base64
-    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo.png');
+    const logoPath = path.join(process.cwd(), 'public', 'images', 'zaafodesktop.png');
     let logoBase64 = '';
     try {
       console.log('Logo path:', logoPath);
