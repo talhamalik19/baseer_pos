@@ -78,7 +78,7 @@ export async function POST(req) {
           
           <!-- Header with Logo -->
           <div style="background:#FEEEDF; padding:20px; text-align:center;">
-            ${companyConfig.logo ? `<img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px; display:block; margin:0 auto;" />` : ''}
+            ${companyConfig.logo ? `<img src="cid:company-logo" alt="Company Logo" style="max-height:60px; max-width:200px; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto; border:none;" />` : ''}
             <h1 style="color:#2c3e50; margin:0; font-size:22px;">${companyConfig.title}</h1>
             <p style="color:#555; margin:5px 0 0;">${companyConfig.subtitle}</p>
           </div>
@@ -136,8 +136,18 @@ export async function POST(req) {
         filename: `receipt-${orderId}.pdf`,
         content: pdf,
         encoding: "base64",
-      },
+      }
     ];
+
+    // Add logo as attachment if it exists
+    if (logoBase64) {
+      const logoBuffer = Buffer.from(logoBase64.split(',')[1], 'base64');
+      attachments.push({
+        filename: 'logo.png',
+        content: logoBuffer,
+        cid: 'company-logo'
+      });
+    }
 
     await transporter.sendMail({
       from: `"POS Receipt" <${process.env.NEXT_EMAIL_FROM}>`,
