@@ -30,7 +30,7 @@ export async function POST(req) {
 
     // ✅ Generate QR code (Buffer for attachment)
     const qrCodeDataURL = await QRCode.toDataURL(
-      `${NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
     );
     // const qrCodeBase64 = qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
     // const qrCodeBuffer = Buffer.from(qrCodeBase64, "base64");
