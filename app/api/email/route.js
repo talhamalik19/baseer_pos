@@ -55,6 +55,9 @@ export async function POST(req) {
     const qrCodeDataURL = await QRCode.toDataURL(
       `${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
     );
+    
+    // Convert QR code to buffer for attachment
+    const qrCodeBuffer = Buffer.from(qrCodeDataURL.split(',')[1], 'base64');
 
     // ✅ Build items table
     const itemsHtml = orderData.items
@@ -119,7 +122,7 @@ export async function POST(req) {
 
             <!-- QR Code -->
             <div style="margin-top:15px;">
-              <img src="${qrCodeDataURL}" alt="QR Code" style="width:100px; height:100px; display:block; margin:0 auto;" />
+              <img src="cid:qr-code" alt="QR Code" style="width:100px; height:100px; display:block; margin:0 auto;" />
               <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
                 Scan the QR or click <a style="text-decoration: underline; color: #2c3e50;" href="${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}">Here</a> to give feedback
               </p>
@@ -148,6 +151,13 @@ export async function POST(req) {
         cid: 'company-logo'
       });
     }
+
+    // Add QR code as attachment
+    attachments.push({
+      filename: 'qrcode.png',
+      content: qrCodeBuffer,
+      cid: 'qr-code'
+    });
 
     await transporter.sendMail({
       from: `"POS Receipt" <${process.env.NEXT_EMAIL_FROM}>`,
