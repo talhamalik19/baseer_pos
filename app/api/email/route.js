@@ -22,7 +22,7 @@ export async function POST(req) {
     const companyConfig = pdfResponse || {
       title: "Receipt",
       subtitle: "Thank You For Your Purchase",
-      logo: logo,
+     logo: `${process.env.NEXT_PUBLIC_BASE_URL}/images/logo.png`,
       companyName: "Store",
       footer: "Thank you for shopping with us!",
       footerText: "Please come again",
@@ -98,7 +98,7 @@ export async function POST(req) {
 
             <!-- QR Code -->
             <div style="margin-top:15px;">
-              <img src=${qrCodeDataURL} alt="QR Code" style="width:100px; height:100px;" />
+              <img src="${qrCodeDataURL}" alt="QR Code" style="width:100px; height:100px;" />
               <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
                 Scan the QR or click <a style="text-decoration: underline"; color: "#2c3e50" href='${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}'>Here</a> to give feedback
               </p>
