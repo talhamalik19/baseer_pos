@@ -22,7 +22,7 @@ export async function POST(req) {
     const companyConfig = pdfResponse || {
       title: "Receipt",
       subtitle: "Thank You For Your Purchase",
-     logo: `${process.env.NEXT_PUBLIC_BASE_URL}/images/logo.png`,
+      logo: `${process.env.NEXT_PUBLIC_BASE_URL}/images/logo.png`,
       companyName: "Store",
       footer: "Thank you for shopping with us!",
       footerText: "Please come again",
@@ -32,8 +32,6 @@ export async function POST(req) {
     const qrCodeDataURL = await QRCode.toDataURL(
       `${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
     );
-    // const qrCodeBase64 = qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
-    // const qrCodeBuffer = Buffer.from(qrCodeBase64, "base64");
 
     // ✅ Build items table
     const itemsHtml = orderData.items
@@ -57,7 +55,7 @@ export async function POST(req) {
           
           <!-- Header with Logo -->
           <div style="background:#FEEEDF; padding:20px; text-align:center;">
-            <img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px;" />
+            <img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px; display:block; margin:0 auto;" />
             <h1 style="color:#2c3e50; margin:0; font-size:22px;">${companyConfig.title}</h1>
             <p style="color:#555; margin:5px 0 0;">${companyConfig.subtitle}</p>
           </div>
@@ -70,7 +68,7 @@ export async function POST(req) {
             <p><strong>Customer Email:</strong> ${orderData.customer_email || "-"}</p>
 
             <h3 style="margin-top:20px; color:#2c3e50;">Items</h3>
-            <table style="width:100%; border-collapse:collapse; margin-top:10px; background:#FEEEDF;">
+            <table style="width:100%; border-collapse:collapse; margin-top:10px;">
               <thead style="background:#FEEEDF; color:#2c3e50;">
                 <tr>
                   <th style="padding:10px; border:1px solid #ddd; text-align:left;">Item</th>
@@ -98,9 +96,9 @@ export async function POST(req) {
 
             <!-- QR Code -->
             <div style="margin-top:15px;">
-              <img src="${qrCodeDataURL}" alt="QR Code" style="width:100px; height:100px;" />
+              <img src="${qrCodeDataURL}" alt="QR Code" style="width:100px; height:100px; display:block; margin:0 auto;" />
               <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
-                Scan the QR or click <a style="text-decoration: underline"; color: "#2c3e50" href='${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}'>Here</a> to give feedback
+                Scan the QR or click <a style="text-decoration: underline; color: #2c3e50;" href="${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}">Here</a> to give feedback
               </p>
             </div>
           </div>
