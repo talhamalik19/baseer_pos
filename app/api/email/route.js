@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
-import logo from "../../../public/images/logo.png"
+import fs from "fs";
+import path from "path";
 
 export async function POST(req) {
   try {
@@ -18,11 +19,21 @@ export async function POST(req) {
       },
     });
 
+    // Convert logo to base64
+    const logoPath = path.join(process.cwd(), 'public', 'images', 'logo.png');
+    let logoBase64 = '';
+    try {
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+    } catch (err) {
+      logoBase64 = '';
+    }
+
     // ✅ Fallback config
     const companyConfig = pdfResponse || {
       title: "Receipt",
       subtitle: "Thank You For Your Purchase",
-      logo: `${process.env.NEXT_PUBLIC_BASE_URL}/images/logo.png`,
+      logo: logoBase64,
       companyName: "Store",
       footer: "Thank you for shopping with us!",
       footerText: "Please come again",
@@ -55,7 +66,7 @@ export async function POST(req) {
           
           <!-- Header with Logo -->
           <div style="background:#FEEEDF; padding:20px; text-align:center;">
-            <img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px; display:block; margin:0 auto;" />
+            ${companyConfig.logo ? `<img src="${companyConfig.logo}" alt="Company Logo" style="max-height:60px; margin-bottom:10px; display:block; margin:0 auto;" />` : ''}
             <h1 style="color:#2c3e50; margin:0; font-size:22px;">${companyConfig.title}</h1>
             <p style="color:#555; margin:5px 0 0;">${companyConfig.subtitle}</p>
           </div>
