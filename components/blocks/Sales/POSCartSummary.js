@@ -630,6 +630,57 @@ export default function POSCartSummary({
         pdfResponse,
         orderId
       );
+           try {
+          const delayedJobData = {
+            email,
+            phone,
+            orderId,
+            orderData,
+            pdfResponse,
+            smsJob: phone
+              ? {
+                  phone,
+                  order_key: orderData?.order_key,
+                  orderId,
+                  total: orderData?.order_grandtotal,
+                  createdAt: Date.now(),
+                  sid: twilioRec?.sid,
+                  auth_token: twilioRec?.auth_token,
+                  auth_phone: twilioRec?.phone,
+                }
+              : null,
+          };
+
+          // Generate PDF if email exists
+          if (email) {
+            delayedJobData.pdfBase64 = await generateReceiptPDF(
+              cartItems,
+              total,
+              amount,
+              balance,
+              customerDetails,
+              orderId,
+              orderData?.order_key,
+              pdfResponse
+            );
+          }
+          const res = await fetch("/api/schedule-email", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(delayedJobData),
+          });
+
+          if (res.ok) {
+            console.log(
+              "Delayed consent check scheduled successfully for order:",
+              orderId
+            );
+          } else {
+            console.error("Failed to schedule delayed consent check");
+          }
+        } catch (err) {
+          console.error("Error setting up delayed receipt sending:", err);
+        }
       setConsentModal(true);
       const sessionId = orderData?.increment_id;
       const expiresAt = Date.now() + minutes * 60 * 1000;
