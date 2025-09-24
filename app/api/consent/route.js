@@ -1,6 +1,6 @@
-import { initWebSocketServer, notifyConsent } from "@/server";
+// import { initWebSocketServer, notifyConsent } from "@/server";
 
-initWebSocketServer(); 
+// initWebSocketServer(); 
 
 export const dynamic = "force-dynamic";
 
