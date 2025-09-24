@@ -288,6 +288,7 @@ export default function POSCartSummary({
 
     try {
       let finalConsent = consentStatus;
+      console.log("final consent", finalConsent)
       // if (email || phone) {
       //   finalConsent = await checkConsentFromAPI();
       // }
@@ -470,6 +471,57 @@ export default function POSCartSummary({
             }/consent?data=${encodeURIComponent(encrypted)}`
           );
           setQrCode(code);
+             try {
+            const delayedJobData = {
+              email,
+              phone,
+              orderId,
+              orderData,
+              pdfResponse,
+              smsJob: phone
+                ? {
+                    phone,
+                    order_key: orderData?.order_key,
+                    orderId,
+                    total: orderData?.order_grandtotal,
+                    createdAt: Date.now(),
+                    sid: twilioRec?.sid,
+                    auth_token: twilioRec?.auth_token,
+                    auth_phone: twilioRec?.phone,
+                  }
+                : null,
+            };
+
+            // Generate PDF if email exists
+            if (email) {
+              delayedJobData.pdfBase64 = await generateReceiptPDF(
+                cartItems,
+                total,
+                amount,
+                balance,
+                customerDetails,
+                orderId,
+                orderData?.order_key,
+                pdfResponse
+              );
+            }
+            const res = await fetch("/api/schedule-email", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(delayedJobData),
+            });
+
+            if (res.ok) {
+              console.log(
+                "Delayed consent check scheduled successfully for order:",
+                orderId
+              );
+            } else {
+              console.error("Failed to schedule delayed consent check");
+            }
+          } catch (err) {
+            console.error("Error setting up delayed receipt sending:", err);
+          }
           return;
         } else {
           setConsentModal(true);
@@ -620,7 +672,7 @@ export default function POSCartSummary({
         // setEmail("");
         return;
       }
-
+      console.log("=====")
       await printReceipt(
         cartItems,
         total,
@@ -630,57 +682,59 @@ export default function POSCartSummary({
         pdfResponse,
         orderId
       );
-           try {
-          const delayedJobData = {
-            email,
-            phone,
-            orderId,
-            orderData,
-            pdfResponse,
-            smsJob: phone
-              ? {
-                  phone,
-                  order_key: orderData?.order_key,
-                  orderId,
-                  total: orderData?.order_grandtotal,
-                  createdAt: Date.now(),
-                  sid: twilioRec?.sid,
-                  auth_token: twilioRec?.auth_token,
-                  auth_phone: twilioRec?.phone,
-                }
-              : null,
-          };
+        //      try {
+        //         console.log("==================")
+        //         console.log("fallback")
+        //   const delayedJobData = {
+        //     email,
+        //     phone,
+        //     orderId,
+        //     orderData,
+        //     pdfResponse,
+        //     smsJob: phone
+        //       ? {
+        //           phone,
+        //           order_key: orderData?.order_key,
+        //           orderId,
+        //           total: orderData?.order_grandtotal,
+        //           createdAt: Date.now(),
+        //           sid: twilioRec?.sid,
+        //           auth_token: twilioRec?.auth_token,
+        //           auth_phone: twilioRec?.phone,
+        //         }
+        //       : null,
+        //   };
 
-          // Generate PDF if email exists
-          if (email) {
-            delayedJobData.pdfBase64 = await generateReceiptPDF(
-              cartItems,
-              total,
-              amount,
-              balance,
-              customerDetails,
-              orderId,
-              orderData?.order_key,
-              pdfResponse
-            );
-          }
-          const res = await fetch("/api/schedule-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(delayedJobData),
-          });
+        //   // Generate PDF if email exists
+        //   if (email) {
+        //     delayedJobData.pdfBase64 = await generateReceiptPDF(
+        //       cartItems,
+        //       total,
+        //       amount,
+        //       balance,
+        //       customerDetails,
+        //       orderId,
+        //       orderData?.order_key,
+        //       pdfResponse
+        //     );
+        //   }
+        //   const res = await fetch("/api/schedule-email", {
+        //     method: "POST",
+        //     headers: { "Content-Type": "application/json" },
+        //     body: JSON.stringify(delayedJobData),
+        //   });
 
-          if (res.ok) {
-            console.log(
-              "Delayed consent check scheduled successfully for order:",
-              orderId
-            );
-          } else {
-            console.error("Failed to schedule delayed consent check");
-          }
-        } catch (err) {
-          console.error("Error setting up delayed receipt sending:", err);
-        }
+        //   if (res.ok) {
+        //     console.log(
+        //       "Delayed consent check scheduled successfully for order:",
+        //       orderId
+        //     );
+        //   } else {
+        //     console.error("Failed to schedule delayed consent check");
+        //   }
+        // } catch (err) {
+        //   console.error("Error setting up delayed receipt sending:", err);
+        // }
       setConsentModal(true);
       const sessionId = orderData?.increment_id;
       const expiresAt = Date.now() + minutes * 60 * 1000;
@@ -696,6 +750,7 @@ export default function POSCartSummary({
             }/consent?data=${encodeURIComponent(encrypted)}`
           );
           setQrCode(code);
+       
       // await saveOrder(orderData);
       // await saveOrders(orderData);
       // await clearCart();
