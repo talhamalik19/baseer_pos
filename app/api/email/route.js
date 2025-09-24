@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import QRCode from "qrcode";
-import path from "path";
-import fs from "fs";
+import logo from "../../../public/images/logo.png"
 
 export async function POST(req) {
   try {
@@ -23,7 +22,7 @@ export async function POST(req) {
     const companyConfig = pdfResponse || {
       title: "Receipt",
       subtitle: "Thank You For Your Purchase",
-      logo: "cid:unique-logo", // cid reference
+      logo: logo,
       companyName: "Store",
       footer: "Thank you for shopping with us!",
       footerText: "Please come again",
@@ -31,10 +30,10 @@ export async function POST(req) {
 
     // ✅ Generate QR code (Buffer for attachment)
     const qrCodeDataURL = await QRCode.toDataURL(
-      `/feedback?id=${orderData?.order_key}`
+      `${NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
     );
-    const qrCodeBase64 = qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
-    const qrCodeBuffer = Buffer.from(qrCodeBase64, "base64");
+    // const qrCodeBase64 = qrCodeDataURL.replace(/^data:image\/png;base64,/, "");
+    // const qrCodeBuffer = Buffer.from(qrCodeBase64, "base64");
 
     // ✅ Build items table
     const itemsHtml = orderData.items
@@ -99,7 +98,7 @@ export async function POST(req) {
 
             <!-- QR Code -->
             <div style="margin-top:15px;">
-              <img src="cid:unique-qrcode" alt="QR Code" style="width:100px; height:100px;" />
+              <img src=${qrCodeDataURL} alt="QR Code" style="width:100px; height:100px;" />
               <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
                 Scan the QR or click <a style="text-decoration: underline"; color: "#2c3e50" href='${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}'>Here</a> to give feedback
               </p>
