@@ -8,7 +8,7 @@ export async function POST(request) {
   try {
     const { email, phone, orderId, orderData, pdfBase64, pdfResponse, smsJob } =
       await request.json();
-    await new Promise((resolve) => setTimeout(resolve, 360000));
+    await new Promise((resolve) => setTimeout(resolve, 300000));
 
     console.log("Re-checking consent for order:", orderId);
     const updatedConsent = await recheckConsentFromAPI(email, phone);
