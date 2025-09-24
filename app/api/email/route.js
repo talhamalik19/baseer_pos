@@ -23,9 +23,18 @@ export async function POST(req) {
     const logoPath = path.join(process.cwd(), 'public', 'images', 'logo.png');
     let logoBase64 = '';
     try {
-      const logoBuffer = fs.readFileSync(logoPath);
-      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+      console.log('Logo path:', logoPath);
+      console.log('File exists:', fs.existsSync(logoPath));
+      
+      if (fs.existsSync(logoPath)) {
+        const logoBuffer = fs.readFileSync(logoPath);
+        logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+        console.log('Logo loaded successfully, length:', logoBase64.length);
+      } else {
+        console.log('Logo file not found');
+      }
     } catch (err) {
+      console.error('Logo error:', err.message);
       logoBase64 = '';
     }
 
@@ -38,6 +47,9 @@ export async function POST(req) {
       footer: "Thank you for shopping with us!",
       footerText: "Please come again",
     };
+
+    console.log('Company config logo exists:', !!companyConfig.logo);
+    console.log('Logo preview:', companyConfig.logo.substring(0, 50) + '...');
 
     // ✅ Generate QR code (Buffer for attachment)
     const qrCodeDataURL = await QRCode.toDataURL(
