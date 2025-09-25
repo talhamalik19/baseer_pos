@@ -36,6 +36,9 @@
   min-height: 100vh;
   display: flex;
   justify-content: center;
+  @media screen and (max-width: 767px) {
+    padding: 00px 15px 40px;
+  }
 }
 
 .invoice_container {
@@ -177,7 +180,7 @@
 
     .options {
       display: flex;
-      gap: 1rem;
+      gap: 10px;
       flex-wrap: wrap;
     }
 

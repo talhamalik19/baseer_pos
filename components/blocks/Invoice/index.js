@@ -227,6 +227,7 @@ export default function Invoice({ style, order, slug }) {
             <label key={opt} className={style.option}>
               <input
                 type="radio"
+                required
                 name={item.id}
                 value={opt}
                 checked={answers[item.id] === opt}

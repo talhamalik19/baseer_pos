@@ -305,13 +305,13 @@ export default function POSCartSummary({
           orderId,
           orderData?.order_key,
         );
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
+        // await saveOrder(orderData);
+        // await saveOrders(orderData);
+        // await clearCart();
+        // setCartItems([]);
+        // setAmount("0.00");
+        // setPhone("");
+        // setEmail("");
         return;
       }
 
@@ -356,13 +356,13 @@ export default function POSCartSummary({
             expiresAt,
           });
           setQrCode(code);
-          await saveOrder(orderData);
-          await saveOrders(orderData);
-          await clearCart();
-          setCartItems([]);
-          setAmount("0.00");
-          setPhone("");
-          setEmail("");
+          // await saveOrder(orderData);
+          // await saveOrders(orderData);
+          // await clearCart();
+          // setCartItems([]);
+          // setAmount("0.00");
+          // setPhone("");
+          // setEmail("");
           return;
         }
       }
@@ -435,13 +435,13 @@ export default function POSCartSummary({
         }
 
         // Save order and clear cart
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
+        // await saveOrder(orderData);
+        // await saveOrders(orderData);
+        // await clearCart();
+        // setCartItems([]);
+        // setAmount("0.00");
+        // setPhone("");
+        // setEmail("");
         return;
       }
 
@@ -594,13 +594,13 @@ export default function POSCartSummary({
           } catch (err) {
             console.error("Error setting up delayed receipt sending:", err);
           }
-          await saveOrder(orderData);
-          await saveOrders(orderData);
-          await clearCart();
-          setCartItems([]);
-          setAmount("0.00");
-          setPhone("");
-          setEmail("");
+          // await saveOrder(orderData);
+          // await saveOrders(orderData);
+          // await clearCart();
+          // setCartItems([]);
+          // setAmount("0.00");
+          // setPhone("");
+          // setEmail("");
           return;
         }
       }
@@ -668,13 +668,13 @@ export default function POSCartSummary({
         } catch (err) {
           console.error("Error setting up delayed receipt sending:", err);
         }
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
+        // await saveOrder(orderData);
+        // await saveOrders(orderData);
+        // await clearCart();
+        // setCartItems([]);
+        // setAmount("0.00");
+        // setPhone("");
+        // setEmail("");
         return;
       }
       console.log("=====")
@@ -757,13 +757,13 @@ export default function POSCartSummary({
           );
           setQrCode(code);
        
-      await saveOrder(orderData);
-      await saveOrders(orderData);
-      await clearCart();
-      setCartItems([]);
-      setAmount("0.00");
-      setPhone("");
-      setEmail("");
+      // await saveOrder(orderData);
+      // await saveOrders(orderData);
+      // await clearCart();
+      // setCartItems([]);
+      // setAmount("0.00");
+      // setPhone("");
+      // setEmail("");
     } catch (error) {
       console.error("Error placing order:", error);
       showAlert("Error", "Something went wrong while placing the order.");
