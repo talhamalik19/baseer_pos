@@ -302,7 +302,8 @@ export default function POSCartSummary({
           balance,
           customerDetails,
           pdfResponse,
-          orderId
+          orderId,
+          orderData?.order_key,
         );
         // await saveOrder(orderData);
         // await saveOrders(orderData);
@@ -323,7 +324,8 @@ export default function POSCartSummary({
             balance,
             customerDetails,
             pdfResponse,
-            orderId
+            orderId,
+            orderData?.order_key
           );
 
           // Show consent QR so customer can change consent
@@ -375,7 +377,8 @@ export default function POSCartSummary({
             balance,
             customerDetails,
             pdfResponse,
-            orderId
+            orderId,
+            orderData?.order_key
           );
         }
 
@@ -452,7 +455,8 @@ export default function POSCartSummary({
             balance,
             customerDetails,
             pdfResponse,
-            orderId
+            orderId,
+             orderData?.order_key
           );
 
           // Show consent QR so customer can grant consent
@@ -610,7 +614,8 @@ export default function POSCartSummary({
           balance,
           customerDetails,
           pdfResponse,
-          orderId
+          orderId,
+           orderData?.order_key
         );
         try {
           const delayedJobData = {
@@ -680,7 +685,8 @@ export default function POSCartSummary({
         balance,
         customerDetails,
         pdfResponse,
-        orderId
+        orderId,
+         orderData?.order_key
       );
         //      try {
         //         console.log("==================")
