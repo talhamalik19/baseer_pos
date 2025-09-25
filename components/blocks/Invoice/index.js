@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
 
 export default function Invoice({ style, order, slug }) {
+  console.log(order)
   const [pdfResponse, setPdfResponse] = useState({});
   const [answers, setAnswers] = useState({});
 
@@ -147,7 +148,7 @@ export default function Invoice({ style, order, slug }) {
 
     // 🔹 QR Code for Feedback
     try {
-      const feedbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${slug}`;
+      const feedbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${slug}`;
       const qrCodeDataURL = await QRCode.toDataURL(feedbackUrl);
       doc.addImage(qrCodeDataURL, "PNG", 90, y + 10, 30, 30);
       doc.setFontSize(9);
@@ -170,8 +171,12 @@ export default function Invoice({ style, order, slug }) {
 
   return (
     <div className={style.invoice_page}>
-      <div className={`${style.invoice_container} ${style?.consent_container}`}>
+      <div className={`${style.invoice_container}`}>
+        <div className={style.header}>
         <h2>Order Receipt</h2>
+        <div  onClick={handleDownload}>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 15 15"><path fill="#4FACB8" fill-rule="evenodd" d="M7.5 1.05a.45.45 0 0 1 .45.45v6.914l2.232-2.232a.45.45 0 1 1 .636.636l-3 3a.45.45 0 0 1-.636 0l-3-3a.45.45 0 1 1 .636-.636L7.05 8.414V1.5a.45.45 0 0 1 .45-.45ZM2.5 10a.5.5 0 0 1 .5.5V12c0 .554.446 1 .996 1h7.005A.999.999 0 0 0 12 12v-1.5a.5.5 0 0 1 1 0V12a2 2 0 0 1-1.999 2H3.996A1.997 1.997 0 0 1 2 12v-1.5a.5.5 0 0 1 .5-.5Z" clip-rule="evenodd"/></svg></div>
+        </div>
         <div className={style.invoice_box}>
           <p>
             <strong>Order #:</strong> {order.increment_id}
@@ -209,34 +214,56 @@ export default function Invoice({ style, order, slug }) {
         </ul>
 
         <h3>Grand Total: ${order.order_grandtotal}</h3>
-        <button onClick={handleDownload}>Download Slip</button>
+        {/* <button onClick={handleDownload}>Download Slip</button> */}
 
-        <div className="feedback-form">
-          {Array.isArray(feedbackArr) &&
-            feedbackArr?.[0].map((item) => (
-              <div key={item.id} className="feedback-question">
-                <p className="question-text">{item.text}</p>
-                <div className="options">
-                  {item.options.map((opt) => (
-                    <label key={opt} className="option">
-                      <input
-                        type="radio"
-                        name={item.id}
-                        value={opt}
-                        checked={answers[item.id] === opt}
-                        onChange={() => handleChange(item.id, opt)}
-                      />
-                      <span className="circle">{opt}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-          <div className="result">
-            <pre>{JSON.stringify(answers, null, 2)}</pre>
-          </div>
+   <div className={style.feedback_form}>
+  <h2>Feedback</h2>
+  {Array.isArray(feedbackArr) &&
+    feedbackArr?.[0].map((item) => (
+      <div key={item.id} className={style.feedback_question}>
+        <p className={style.question_text}>{item.text}</p>
+        <div className={style.options}>
+          {item.options.map((opt) => (
+            <label key={opt} className={style.option}>
+              <input
+                type="radio"
+                name={item.id}
+                value={opt}
+                checked={answers[item.id] === opt}
+                onChange={() => handleChange(item.id, opt)}
+              />
+              <span className={style.circle}>{opt}</span>
+            </label>
+          ))}
         </div>
+      </div>
+    ))}
+
+  <button
+    className={style.feedback_submit}
+    onClick={() => {
+      const feedbackObject = {
+        data: {
+          order_key: slug,
+          customer_email: order?.customer_email,
+          customer_phone: "",
+          channel: "offline",
+          responses: feedbackArr?.[0].map((q) => ({
+            question_id: q.id,
+            question_text: q.text,
+            rating: Number(answers[q.id]) || 0,
+            comment: "",
+          })),
+        },
+      };
+      console.log("Feedback Object:", feedbackObject);
+    }}
+  >
+    Submit Feedback
+  </button>
+</div>
+
+
       </div>
     </div>
   );

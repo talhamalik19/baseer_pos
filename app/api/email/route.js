@@ -53,7 +53,7 @@ export async function POST(req) {
 
     // ✅ Generate QR code (Buffer for attachment)
     const qrCodeDataURL = await QRCode.toDataURL(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}`
+      `${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${orderData?.order_key}`
     );
     
     // Convert QR code to buffer for attachment
@@ -124,7 +124,7 @@ export async function POST(req) {
             <div style="margin-top:15px;">
               <img src="cid:qr-code" alt="QR Code" style="width:100px; height:100px; display:block; margin:0 auto;" />
               <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
-                Scan the QR or click <a style="text-decoration: underline; color: #2c3e50;" href="${process.env.NEXT_PUBLIC_BASE_URL}/feedback?id=${orderData?.order_key}">Here</a> to give feedback
+                Scan the QR or click <a style="text-decoration: underline; color: #2c3e50;" href="${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${orderData?.order_key}">Here</a> to give feedback
               </p>
             </div>
           </div>
