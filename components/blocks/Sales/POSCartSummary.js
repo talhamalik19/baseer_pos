@@ -18,7 +18,7 @@ import SimpleAlertModal from "@/components/global/alertModal";
 import generateReceiptPDF from "@/lib/generatePDF";
 import QRCode from "qrcode";
 import { encryptData } from "@/lib/crypto";
-import { getCustomerConsentAction } from "@/lib/Magento/actions";
+import { getCustomerConsentAction, submitConsentAction } from "@/lib/Magento/actions";
 
 export default function POSCartSummary({
   cartItems,
@@ -149,27 +149,20 @@ export default function POSCartSummary({
       setConsentLoading(true);
       try {
         const res = await getCustomerConsentAction(email, phone);
+
+        // in case of registered customer (consent given)
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent) {
           setConsentStatus(res[0].consent);
           setConsentChecked(true);
           setChangeConsent(res?.[0]?.consent == "yes" ? true : false);
           return res[0].consent;
         }
+
+        // in case of unregistered and registered but no consent customers
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent == null) {
           setConsentStatus("not_set");
           setConsentChecked(true);
           return "not_set";
-        }
-        if (res && res.consent) {
-          setConsentStatus(res.consent);
-          setConsentChecked(true);
-          return res.consent;
-        }
-
-        if (res && res.message) {
-          setConsentStatus("not_found");
-          setConsentChecked(true);
-          return "no";
         }
 
         setConsentStatus(null);
@@ -199,16 +192,13 @@ export default function POSCartSummary({
     setIsInputFocused(true);
   };
 
-  // New function to handle consent change checkbox
-  const handleConsentChange = async (checked) => {
-    setChangeConsent(checked);
-    // Don't generate QR code immediately, wait for place order button
+    const handleConsentChange = async (checked) => {
+    setChangeConsent(!checked);
   };
 
   const handlePlaceOrder = async () => {
     if (code == undefined) {
       redirect("/manage-pos?pos_code=false");
-      return;
     }
 
     if (!validateEmail(email)) {
@@ -288,9 +278,6 @@ export default function POSCartSummary({
 
     try {
       let finalConsent = consentStatus;
-      // if (email || phone) {
-      //   finalConsent = await checkConsentFromAPI();
-      // }
       if (!finalConsent) finalConsent = "no";
 
       if (!email && !phone) {
@@ -304,158 +291,48 @@ export default function POSCartSummary({
           orderId,
           orderData?.order_key
         );
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
-        return;
-      }
-
-      if (changeConsent != (finalConsent == "yes" ? true : false)) {
-        if (thermalPrint) {
-          await printReceipt(
-            cartItems,
-            total,
-            amount,
-            balance,
-            customerDetails,
-            pdfResponse,
-            orderId,
-            orderData?.order_key
-          );
-          await saveOrder(orderData);
-          await saveOrders(orderData);
-          await clearCart();
-          setCartItems([]);
-          setAmount("0.00");
-          setPhone("");
-          setEmail("");
-          // Show consent QR so customer can change consent
-          setConsentChangeModal(true);
-          const sessionId = orderData?.increment_id;
-          const expiresAt = Date.now() + minutes * 60 * 1000;
-          const encrypted = encryptData({
-            sessionId,
-            phone,
-            email,
-            expiresAt,
-          });
-          const code = await QRCode.toDataURL(
-            `${
-              process.env.NEXT_PUBLIC_BASE_URL
-            }/consent?data=${encodeURIComponent(encrypted)}`
-          );
-          setQrCode(code);
-          return;
-        } else {
-          setConsentChangeModal(true);
-          const sessionId = orderData?.increment_id;
-          const expiresAt = Date.now() + minutes * 60 * 1000;
-          const encrypted = encryptData({
-            sessionId,
-            phone,
-            email,
-            expiresAt,
-          });
-          setQrCode(code);
-          // await saveOrder(orderData);
-          // await saveOrders(orderData);
-          // await clearCart();
-          // setCartItems([]);
-          // setAmount("0.00");
-          // setPhone("");
-          // setEmail("");
-          return;
-        }
-      }
-
-      // Case 3: Consent is "yes" - send digital receipts with delay and re-check
-      if (finalConsent === "yes") {
-        if (thermalPrint) {
-          await printReceipt(
-            cartItems,
-            total,
-            amount,
-            balance,
-            customerDetails,
-            pdfResponse,
-            orderId,
-            orderData?.order_key
-          );
-        }
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
-        try {
-          const delayedJobData = {
-            email,
-            phone,
-            orderId,
-            orderData,
-            pdfResponse,
-            smsJob: phone
-              ? {
-                  phone,
-                  order_key: orderData?.order_key,
-                  orderId,
-                  total: orderData?.order_grandtotal,
-                  createdAt: Date.now(),
-                  sid: twilioRec?.sid,
-                  auth_token: twilioRec?.auth_token,
-                  auth_phone: twilioRec?.phone,
-                }
-              : null,
-          };
-          // Generate PDF if email exists
-          if (email) {
-            delayedJobData.pdfBase64 = await generateReceiptPDF(
-              cartItems,
-              total,
-              amount,
-              balance,
-              customerDetails,
-              orderId,
-              orderData?.order_key,
-              pdfResponse
-            );
-          }
-          const res = await fetch("/api/schedule-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(delayedJobData),
-          });
-
-          if (res.ok) {
-            console.log(
-              "Delayed consent check scheduled successfully for order:",
-              orderId
-            );
-          } else {
-            console.error("Failed to schedule delayed consent check");
-          }
-        } catch (err) {
-          console.error("Error setting up delayed receipt sending:", err);
-        }
-        // Save order and clear cart
         // await saveOrder(orderData);
         // await saveOrders(orderData);
         // await clearCart();
         // setCartItems([]);
-        // setAmount("0.00");
+        // setAmount("");
         // setPhone("");
         // setEmail("");
         return;
       }
 
-      // Case 4: Consent is "not_set" - show consent QR for first-time consent
-      if (finalConsent === "not_set") {
+      if (changeConsent != (finalConsent == "yes" ? true : false)) {
+        console.log("consent is changed incase of yes")
+        // if (thermalPrint) {
+        const consentRes = await submitConsentAction({
+          increment_id: generateRandomId(),
+          customer_email: email,
+          phone_number: phone.length ? phone : "",
+          consent: "no"
+        })
+          await printReceipt(
+            cartItems,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key
+          );
+          //  await saveOrder(orderData);
+          // await saveOrders(orderData);
+          // await clearCart();
+          // setCartItems([]);
+          // setAmount("");
+          // setPhone("");
+          // setEmail("");
+          return;
+      }
+
+      // Case 3: Consent is "yes" - send digital receipts with delay and re-check
+      if (finalConsent === "yes") {
+        console.log("consent is yes")
         if (thermalPrint) {
           await printReceipt(
             cartItems,
@@ -467,161 +344,58 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key
           );
-          await saveOrder(orderData);
-          await saveOrders(orderData);
-          await clearCart();
-          setCartItems([]);
-          setAmount("0.00");
-          setPhone("");
-          setEmail("");
-          // Show consent QR so customer can grant consent
-          setConsentModal(true);
-          const sessionId = orderData?.increment_id;
-          const expiresAt = Date.now() + minutes * 60 * 1000;
-          const encrypted = encryptData({
-            sessionId,
-            phone,
-            email,
-            expiresAt,
-          });
-          const code = await QRCode.toDataURL(
-            `${
-              process.env.NEXT_PUBLIC_BASE_URL
-            }/consent?data=${encodeURIComponent(encrypted)}`
-          );
-          setQrCode(code);
-          try {
-            const delayedJobData = {
-              email,
-              phone,
-              orderId,
-              orderData,
-              pdfResponse,
-              smsJob: phone
-                ? {
-                    phone,
-                    order_key: orderData?.order_key,
-                    orderId,
-                    total: orderData?.order_grandtotal,
-                    createdAt: Date.now(),
-                    sid: twilioRec?.sid,
-                    auth_token: twilioRec?.auth_token,
-                    auth_phone: twilioRec?.phone,
-                  }
-                : null,
-            };
-
-            // Generate PDF if email exists
-            if (email) {
-              delayedJobData.pdfBase64 = await generateReceiptPDF(
-                cartItems,
-                total,
-                amount,
-                balance,
-                customerDetails,
-                orderId,
-                orderData?.order_key,
-                pdfResponse
-              );
-            }
-            const res = await fetch("/api/schedule-email", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(delayedJobData),
-            });
-
-            if (res.ok) {
-              console.log(
-                "Delayed consent check scheduled successfully for order:",
-                orderId
-              );
-            } else {
-              console.error("Failed to schedule delayed consent check");
-            }
-          } catch (err) {
-            console.error("Error setting up delayed receipt sending:", err);
-          }
-          return;
-        } else {
-          setConsentModal(true);
-          const sessionId = orderData?.increment_id;
-          const expiresAt = Date.now() + minutes * 60 * 1000;
-          const encrypted = encryptData({
-            sessionId,
-            phone,
-            email,
-            expiresAt,
-          });
-          const code = await QRCode.toDataURL(
-            `${
-              process.env.NEXT_PUBLIC_BASE_URL
-            }/consent?data=${encodeURIComponent(encrypted)}`
-          );
-          setQrCode(code);
-          try {
-            const delayedJobData = {
-              email,
-              phone,
-              orderId,
-              orderData,
-              pdfResponse,
-              smsJob: phone
-                ? {
-                    phone,
-                    order_key: orderData?.order_key,
-                    orderId,
-                    total: orderData?.order_grandtotal,
-                    createdAt: Date.now(),
-                    sid: twilioRec?.sid,
-                    auth_token: twilioRec?.auth_token,
-                    auth_phone: twilioRec?.phone,
-                  }
-                : null,
-            };
-
-            // Generate PDF if email exists
-            if (email) {
-              delayedJobData.pdfBase64 = await generateReceiptPDF(
-                cartItems,
-                total,
-                amount,
-                balance,
-                customerDetails,
-                orderId,
-                orderData?.order_key,
-                pdfResponse
-              );
-            }
-            const res = await fetch("/api/schedule-email", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(delayedJobData),
-            });
-
-            if (res.ok) {
-              console.log(
-                "Delayed consent check scheduled successfully for order:",
-                orderId
-              );
-            } else {
-              console.error("Failed to schedule delayed consent check");
-            }
-          } catch (err) {
-            console.error("Error setting up delayed receipt sending:", err);
-          }
-          // await saveOrder(orderData);
-          // await saveOrders(orderData);
-          // await clearCart();
-          // setCartItems([]);
-          // setAmount("0.00");
-          // setPhone("");
-          // setEmail("");
-          return;
         }
+        // await saveOrder(orderData);
+        // await saveOrders(orderData);
+        // await clearCart();
+        // setCartItems([]);
+        // setAmount("");
+        // setPhone("");
+        // setEmail("");
+      }
+
+      // Case 4: Consent is "not_set" - show consent QR for first-time consent
+      if (finalConsent === "not_set") {
+        console.log("consent is not set")
+        if (thermalPrint) {
+          await printReceipt(
+            cartItems,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key
+          );
+        }
+        setConsentModal(true);
+        const sessionId = orderData?.increment_id;
+        const expiresAt = Date.now() + minutes * 60 * 1000;
+        const encrypted = encryptData({
+          sessionId,
+          phone,
+          email,
+          expiresAt,
+        });
+        const code = await QRCode.toDataURL(
+          `${
+            process.env.NEXT_PUBLIC_BASE_URL
+          }/consent?data=${encodeURIComponent(encrypted)}`
+        );
+        setQrCode(code);
+        // await saveOrder(orderData);
+        // await saveOrders(orderData);
+        // await clearCart();
+        // setCartItems([]);
+        // setAmount("");
+        // setPhone("");
+        // setEmail("");
       }
 
       // Case 5: Consent is "no" - just print thermal, no digital receipts
       if (finalConsent == "no") {
+        console.log("consent is no")
         await printReceipt(
           cartItems,
           total,
@@ -632,166 +406,66 @@ export default function POSCartSummary({
           orderId,
           orderData?.order_key
         );
-        await saveOrder(orderData);
-        await saveOrders(orderData);
-        await clearCart();
-        setCartItems([]);
-        setAmount("0.00");
-        setPhone("");
-        setEmail("");
-        try {
-          const delayedJobData = {
-            email,
-            phone,
-            orderId,
-            orderData,
-            pdfResponse,
-            smsJob: phone
-              ? {
-                  phone,
-                  order_key: orderData?.order_key,
-                  orderId,
-                  total: orderData?.order_grandtotal,
-                  createdAt: Date.now(),
-                  sid: twilioRec?.sid,
-                  auth_token: twilioRec?.auth_token,
-                  auth_phone: twilioRec?.phone,
-                }
-              : null,
-          };
-
-          // Generate PDF if email exists
-          if (email) {
-            delayedJobData.pdfBase64 = await generateReceiptPDF(
-              cartItems,
-              total,
-              amount,
-              balance,
-              customerDetails,
-              orderId,
-              orderData?.order_key,
-              pdfResponse
-            );
-          }
-          const res = await fetch("/api/schedule-email", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(delayedJobData),
-          });
-
-          if (res.ok) {
-            console.log(
-              "Delayed consent check scheduled successfully for order:",
-              orderId
-            );
-          } else {
-            console.error("Failed to schedule delayed consent check");
-          }
-        } catch (err) {
-          console.error("Error setting up delayed receipt sending:", err);
-        }
         // await saveOrder(orderData);
         // await saveOrders(orderData);
         // await clearCart();
         // setCartItems([]);
-        // setAmount("0.00");
+        // setAmount("");
         // setPhone("");
         // setEmail("");
         return;
       }
-      await printReceipt(
-        cartItems,
-        total,
-        amount,
-        balance,
-        customerDetails,
-        pdfResponse,
-        orderId,
-        orderData?.order_key
-      );
-      await saveOrder(orderData);
-      await saveOrders(orderData);
-      await clearCart();
-      setCartItems([]);
-      setAmount("0.00");
-      setPhone("");
-      setEmail("");
-      //      try {
-      //         console.log("==================")
-      //         console.log("fallback")
-      //   const delayedJobData = {
-      //     email,
-      //     phone,
-      //     orderId,
-      //     orderData,
-      //     pdfResponse,
-      //     smsJob: phone
-      //       ? {
-      //           phone,
-      //           order_key: orderData?.order_key,
-      //           orderId,
-      //           total: orderData?.order_grandtotal,
-      //           createdAt: Date.now(),
-      //           sid: twilioRec?.sid,
-      //           auth_token: twilioRec?.auth_token,
-      //           auth_phone: twilioRec?.phone,
-      //         }
-      //       : null,
-      //   };
+      console.log("fallback is called")
+      try {
+        const delayedJobData = {
+          email,
+          phone,
+          orderId,
+          orderData,
+          pdfResponse,
+          smsJob: phone
+            ? {
+                phone,
+                order_key: orderData?.order_key,
+                orderId,
+                total: orderData?.order_grandtotal,
+                createdAt: Date.now(),
+                sid: twilioRec?.sid,
+                auth_token: twilioRec?.auth_token,
+                auth_phone: twilioRec?.phone,
+              }
+            : null,
+        };
 
-      //   // Generate PDF if email exists
-      //   if (email) {
-      //     delayedJobData.pdfBase64 = await generateReceiptPDF(
-      //       cartItems,
-      //       total,
-      //       amount,
-      //       balance,
-      //       customerDetails,
-      //       orderId,
-      //       orderData?.order_key,
-      //       pdfResponse
-      //     );
-      //   }
-      //   const res = await fetch("/api/schedule-email", {
-      //     method: "POST",
-      //     headers: { "Content-Type": "application/json" },
-      //     body: JSON.stringify(delayedJobData),
-      //   });
+        if (email) {
+          delayedJobData.pdfBase64 = await generateReceiptPDF(
+            cartItems,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            orderId,
+            orderData?.order_key,
+            pdfResponse
+          );
+        }
+        const res = await fetch("/api/schedule-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(delayedJobData),
+        });
 
-      //   if (res.ok) {
-      //     console.log(
-      //       "Delayed consent check scheduled successfully for order:",
-      //       orderId
-      //     );
-      //   } else {
-      //     console.error("Failed to schedule delayed consent check");
-      //   }
-      // } catch (err) {
-      //   console.error("Error setting up delayed receipt sending:", err);
-      // }
-      setConsentModal(true);
-      const sessionId = orderData?.increment_id;
-      const expiresAt = Date.now() + minutes * 60 * 1000;
-      const encrypted = encryptData({
-        sessionId,
-        phone,
-        email,
-        expiresAt,
-      });
-      const code = await QRCode.toDataURL(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/consent?data=${encodeURIComponent(
-          encrypted
-        )}`
-      );
-      setQrCode(code);
-
-      // await saveOrder(orderData);
-      // await saveOrders(orderData);
-      // await clearCart();
-      // setCartItems([]);
-      // setAmount("0.00");
-      // setPhone("");
-      // setEmail("");
+        if (res.ok) {
+          console.log(
+            "Delayed consent check scheduled successfully for order:",
+            orderId
+          );
+        } else {
+          console.error("Failed to schedule delayed consent check");
+        }
+      } catch (err) {
+        console.error("Error setting up delayed receipt sending:", err);
+      }
     } catch (error) {
       console.error("Error placing order:", error);
       showAlert("Error", "Something went wrong while placing the order.");
@@ -859,12 +533,20 @@ export default function POSCartSummary({
                   className={`${styles.paymentDetailBlock} ${styles.paymentConsentBlock}`}
                 >
                   {consentStatus == "yes" ? (
-                    <p>The customer has opted to receive E-Receipts.</p>
+                    <label className={styles.checkboxWrapper}>
+                      <input
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={!changeConsent}
+                        onChange={(e) => handleConsentChange(e.target.checked)}
+                      />
+                      <span className={styles.customCheck}></span>
+                      I do not wish to receive an e-receipt.
+                    </label>
                   ) : (
+                    <>
                     <p>{"The customer don't want to receive E-Receipts."}</p>
-                  )}
-
-                  {/* 👉 New button to open consent change modal */}
+                      {/* 👉 New button to open consent change modal */}
                   <button
                     type="button"
                     className={styles.btnPrimary}
@@ -889,6 +571,8 @@ export default function POSCartSummary({
                   >
                     Change Consent
                   </button>
+                  </>
+                  )}
 
                   {/* <label className={styles.checkboxWrapper}>
         <input
@@ -1007,6 +691,7 @@ export default function POSCartSummary({
             clearCart={clearCart}
             getCartItems={getCartItems}
             setCartItems={setCartItems}
+            setAmount={setAmount}
           />
           <button
             onClick={handlePlaceOrder}
@@ -1052,18 +737,6 @@ export default function POSCartSummary({
           onClose={() => setConsentModal(false)}
           title="Consent QR Code"
           qrcode={qrcode}
-          // message={`
-          //   <p>By signing/submitting this form, I confirm that the information provided is accurate and complete to the best of my knowledge.</p>
-          //   <p>I understand that <strong>[Your Company Name]</strong> will collect, store, and use my personal information in accordance with Canadian privacy laws (PIPEDA) and international data protection regulations, including GDPR.</p>
-          //   <p>I consent to receiving Smart Receipts and related service notifications via WhatsApp and Email. I understand that my contact details will only be used for this purpose and will not be shared with unauthorized third parties.</p>
-          //   <p>I acknowledge that:</p>
-          //   <ul style="text-align:left; margin:10px 0 0 20px;">
-          //     <li>I have read and understood the purpose of this consent.</li>
-          //     <li>I may withdraw my consent at any time by contacting [support email/phone].</li>
-          //     <li>Upon withdrawal, no further Smart Receipts or related communications will be sent.</li>
-          //     <li>My data will be handled securely and only retained as long as necessary for service delivery.</li>
-          //   </ul>
-          // `}
         />
       )}
 
@@ -1075,7 +748,6 @@ export default function POSCartSummary({
           onClose={() => setConsentChangeModal(false)}
           title="Change Consent Preference"
           qrcode={qrcode}
-          // message="Scan this QR code to change your consent preference"
         />
       )}
     </>
