@@ -48,19 +48,7 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
           className={style.login_form}
           autoComplete="off"
         >
-          {/* Hidden inputs to prevent autocomplete */}
-          <input
-            type="text"
-            name="prevent_autofill"
-            style={{ display: "none" }}
-          />
-          <input
-            type="password"
-            name="password_fake"
-            style={{ display: "none" }}
-          />
-
-          <div className={style.input_box}>
+          <div className={`${style.input_box} ${email ? "has-value" : ""}`}>
             <input
               type="email"
               className={style.input_field}
@@ -68,7 +56,7 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              autoComplete="new-email"
+              autoComplete="off"
             />
             <svg
               width="17"
@@ -90,13 +78,7 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
           </div>
 
           {message && (
-            <p
-              className={`${
-                success ? 'success' : 'error'
-              }`}
-            >
-              {message}
-            </p>
+            <p className={`${success ? "success" : "error"}`}>{message}</p>
           )}
 
           {success && (

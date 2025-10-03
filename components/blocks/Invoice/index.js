@@ -3,46 +3,32 @@ import React, { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import QRCode from "qrcode";
+import Image from "next/image";
+import Link from "next/link";
+import InvoiceSwiper from "./InvoiceSwiper";
 
 export default function Invoice({ style, order, slug }) {
-  console.log(order)
   const [pdfResponse, setPdfResponse] = useState({});
   const [answers, setAnswers] = useState({});
+  const [showAll, setShowAll] = useState(false);
+  const [qrCodes, setQrCodes] = useState({ order: "", fbr: "" });
+  const [accordionOpen, setAccordionOpen] = useState(null);
+  const visibleItems = showAll ? order?.items : order?.items.slice(0, 2);
 
-  const feedbackArr = [
-    [
-      {
-        id: "Q1",
-        text: "To what extent was the website easy to navigate?",
-        options: ["5", "4", "3", "2", "1"],
-      },
-      {
-        id: "Q2",
-        text: "To what extent was the freshness of the herbs bundle improved?",
-        options: ["5", "4", "3", "2", "1"],
-      },
-      {
-        id: "Q3",
-        text: "How secure was the packaging of the truffles?",
-        options: ["5", "4", "3", "2", "1"],
-      },
-      {
-        id: "Q4",
-        text: "How would you rate the authenticity of the caviar?",
-        options: ["5", "4", "3", "2", "1"],
-      },
-      {
-        id: "Q5",
-        text: "How satisfied were you with the delivery updates?",
-        options: ["5", "4", "3", "2", "1"],
-      },
-    ],
-    "generated_by_gemini",
-    {
-      source: "gemini",
-      avoided_recent_questions_count: 5,
-    },
-  ];
+  // Single QR code generation effect
+  useEffect(() => {
+    async function generateAllQRCodes() {
+      if (!order?.increment_id) return;
+      
+      try {
+        const qrDataURL = await QRCode.toDataURL(order.increment_id);
+        setQrCodes({ order: qrDataURL, fbr: qrDataURL });
+      } catch (err) {
+        console.error("QR generation failed:", err);
+      }
+    }
+    generateAllQRCodes();
+  }, [order?.increment_id]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -131,7 +117,7 @@ export default function Invoice({ style, order, slug }) {
         `$${(item.item_price * item.item_qty_ordered).toFixed(2)}`,
       ]),
       startY: y,
-      theme: "plain", // ✅ matches reference style
+      theme: "plain",
       styles: { fontSize: 10, cellPadding: 2 },
       headStyles: { fillColor: [240, 240, 240], textColor: 0 },
       columnStyles: {
@@ -169,102 +155,462 @@ export default function Invoice({ style, order, slug }) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
-  return (
-    <div className={style.invoice_page}>
-      <div className={`${style.invoice_container}`}>
-        <div className={style.header}>
-        <h2>Order Receipt</h2>
-        <div  onClick={handleDownload}>
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 15 15"><path fill="#4FACB8" fill-rule="evenodd" d="M7.5 1.05a.45.45 0 0 1 .45.45v6.914l2.232-2.232a.45.45 0 1 1 .636.636l-3 3a.45.45 0 0 1-.636 0l-3-3a.45.45 0 1 1 .636-.636L7.05 8.414V1.5a.45.45 0 0 1 .45-.45ZM2.5 10a.5.5 0 0 1 .5.5V12c0 .554.446 1 .996 1h7.005A.999.999 0 0 0 12 12v-1.5a.5.5 0 0 1 1 0V12a2 2 0 0 1-1.999 2H3.996A1.997 1.997 0 0 1 2 12v-1.5a.5.5 0 0 1 .5-.5Z" clip-rule="evenodd"/></svg></div>
-        </div>
-        <div className={style.invoice_box}>
-          <p>
-            <strong>Order #:</strong> {order.increment_id}
-          </p>
-          <p>
-            <strong>Date:</strong> {order.created_at}
-          </p>
-          <p>
-            <strong>Customer:</strong> {order.customer_firstname}{" "}
-            {order.customer_lastname}
-          </p>
-          <p>
-            <strong>Email:</strong> {order.customer_email}
-          </p>
-        </div>
+  const handleAccordionOpen = (i) => {
+    setAccordionOpen(i);
+  };
 
-        <h3>Items</h3>
-        <ul className={style.item_list}>
-          {order.items.map((item) => (
-            <li key={item.item_id}>
-              <div className={style.item_row}>
-                <img src={item.image_url} alt={item.product_name} />
+  const warehouseDeatil = [
+    {
+      banners: [
+        {
+          id: "1",
+          title: "Banner 1",
+          detail: "Descc",
+          link: "http://123.com",
+          image_url:
+            "https://images.unsplash.com/photo-1464854860390-e95991b46441?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmYXNoaW9uJTIwc2FsZSUyMGJhbm5lcnxlbnwxfHx8fDE3NTkwOTMxMzR8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+          store_id: "0",
+          created_at: "2025-10-01 09:50:17",
+          updated_at: "2025-10-01 09:50:17",
+        },
+        {
+          id: "2",
+          title: "Banner 2",
+          detail: "pasdasdp",
+          link: "http://ddd.com",
+          image_url:
+            "https://images.unsplash.com/photo-1624778970512-6137c373e013?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjbG90aGluZyUyMGRpc2NvdW50JTIwcHJvbW90aW9ufGVufDF8fHx8MTc1OTE0Nzg2N3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral",
+          store_id: "0,1",
+          created_at: "2025-10-01 09:51:09",
+          updated_at: "2025-10-01 09:52:49",
+        },
+      ],
+      policy_blocks: {
+        _1759314925151_151: {
+          title: "Text 1",
+          description: "text desc\r\n _123123\r\n-sadasd",
+        },
+        _1759314950970_970: {
+          title: "Textt2",
+          description: "asdad",
+        },
+        _1759314957980_980: {
+          title: "Text 3",
+          description: "00asd0asd",
+        },
+      },
+      social_links: {
+        _1759316657620_620: {
+          image: "/images/logo.png",
+          link: "https://www.facebook.com/",
+        },
+        _1759385291081_81: {
+          image: "/images/logo.png",
+          link: "https://magento.stackexchange.com/questions/91905/create-beautiful-image-upload-in-configuration-magento-2",
+        },
+      },
+      copyrights:
+        "Powered By\r\nBaseer\r\nThis receipt is generated by Baseer, a trusted third-party provider.\r\nPrivacy Policy\r\n© 2025 Baseer",
+    },
+  ];
+
+  const policyBlocks = warehouseDeatil?.[0]?.policy_blocks;
+
+  const termsAndPolicies = Object.values(policyBlocks).map((block) => ({
+    title: block.title,
+    answer: block.description
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean),
+  }));
+
+  const copyrightLines = warehouseDeatil?.[0]?.copyrights
+    ?.split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const socialLinks = Object.values(warehouseDeatil?.[0]?.social_links || {});
+
+  return (
+    <div className={`${style.invoice_page}`}>
+      <div className={`${style.invoice_container}`}>
+        <div className={style.invoice_item_container}>
+          <div className={style.invoice_item}>
+            <div className={style.company_detail}>
+              <Image
+                src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/responsive_logo.png`}
+                alt="logo"
+                width={71}
+                height={60}
+              />
+              <div className={style.invoice_name}>
+                <h2 className={style.name}>Talha Malik</h2>
                 <div>
-                  <p className={style.item_name}>{item.product_name}</p>
-                  <p>Qty: {item.item_qty_ordered}</p>
-                  <p>Price: ${item.item_price}</p>
                   <p>
-                    Total: $
-                    {(item.item_price * item.item_qty_ordered).toFixed(2)}
+                    <span className={style.label}>NTN: </span>4137675-7
+                  </p>
+                  <p>
+                    <span className={style.label}>STN: </span>17-00-4137-675-16
                   </p>
                 </div>
               </div>
-            </li>
-          ))}
-        </ul>
-
-        <h3>Grand Total: ${order.order_grandtotal}</h3>
-        {/* <button onClick={handleDownload}>Download Slip</button> */}
-
-   <div className={style.feedback_form}>
-  <h2>Feedback</h2>
-  {Array.isArray(feedbackArr) &&
-    feedbackArr?.[0].map((item) => (
-      <div key={item.id} className={style.feedback_question}>
-        <p className={style.question_text}>{item.text}</p>
-        <div className={style.options}>
-          {item.options.map((opt) => (
-            <label key={opt} className={style.option}>
-              <input
-                type="radio"
-                required
-                name={item.id}
-                value={opt}
-                checked={answers[item.id] === opt}
-                onChange={() => handleChange(item.id, opt)}
+            </div>
+            <div className={style.working_hours}>
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 15 15"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.54272 3.76123V7.26123L9.87606 8.4279"
+                  stroke="#007A55"
+                  strokeWidth="1.16667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7.54268 13.0946C10.7643 13.0946 13.376 10.4829 13.376 7.26123C13.376 4.03957 10.7643 1.42789 7.54268 1.42789C4.32102 1.42789 1.70935 4.03957 1.70935 7.26123C1.70935 10.4829 4.32102 13.0946 7.54268 13.0946Z"
+                  stroke="#007A55"
+                  strokeWidth="1.16667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Open 11:00am - 10:00pm
+            </div>
+          </div>
+          <p className={style.address}>
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 17 17"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M13.6261 6.92789C13.6261 10.2566 9.93341 13.7232 8.69341 14.7939C8.57789 14.8808 8.43728 14.9277 8.29275 14.9277C8.14821 14.9277 8.0076 14.8808 7.89208 14.7939C6.65208 13.7232 2.95941 10.2566 2.95941 6.92789C2.95941 5.5134 3.52131 4.15685 4.52151 3.15666C5.5217 2.15646 6.87826 1.59456 8.29275 1.59456C9.70723 1.59456 11.0638 2.15646 12.064 3.15666C13.0642 4.15685 13.6261 5.5134 13.6261 6.92789Z"
+                stroke="#62748E"
+                strokeWidth="1.33333"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               />
-              <span className={style.circle}>{opt}</span>
-            </label>
+              <path
+                d="M8.29272 8.9279C9.39729 8.9279 10.2927 8.03247 10.2927 6.9279C10.2927 5.82333 9.39729 4.9279 8.29272 4.9279C7.18816 4.9279 6.29272 5.82333 6.29272 6.9279C6.29272 8.03247 7.18816 8.9279 8.29272 8.9279Z"
+                stroke="#62748E"
+                strokeWidth="1.33333"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Plot # 178, Street 1, I-9/3, Islamabad
+          </p>
+        </div>
+
+        <div className={style.sales_invoice_box}>
+          <div>
+            <div className={style.sales_title}>
+              <svg
+                width="21"
+                height="21"
+                viewBox="0 0 21 21"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3.62604 1.9279V18.5946L5.2927 17.7612L6.95937 18.5946L8.62604 17.7612L10.2927 18.5946L11.9594 17.7612L13.626 18.5946L15.2927 17.7612L16.9594 18.5946V1.9279L15.2927 2.76124L13.626 1.9279L11.9594 2.76124L10.2927 1.9279L8.62604 2.76124L6.95937 1.9279L5.2927 2.76124L3.62604 1.9279Z"
+                  stroke="#155DFC"
+                  strokeWidth="1.66667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M13.6261 6.9279H8.62608C8.18405 6.9279 7.76013 7.1035 7.44757 7.41606C7.13501 7.72862 6.95941 8.15254 6.95941 8.59457C6.95941 9.0366 7.13501 9.46052 7.44757 9.77308C7.76013 10.0856 8.18405 10.2612 8.62608 10.2612H11.9594C12.4014 10.2612 12.8254 10.4368 13.1379 10.7494C13.4505 11.062 13.6261 11.4859 13.6261 11.9279C13.6261 12.3699 13.4505 12.7939 13.1379 13.1064C12.8254 13.419 12.4014 13.5946 11.9594 13.5946H6.95941"
+                  stroke="#155DFC"
+                  strokeWidth="1.66667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M10.2927 14.8446V5.6779"
+                  stroke="#155DFC"
+                  strokeWidth="1.66667"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className={style.sales_title_text}>
+                <p className={style.text}>Sales Invoice</p>
+                <p>Transaction Details</p>
+              </div>
+            </div>
+            <div className={style.sales_summary}>
+              <p className={style.date}>09/09/2025</p>
+              <p className={style.time}>05:15:56 PM</p>
+            </div>
+          </div>
+          <div className={style.invoice_num}>
+            <p className={style.title}>Invoice Number</p>
+            <p>SST2090925-00116</p>
+          </div>
+        </div>
+
+        <div className={style.cashier_customer}>
+          <div className={style.cashier}>
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 17 17"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12.9594 14.2612V12.9279C12.9594 12.2207 12.6784 11.5424 12.1783 11.0423C11.6782 10.5422 10.9999 10.2612 10.2927 10.2612H6.2927C5.58546 10.2612 4.90718 10.5422 4.40709 11.0423C3.90699 11.5424 3.62604 12.2207 3.62604 12.9279V14.2612"
+                stroke="#155DFC"
+                strokeWidth="1.33333"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M8.2927 7.59456C9.76546 7.59456 10.9594 6.40066 10.9594 4.9279C10.9594 3.45514 9.76546 2.26123 8.2927 2.26123C6.81994 2.26123 5.62604 3.45514 5.62604 4.9279C5.62604 6.40066 6.81994 7.59456 8.2927 7.59456Z"
+                stroke="#155DFC"
+                strokeWidth="1.33333"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <div>
+              <p className={style.text}>Cashier</p>
+              <p className={style.name}>Talha Malik</p>
+            </div>
+          </div>
+          <div className={style.customer}>
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 17 17"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9.51404 11.3066C9.65172 11.3698 9.80684 11.3843 9.95383 11.3475C10.1008 11.3108 10.2309 11.2251 10.3227 11.1046L10.5594 10.7946C10.6836 10.629 10.8446 10.4946 11.0298 10.402C11.2149 10.3094 11.419 10.2612 11.626 10.2612H13.626C13.9797 10.2612 14.3188 10.4017 14.5688 10.6518C14.8189 10.9018 14.9594 11.241 14.9594 11.5946V13.5946C14.9594 13.9482 14.8189 14.2873 14.5688 14.5374C14.3188 14.7874 13.9797 14.9279 13.626 14.9279C10.4434 14.9279 7.39119 13.6636 5.14076 11.4132C2.89032 9.16275 1.62604 6.11051 1.62604 2.92791C1.62604 2.57429 1.76651 2.23515 2.01656 1.9851C2.26661 1.73505 2.60575 1.59457 2.95937 1.59457H4.95937C5.31299 1.59457 5.65213 1.73505 5.90218 1.9851C6.15223 2.23515 6.2927 2.57429 6.2927 2.92791V4.92791C6.2927 5.1349 6.24451 5.33905 6.15194 5.52419C6.05937 5.70933 5.92497 5.87038 5.75937 5.99457L5.44737 6.22857C5.32498 6.32203 5.23872 6.45496 5.20323 6.60481C5.16775 6.75465 5.18523 6.91216 5.2527 7.05057C6.16383 8.90115 7.66232 10.3978 9.51404 11.3066Z"
+                stroke="#009966"
+                strokeWidth="1.33333"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+
+            <div>
+              <p className={style.text}>talha.malik@unitedsol.net</p>
+              <p className={style.name}>Email</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Feedback Rating Section */}
+        <div className={style.feedback_section}>
+          <h2>How was our service?</h2>
+
+          <div className={style.stars}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span
+                key={star}
+                className={`${style.star} ${
+                  answers.rating >= star ? style.active : ""
+                }`}
+                onClick={() =>
+                  setAnswers((prev) => ({ ...prev, rating: star }))
+                }
+              >
+                ★
+              </span>
+            ))}
+          </div>
+
+          {answers.rating && (
+            <>
+              <p className={style.rating_text}>
+                You rated us {answers.rating} star
+                {answers.rating > 1 ? "s" : ""}
+              </p>
+              <div className={style.textarea_box}>
+                <label htmlFor="feedback">
+                  Tell us more about your experience (optional)
+                </label>
+                <textarea
+                  id="feedback"
+                  value={answers.comment || ""}
+                  onChange={(e) =>
+                    setAnswers((prev) => ({ ...prev, comment: e.target.value }))
+                  }
+                  maxLength={500}
+                  placeholder="Share your thoughts about our service..."
+                />
+                <div className={style.char_count}>
+                  {answers.comment?.length || 0}/500 characters
+                </div>
+              </div>
+              <button
+                className={style.submit_btn}
+                onClick={() => {
+                  console.log("Feedback Submitted:", answers);
+                }}
+              >
+                Submit Review
+              </button>
+            </>
+          )}
+        </div>
+
+        <div className={style.products_section}>
+          {/* Header */}
+          <div className={style.products_header}>
+            <div>
+              <p className={style.title}>Products</p>
+            </div>
+            <p className={style.count}>{order?.items.length} items</p>
+          </div>
+
+          {/* Products List */}
+          {visibleItems.map((item, i) => (
+            <div key={i} className={style.product_row}>
+              <div className={style.product_detail}>
+                <p className={style.product_name}>
+                  {item.product_name} {item.size ? `- ${item.size}` : ""}
+                </p>
+                <span className={style.product_code}>{item.product_sku}</span>
+                <div className={style.meta}>
+                  <span>Qty: {item.item_qty_ordered}</span>
+                  <span className={style.discount}>
+                    Discount: Rs. {item.discount}
+                  </span>
+                  <div className={style.price_box}>Rs. {item.item_price}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {/* Load more */}
+          {order?.items.length > 2 && (
+            <div className={style.load_more_btn}>
+              <button
+                className={style.load_more}
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll
+                  ? " Show less products"
+                  : ` View all products (${order?.items.length} total)`}
+              </button>
+            </div>
+          )}
+
+          <div className={style.summary}>
+            <p>order Summary</p>
+            <div className={style.summary_detail}>
+              <div className={style.summary_block}>
+                <p>Total Orders</p>
+                <p>{order?.items?.length}</p>
+              </div>
+              <div className={style.summary_block}>
+                <p>Total Quantity</p>
+                <p>
+                  {order?.items.reduce(
+                    (sum, item) => sum + parseFloat(item.item_qty_ordered),
+                    0
+                  )}
+                </p>
+              </div>
+              <div className={style.summary_block}>
+                <p>Subtotal</p>
+                <p>{order?.order_grandtotal}</p>
+              </div>
+            </div>
+
+            <div className={style.summary_total}>
+              <div className={style.summary_total_block}>
+                <p>Total Payable</p>
+                <p>{order?.order_grandtotal}</p>
+              </div>
+              <div className={style.summary_total_block}>
+                <p>Payment Mode</p>
+                <p>Cash</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={style.fbr_social}>
+          <div className={style.fbr}>
+            <img src="/images/fbr.png" alt="fbr logo" />
+            <p>Verify via FBR Tax Asaan App or SMS 9966</p>
+            <div className={style.qr}>
+              {qrCodes?.fbr && <img src={qrCodes.fbr} alt="qr code" />}
+              <p>{order?.increment_id}</p>
+            </div>
+            <div></div>
+          </div>
+          <div className={style.social}>
+            <p>Connect with us</p>
+            <div className={style.social_icons}>
+              {socialLinks?.map((item, index) => (
+                <Link key={index} href={item?.link}>
+                  <img src={item.image} alt="logo" />
+                </Link>
+              ))}
+            </div>
+            <p>Follow for updates</p>
+          </div>
+        </div>
+
+        <div className={style.qr}>
+          <div className={style.fbr}>
+            <img src="/images/fbr.png" alt="fbr logo" />
+            <p>Verify via FBR Tax Asaan App or SMS 9966</p>
+            <div className={style.qr}>
+              {qrCodes?.fbr && <img src={qrCodes.fbr} alt="qr code" />}
+              <p>{order?.increment_id}</p>
+            </div>
+            <div></div>
+          </div>
+        </div>
+
+        <div className={style.swiper}>
+          <InvoiceSwiper slide={warehouseDeatil?.[0]?.banners} style={style} />
+        </div>
+
+        <div className={style.accordion}>
+          <div className={style.header}>
+            <p>Terms & Policies</p>
+          </div>
+
+          {termsAndPolicies?.map((item, index) => (
+            <div key={index} className={style.accordion_item}>
+              <p
+                className={`${style.question} ${style.question_opened}`}
+                onClick={() => handleAccordionOpen(index)}
+              >
+                {item?.title}
+              </p>
+              {accordionOpen == index && (
+                <ul>
+                  {item?.answer?.map((ans, i) => (
+                    <li className={style.ans} key={i}>
+                      {ans}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+          <div>Customer satisfaction guaranteed</div>
+        </div>
+        <div className={style.footer}>
+          {copyrightLines?.map((line, index) => (
+            <p key={index}>{line}</p>
           ))}
         </div>
-      </div>
-    ))}
-
-  <button
-    className={style.feedback_submit}
-    onClick={() => {
-      const feedbackObject = {
-        data: {
-          order_key: slug,
-          customer_email: order?.customer_email,
-          customer_phone: "",
-          channel: "offline",
-          responses: feedbackArr?.[0].map((q) => ({
-            question_id: q.id,
-            question_text: q.text,
-            rating: Number(answers[q.id]) || 0,
-            comment: "",
-          })),
-        },
-      };
-      console.log("Feedback Object:", feedbackObject);
-    }}
-  >
-    Submit Feedback
-  </button>
-</div>
-
-
       </div>
     </div>
   );

@@ -25,10 +25,11 @@ export default async function RootLayout({ children }) {
       <header className={style.header}>
         <Link href="/dashboard">
           <Image
-            src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/zaafodesktop.png`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`}
             alt={serverLanguage?.logo_alt ?? 'Baseer logo'}
-            width={180}
-            height={70}
+            width={200}
+            height={54}
+            style={{maxWidth: "auto", maxHeight: "auto"}}
           />
         </Link>
       </header>

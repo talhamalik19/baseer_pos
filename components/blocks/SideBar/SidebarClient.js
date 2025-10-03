@@ -142,11 +142,11 @@ export default function SideBarClient({ nav, language, currency}) {
         <div className={styles.logo}>
           {isOpen || isNavHovered ? (
             <Link href="/dashboard">
-              <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/zaafodesktop.png`} alt="Logo" width={150} height={70} />
+              <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`} alt="Logo" width={148} height={40} />
             </Link>
           ) : (
             <Link href="/dashboard">
-              <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/zaaforesponsive.png`} alt="Logo" width={40} height={40} style={{maxWidth: "40px", height: "40px"}} />
+              <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/responsive_logo.png`} alt="Logo" width={40} height={40} style={{maxWidth: "40px", height: "40px"}} />
             </Link>
           )}
         </div>

@@ -2,13 +2,49 @@ import Invoice from "@/components/blocks/Invoice";
 import { getOrdersByKey } from "@/lib/Magento";
 import { magentoRestFetch } from "@/lib/Magento/restAPI";
 import React from "react";
-import style from "../consent/consent.module.scss"
+import style from "../../(auth)/consent/consent.module.scss"
+import { getFeedbackAction } from "@/lib/Magento/actions";
 
 export default async function InvoicePage({ searchParams }) {
   const id = await searchParams;
   const slug = id?.id;
 
   const ordersResponse = await getOrdersByKey(slug);
+  
+  const createReviewPayload = (orderData) => {
+  const order = orderData?.data;
+  
+  if (!order) return null;
+
+  return {
+    data: {
+      order: {
+        order_key: slug,
+        total: parseFloat(order.order_grandtotal),
+        locale: "en_US",
+        fulfillment: "offline",
+        customer: {
+          customer_email: order.customer_email,
+          customer_phone: order.shipping_address?.telephone || "",
+          previous_purchase_count: 0
+        },
+        items: order.items.map(item => ({
+          sku: item.product_sku,
+          name: item.product_name,
+          price: parseFloat(item.item_price),
+          quantity: parseFloat(item.item_qty_ordered)
+        }))
+      }
+    }
+  };
+};
+
+const reviewPayload = createReviewPayload(ordersResponse);
+console.log("reviewPayload", reviewPayload);
+
+const getFeedback = await getFeedbackAction(reviewPayload);
+console.log(getFeedback)
+
 // const submitFeedback = async (data) => {
 //   "use server";
 //   try {

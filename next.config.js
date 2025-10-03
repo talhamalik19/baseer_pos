@@ -29,7 +29,12 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'www.zaafoo.com',
+        hostname: 'web.baseer.ca',
+        pathname: '/**',
+      },
+        {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
         pathname: '/**',
       },
     ],

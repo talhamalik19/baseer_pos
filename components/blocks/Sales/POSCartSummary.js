@@ -58,11 +58,13 @@ export default function POSCartSummary({
   // New state for consent change functionality
   const [changeConsent, setChangeConsent] = useState(false);
   const [consentChangeModal, setConsentChangeModal] = useState(false);
+  const [consentTrue, setConsentTrue] = useState(false)
 
   useEffect(() => {
     setConsentStatus(null);
     setConsentChecked(false);
     setChangeConsent(false); // Reset consent change state
+    setConsentTrue(false)
     consentPromiseRef.current = null;
   }, [email, phone]);
 
@@ -279,6 +281,7 @@ export default function POSCartSummary({
     try {
       let finalConsent = consentStatus;
       if (!finalConsent) finalConsent = "no";
+            console.log("final consent", finalConsent, "change consent", changeConsent)
 
       if (!email && !phone) {
         await printReceipt(
@@ -291,18 +294,17 @@ export default function POSCartSummary({
           orderId,
           orderData?.order_key
         );
-        // await saveOrder(orderData);
-        // await saveOrders(orderData);
-        // await clearCart();
-        // setCartItems([]);
-        // setAmount("");
-        // setPhone("");
-        // setEmail("");
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
         return;
       }
-
       if (changeConsent != (finalConsent == "yes" ? true : false)) {
-        console.log("consent is changed incase of yes")
+        console.log("consent is changed incase of yes or no")
         // if (thermalPrint) {
         const consentRes = await submitConsentAction({
           increment_id: generateRandomId(),
@@ -320,13 +322,13 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key
           );
-          //  await saveOrder(orderData);
-          // await saveOrders(orderData);
-          // await clearCart();
-          // setCartItems([]);
-          // setAmount("");
-          // setPhone("");
-          // setEmail("");
+           await saveOrder(orderData);
+          await saveOrders(orderData);
+          await clearCart();
+          setCartItems([]);
+          setAmount("");
+          setPhone("");
+          setEmail("");
           return;
       }
 
@@ -345,13 +347,13 @@ export default function POSCartSummary({
             orderData?.order_key
           );
         }
-        // await saveOrder(orderData);
-        // await saveOrders(orderData);
-        // await clearCart();
-        // setCartItems([]);
-        // setAmount("");
-        // setPhone("");
-        // setEmail("");
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
       }
 
       // Case 4: Consent is "not_set" - show consent QR for first-time consent
@@ -384,13 +386,13 @@ export default function POSCartSummary({
           }/consent?data=${encodeURIComponent(encrypted)}`
         );
         setQrCode(code);
-        // await saveOrder(orderData);
-        // await saveOrders(orderData);
-        // await clearCart();
-        // setCartItems([]);
-        // setAmount("");
-        // setPhone("");
-        // setEmail("");
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
       }
 
       // Case 5: Consent is "no" - just print thermal, no digital receipts
@@ -406,14 +408,16 @@ export default function POSCartSummary({
           orderId,
           orderData?.order_key
         );
-        // await saveOrder(orderData);
-        // await saveOrders(orderData);
-        // await clearCart();
-        // setCartItems([]);
-        // setAmount("");
-        // setPhone("");
-        // setEmail("");
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
+        if(!consentTrue){
         return;
+        }
       }
       console.log("fallback is called")
       try {
@@ -552,6 +556,7 @@ export default function POSCartSummary({
                     className={styles.btnPrimary}
                     onClick={async () => {
                       setConsentChangeModal(true);
+                      setConsentTrue(true)
                       const sessionId = generateRandomId();
                       const expiresAt = Date.now() + minutes * 60 * 1000;
                       const encrypted = encryptData({

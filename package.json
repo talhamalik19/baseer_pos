@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3054",
+    "dev": "next dev -p 3050",
     "build": "next build",
-    "start": "next start -p 3054",
+    "start": "next start -p 3050",
     "lint": "next lint"
   },
   "dependencies": {
@@ -23,6 +23,7 @@
     "react-tooltip": "^5.29.1",
     "recharts": "^2.15.1",
     "sass": "^1.85.1",
+    "swiper": "^12.0.2",
     "twilio": "^5.9.0",
     "ws": "^8.18.3"
   },

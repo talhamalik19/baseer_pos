@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import styles from "./suspend.module.scss";
 
-const OrderControls = ({ cartItems, addItemsToSuspend, clearCart, getCartItems, setCartItems }) => {
+const OrderControls = ({ cartItems, addItemsToSuspend, clearCart, getCartItems, setCartItems, setAmount }) => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -32,6 +32,7 @@ const OrderControls = ({ cartItems, addItemsToSuspend, clearCart, getCartItems, 
     if (cartItems && cartItems.length > 0) {
       setShowConfirmModal(true);
     }
+    if (setAmount) setAmount("")
   };
 
   const handleOverlayClick = (e) => {
