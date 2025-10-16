@@ -23,6 +23,12 @@ export default function ProductView({
   currencySymbol,
   currency,
   serverLanguage,
+  warehouseId,
+  payment,
+  setPayment,
+  applyTaxAfterDiscount,
+  discountIncludingTax,
+  fbrDetails,
 }) {
   const [viewMode, setViewMode] = useState("cards"); // Default to cards view
 
@@ -53,6 +59,7 @@ export default function ProductView({
           ordersResponse={orders}
           isPos={true}
           posDetail={posDetail}
+          // payment={payment}
         />
       </div>
 
@@ -139,6 +146,11 @@ export default function ProductView({
                   styles={styles}
                   currencySymbol={currencySymbol}
                   serverLanguage={serverLanguage}
+                  payment={payment}
+                  setPayment={setPayment}
+                  applyTaxAfterDiscount={applyTaxAfterDiscount}
+                  discountIncludingTax={discountIncludingTax}
+                  fbrDetails={fbrDetails}
                 />
               ) : (
                 <div className={styles.grid_wrapper}>
@@ -152,6 +164,12 @@ export default function ProductView({
                         setCartItems={setCartItems}
                         currencySymbol={currencySymbol}
                         serverLanguage={serverLanguage}
+                        payment={payment}
+                        setPayment={setPayment}
+                        applyTaxAfterDiscount={applyTaxAfterDiscount}
+                        discountIncludingTax={discountIncludingTax}
+                        fbrDetails={fbrDetails}
+                        // taxPercent={taxPercent}
                       />
                     ))}
                   </div>
@@ -176,6 +194,12 @@ export default function ProductView({
             currencySymbol={currencySymbol}
             currency={currency}
             serverLanguage={serverLanguage}
+            warehouseId={warehouseId}
+            payment={payment}
+            setPayment={setPayment}
+            applyTaxAfterDiscount={applyTaxAfterDiscount}
+            discountIncludingTax={discountIncludingTax}
+            fbrDetails={fbrDetails}
           />
         </div>
       </div>

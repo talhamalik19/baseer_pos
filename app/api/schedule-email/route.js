@@ -27,9 +27,8 @@ export async function POST(request) {
   writeToLogFile(`API Base URL: ${baseUrl}`);
   
   try {
-    const { email, phone, orderId, orderData, pdfBase64, pdfResponse, smsJob } =
+    const { email, phone, orderId, orderData, pdfBase64, pdfResponse, smsJob, warehouseId, smtp_config } =
       await request.json();
-    
     writeToLogFile(`Starting delayed consent check for order: ${orderId}`);
     writeToLogFile(`Email: ${email}, Phone: ${phone}`);
     
@@ -56,18 +55,26 @@ export async function POST(request) {
       
       if (email && pdfBase64) {
         writeToLogFile(`Sending delayed Email for order: ${orderId}`);
-        await fetch(`${baseUrl}/api/email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            orderId,
-            orderData,
-            pdf: pdfBase64,
-            pdfResponse,
-          }),
-        });
-        writeToLogFile(`Email sent successfully for order: ${orderId}`);
+        try {
+          const res = await fetch(`${baseUrl}/api/email`, {
+             method: "POST",
+             headers: { "Content-Type": "application/json" },
+             body: JSON.stringify({
+               email,
+               orderId,
+               orderData,
+               pdf: pdfBase64,
+               pdfResponse,
+               warehouseId,
+               smtp_config
+             }),
+           });
+           writeToLogFile(`response from email api: ${res}`)
+           const result = await res.json()
+           writeToLogFile(`result ${result}`)
+           writeToLogFile(`Email sent successfully for order: ${orderId}`);
+          
+        } catch (error) {writeToLogFile(error) }
       }
 
       if (phone && smsJob) {

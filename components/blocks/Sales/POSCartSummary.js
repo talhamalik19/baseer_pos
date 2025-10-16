@@ -17,8 +17,9 @@ import OrderControls from "./HandleSuspendOrders";
 import SimpleAlertModal from "@/components/global/alertModal";
 import generateReceiptPDF from "@/lib/generatePDF";
 import QRCode from "qrcode";
-import { encryptData } from "@/lib/crypto";
+import { decryptData, encryptData } from "@/lib/crypto";
 import { getCustomerConsentAction, submitConsentAction } from "@/lib/Magento/actions";
+import { submitRecordToFbr } from "@/lib/submitInvoiceToFbr";
 
 export default function POSCartSummary({
   cartItems,
@@ -29,15 +30,24 @@ export default function POSCartSummary({
   currencySymbol,
   currency,
   serverLanguage,
+  warehouseId,
+  payment,
+  setPayment,
+  disocuntIncludingTax,
+  applyTaxAfterDiscount,
+  fbrDetails
 }) {
-  let minutes = 2;
+  const companyDetail = JSON.parse(localStorage?.getItem("company_detail"))
+  const consentTimerStorage = JSON.parse(localStorage.getItem("loginDetail"));
+  const decryptedSmtp = decryptData(consentTimerStorage?.smtp_config);
+  const consentTimer = consentTimerStorage?.consent_timer;
+  const minutes = consentTimer ? Number(consentTimer) : Infinity;
   const code = posDetail;
   const [discountPercent, setDiscountPercent] = useState(0);
   const [amount, setAmount] = useState("");
   const [balance, setBalance] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [paymentType, setPaymentType] = useState("checkmo");
   const [alertModal, setAlertModal] = useState({
     isOpen: false,
     title: "",
@@ -55,47 +65,89 @@ export default function POSCartSummary({
   const [createCustomer, setCreateCustomer] = useState(true);
   const consentPromiseRef = useRef(null);
 
-  // New state for consent change functionality
   const [changeConsent, setChangeConsent] = useState(false);
   const [consentChangeModal, setConsentChangeModal] = useState(false);
-  const [consentTrue, setConsentTrue] = useState(false)
+  const [consentTrue, setConsentTrue] = useState(false);
 
   useEffect(() => {
     setConsentStatus(null);
     setConsentChecked(false);
-    setChangeConsent(false); // Reset consent change state
-    setConsentTrue(false)
+    setChangeConsent(false);
+    setConsentTrue(false);
     consentPromiseRef.current = null;
   }, [email, phone]);
 
   const twilio = JSON.parse(localStorage.getItem("loginDetail"));
-
   const twilioRec = twilio?.twilio;
 
-  const { subtotal, discountAmount, taxAmount, total, grandTotal } =
-    useMemo(() => {
-      let subtotal = 0;
+  // ✅ Calculate tax per product globally
+  const cartItemsWithTax = useMemo(() => {
+    return cartItems?.map((item) => {
+      const discountedPrice = item?.product?.discounted_price;
+      const specialPrice = item?.product?.special_price || 0;
+      const regularPrice =
+        item?.product?.price?.regularPrice?.amount?.value ||
+        item?.product?.price_range?.minimum_price?.regular_price?.value ||
+        0;
+
+      const basePrice = discountedPrice
+        ? parseFloat(discountedPrice)
+        : specialPrice > 0
+        ? specialPrice
+        : regularPrice;
+
+      const qty = item?.quantity || 0;
+      const rowTotal = basePrice * qty;
+
+      let taxRate = 0;
       let taxAmount = 0;
 
-      cartItems?.forEach((item) => {
-        const price = item?.product?.special_price
-          ? item?.product?.special_price
-          : item?.product?.price?.regularPrice?.amount?.value || 0;
-        const qty = item?.quantity || 0;
-        const lineTotal = price * qty;
+      if (item?.product?.fbr_tax_applied == null || item?.product?.fbr_tax_applied == undefined) {
+        taxRate = item?.product?.tax_percent || 0;
+        taxAmount = (rowTotal * taxRate) / 100;
+      }
+      if (item?.product?.fbr_tax_applied == 1) {
+        if(payment == "checkmo"){
+          taxRate = fbrDetails?.fbr_offline_discount 
+        } else {
+          taxRate = fbrDetails?.fbr_online_discount
+        }
+        if(applyTaxAfterDiscount == 0){
+        taxAmount = ((item?.product?.special_price) && item?.product?.special_price > 0 ? (item?.product?.special_price * taxRate) / 100 : (regularPrice * taxRate) / 100) * qty;
+        } if(applyTaxAfterDiscount == 1){
+          taxAmount = (rowTotal * taxRate) / 100
+        }
+        // taxRate = payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount;
+      }
 
-        subtotal += lineTotal;
+      return {
+        ...item,
+        basePrice,
+        rowTotal,
+        taxRate,
+        taxAmount,
+      };
+    }) || [];
+  }, [cartItems, payment]);
 
-        const taxRate = item?.product?.tax_percent || 0;
-        taxAmount += (lineTotal * taxRate) / 100;
+  const { subtotal, discountAmount, taxAmount, total, grandTotal, taxRate, totalWithoutTax } =
+    useMemo(() => {
+      let subtotal = 0;
+      let totalTaxAmount = 0;
+      let lastTaxRate = 0;
+
+      cartItemsWithTax?.forEach((item) => {
+        subtotal += item.rowTotal;
+        totalTaxAmount += item.taxAmount;
+        lastTaxRate = item.taxRate;
       });
 
       const discountAmount = (subtotal * discountPercent) / 100;
-      const total = subtotal - discountAmount;
-      const grandTotal = total + taxAmount;
-
-      return { subtotal, discountAmount, taxAmount, total, grandTotal };
-    }, [cartItems, discountPercent]);
+      const total = subtotal - discountAmount + totalTaxAmount;
+      const totalWithoutTax = subtotal - discountAmount;
+      const grandTotal = total + totalTaxAmount;
+      return { subtotal, discountAmount, taxAmount: totalTaxAmount, total, grandTotal, taxRate: lastTaxRate, totalWithoutTax };
+    }, [cartItemsWithTax, discountPercent]);
 
   useEffect(() => {
     if (amountInputRef.current) {
@@ -152,7 +204,6 @@ export default function POSCartSummary({
       try {
         const res = await getCustomerConsentAction(email, phone);
 
-        // in case of registered customer (consent given)
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent) {
           setConsentStatus(res[0].consent);
           setConsentChecked(true);
@@ -160,7 +211,6 @@ export default function POSCartSummary({
           return res[0].consent;
         }
 
-        // in case of unregistered and registered but no consent customers
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent == null) {
           setConsentStatus("not_set");
           setConsentChecked(true);
@@ -194,7 +244,7 @@ export default function POSCartSummary({
     setIsInputFocused(true);
   };
 
-    const handleConsentChange = async (checked) => {
+  const handleConsentChange = async (checked) => {
     setChangeConsent(!checked);
   };
 
@@ -228,32 +278,38 @@ export default function POSCartSummary({
     const customerDetails = {
       phone,
       email,
-      paymentType,
+      payment,
     };
 
-    const items = cartItems.map((item) => {
-      const product = item?.product || {};
-      const price = product?.price?.regularPrice?.amount?.value || 0;
-      const originalPrice = product?.special_price
-        ? product.special_price
-        : price;
-      const quantity = item.quantity || 1;
-      const taxPercent = product?.tax_percent || 0;
-      const priceInclTax = price * (1 + taxPercent / 100);
-      const rowTotalInclTax = priceInclTax * quantity;
-      const discountPercent = product?.pos_discount_percent || 0;
-      const rowTotal = price * quantity * (1 - discountPercent / 100);
+         const totalDiscount = cartItems.reduce((sum, item) => {
+        const product = item?.product;
+        const regularPrice = product?.price?.regularPrice?.amount?.value || 0;
+        const actualPrice = product?.special_price && product?.special_price > 0 ? product?.special_price : regularPrice;
+        const discountedPrice = product?.discounted_price || actualPrice;
+        const itemDiscount = (actualPrice - discountedPrice) * item.quantity;
+        return sum + itemDiscount;
+      }, 0);
 
+    const items = cartItems.map((item, index) => {
+      const itemWithTax = cartItemsWithTax[index];
+      const quantity = item.quantity || 1;
+      const discountPercent = item?.product?.pos_discount_percent || 0;
+
+      const priceInclTax = itemWithTax.basePrice + (itemWithTax.taxAmount / quantity);
+      const rowTotalInclTax = itemWithTax.rowTotal + itemWithTax.taxAmount;
+
+      
       return {
-        product_id: product?.id || product?.product_id,
-        product_sku: product?.sku || "",
-        product_name: product?.name || "",
-        price: price.toFixed(2),
-        original_price: originalPrice.toFixed(2),
+        product_id: item?.product?.id || item?.product?.product_id,
+        product_sku: item?.product?.sku || "",
+        product_name: item?.product?.name || "",
+        price: itemWithTax.basePrice.toFixed(2),
+        original_price: (item?.product?.price?.regularPrice?.amount?.value || 0).toFixed(2),
         qty: quantity,
-        row_total: rowTotal.toFixed(2),
+        row_total: itemWithTax.rowTotal.toFixed(2),
         discount_percent: discountPercent,
-        tax_percent: taxPercent,
+        tax_percent: itemWithTax.taxRate,
+        tax_amount: itemWithTax.taxAmount.toFixed(2),
         price_incl_tax: priceInclTax.toFixed(2),
         row_total_incl_tax: rowTotalInclTax.toFixed(2),
       };
@@ -271,29 +327,103 @@ export default function POSCartSummary({
       customer_firstname: "POS",
       customer_last_name: "Customer",
       items,
-      payment_method: paymentType,
+      payment_method: payment,
       order_subtotal: subtotal.toFixed(2),
       order_grandtotal: total.toFixed(2),
       discount: discountPercent,
       order_date: new Date().toISOString(),
+      fbr_tax_percent: payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount,
+      order_tax_amount: taxAmount.toFixed(2)
     };
+
+    try {
+      const fbrPayload = {
+        InvoiceNumber: orderId,
+        POSID: companyDetail?.fbr_pos_id ?? 817377,
+        USIN: companyDetail?.usin ?? "USIN0",
+        DateTime: new Date().toISOString().replace("T", " ").slice(0, 19),
+        TotalBillAmount: parseFloat(orderData.order_grandtotal),
+        TotalQuantity: cartItemsWithTax.reduce((sum, item) => sum + item.quantity, 0),
+        TotalSaleValue: parseFloat(orderData.order_subtotal),
+        TotalTaxCharged: orderData?.order_tax_amount,
+        Discount: parseFloat(totalDiscount),
+        FurtherTax: 0.0,
+        PaymentMode: payment === "checkmo" ? 1 : 2,
+        InvoiceType: 1,
+        Items: cartItems.map((item, index) => {
+          const product = item?.product;
+          const actualPrice = product?.special_price && product?.special_price > 0 ? product?.special_price : product?.price?.regularPrice?.amount?.value;
+      const itemWithTax = cartItemsWithTax[index];
+      const quantity = item.quantity || 1;
+      const discountPercent = item?.product?.pos_discount_percent || 0;
+
+      const priceInclTax = itemWithTax.basePrice + (itemWithTax.taxAmount / quantity);
+      const rowTotalInclTax = itemWithTax.rowTotal + itemWithTax.taxAmount;
+          return {
+            ItemCode: product.sku || "",
+            ItemName: product.name || "",
+            Quantity: item.quantity,
+            PCTCode: companyDetail?.fbr_access_code ?? "CA52C6FC",
+            TaxRate: itemWithTax.taxRate,
+            SaleValue: actualPrice.toFixed(2),
+            TotalAmount: priceInclTax.toFixed(2),
+            TaxCharged: ((itemWithTax.taxAmount)/quantity).toFixed(2),
+            Discount: actualPrice - product?.discounted_price || 0.0,
+            FurtherTax: 0.0,
+            InvoiceType: 1,
+          };
+        }),
+      };
+console.log(fbrPayload)
+      try {
+        const res = await fetch("/api/fbr", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: companyDetail?.fbr_token ?? "123456",
+            mode: consentTimerStorage?.pos_mode?.mode,
+            ...fbrPayload
+          }),
+        });
+
+        const fbrResponse = await res.json();
+        console.log("fbr response", fbrResponse);
+
+        if (res.ok && fbrResponse?.InvoiceNumber) {
+          orderData.fbr_invoice_id = fbrResponse.InvoiceNumber;
+        } else {
+          orderData.fbr_invoice_id = null;
+          console.error("FBR API error:", fbrResponse);
+        }
+      } catch (error) {
+        console.error("Network error calling FBR:", error);
+        orderData.fbr_invoice_id = null;
+      }
+
+    } catch (fbrErr) {
+      console.error("Error sending FBR record:", fbrErr);
+      orderData.fbr_invoice_id = null;
+    }
 
     try {
       let finalConsent = consentStatus;
       if (!finalConsent) finalConsent = "no";
-            console.log("final consent", finalConsent, "change consent", changeConsent)
 
       if (!email && !phone) {
-        await printReceipt(
-          cartItems,
-          total,
-          amount,
-          balance,
-          customerDetails,
-          pdfResponse,
-          orderId,
-          orderData?.order_key
-        );
+        if (thermalPrint) {
+          await printReceipt(
+            cartItemsWithTax,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key,
+            warehouseId,
+            orderData?.fbr_invoice_id
+          );
+        }
         await saveOrder(orderData);
         await saveOrders(orderData);
         await clearCart();
@@ -303,48 +433,51 @@ export default function POSCartSummary({
         setEmail("");
         return;
       }
+
       if (changeConsent != (finalConsent == "yes" ? true : false)) {
-        console.log("consent is changed incase of yes or no")
-        // if (thermalPrint) {
         const consentRes = await submitConsentAction({
           increment_id: generateRandomId(),
           customer_email: email,
           phone_number: phone.length ? phone : "",
           consent: "no"
-        })
-          await printReceipt(
-            cartItems,
-            total,
-            amount,
-            balance,
-            customerDetails,
-            pdfResponse,
-            orderId,
-            orderData?.order_key
-          );
-           await saveOrder(orderData);
-          await saveOrders(orderData);
-          await clearCart();
-          setCartItems([]);
-          setAmount("");
-          setPhone("");
-          setEmail("");
-          return;
-      }
-
-      // Case 3: Consent is "yes" - send digital receipts with delay and re-check
-      if (finalConsent === "yes") {
-        console.log("consent is yes")
+        });
         if (thermalPrint) {
           await printReceipt(
-            cartItems,
+            cartItemsWithTax,
             total,
             amount,
             balance,
             customerDetails,
             pdfResponse,
             orderId,
-            orderData?.order_key
+            orderData?.order_key,
+            warehouseId,
+            orderData?.fbr_invoice_id
+          );
+        }
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
+        return;
+      }
+
+      if (finalConsent === "yes") {
+        if (thermalPrint) {
+          await printReceipt(
+            cartItemsWithTax,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key,
+            warehouseId,
+            orderData?.fbr_invoice_id
           );
         }
         await saveOrder(orderData);
@@ -356,24 +489,24 @@ export default function POSCartSummary({
         setEmail("");
       }
 
-      // Case 4: Consent is "not_set" - show consent QR for first-time consent
       if (finalConsent === "not_set") {
-        console.log("consent is not set")
         if (thermalPrint) {
           await printReceipt(
-            cartItems,
+            cartItemsWithTax,
             total,
             amount,
             balance,
             customerDetails,
             pdfResponse,
             orderId,
-            orderData?.order_key
+            orderData?.order_key,
+            warehouseId,
+            orderData?.fbr_invoice_id
           );
         }
         setConsentModal(true);
         const sessionId = orderData?.increment_id;
-        const expiresAt = Date.now() + minutes * 60 * 1000;
+        const expiresAt = minutes === Infinity ? null : Date.now() + minutes * 60 * 1000;
         const encrypted = encryptData({
           sessionId,
           phone,
@@ -395,19 +528,21 @@ export default function POSCartSummary({
         setEmail("");
       }
 
-      // Case 5: Consent is "no" - just print thermal, no digital receipts
       if (finalConsent == "no") {
-        console.log("consent is no")
-        await printReceipt(
-          cartItems,
-          total,
-          amount,
-          balance,
-          customerDetails,
-          pdfResponse,
-          orderId,
-          orderData?.order_key
-        );
+        if (thermalPrint) {
+          await printReceipt(
+            cartItemsWithTax,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key,
+            warehouseId,
+            orderData?.fbr_invoice_id,
+          );
+        }
         await saveOrder(orderData);
         await saveOrders(orderData);
         await clearCart();
@@ -415,11 +550,11 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
-        if(!consentTrue){
-        return;
+        if (!consentTrue) {
+          return;
         }
       }
-      console.log("fallback is called")
+
       try {
         const delayedJobData = {
           email,
@@ -427,6 +562,8 @@ export default function POSCartSummary({
           orderId,
           orderData,
           pdfResponse,
+          warehouseId,
+          smtp_config: decryptedSmtp,
           smsJob: phone
             ? {
                 phone,
@@ -437,22 +574,25 @@ export default function POSCartSummary({
                 sid: twilioRec?.sid,
                 auth_token: twilioRec?.auth_token,
                 auth_phone: twilioRec?.phone,
+                warehouseId: warehouseId
               }
             : null,
         };
 
         if (email) {
           delayedJobData.pdfBase64 = await generateReceiptPDF(
-            cartItems,
+            cartItemsWithTax,
             total,
             amount,
             balance,
             customerDetails,
             orderId,
             orderData?.order_key,
-            pdfResponse
+            pdfResponse,
+            orderData?.fbr_invoice_id
           );
         }
+
         const res = await fetch("/api/schedule-email", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -495,6 +635,7 @@ export default function POSCartSummary({
         <h2>
           {currencySymbol}
           {total.toFixed(2)}
+          <p>{currencySymbol}{totalWithoutTax.toFixed(2)}</p>
         </h2>
 
         <div className={styles.paymentDetails}>
@@ -530,7 +671,6 @@ export default function POSCartSummary({
               />
             </div>
 
-            {/* New consent change checkbox - only show when consent is "yes" or "no" */}
             {(consentStatus === "yes" || consentStatus === "no") &&
               (email || phone) && (
                 <div
@@ -549,46 +689,34 @@ export default function POSCartSummary({
                     </label>
                   ) : (
                     <>
-                    <p>{"The customer don't want to receive E-Receipts."}</p>
-                      {/* 👉 New button to open consent change modal */}
-                  <button
-                    type="button"
-                    className={styles.btnPrimary}
-                    onClick={async () => {
-                      setConsentChangeModal(true);
-                      setConsentTrue(true)
-                      const sessionId = generateRandomId();
-                      const expiresAt = Date.now() + minutes * 60 * 1000;
-                      const encrypted = encryptData({
-                        sessionId,
-                        phone,
-                        email,
-                        expiresAt,
-                      });
-                      const code = await QRCode.toDataURL(
-                        `${
-                          process.env.NEXT_PUBLIC_BASE_URL
-                        }/consent?data=${encodeURIComponent(encrypted)}`
-                      );
-                      setQrCode(code);
-                    }}
-                    style={{ marginTop: "10px" }}
-                  >
-                    Change Consent
-                  </button>
-                  </>
+                      <p>{"The customer don't want to receive E-Receipts."}</p>
+                      <button
+                        type="button"
+                        className={styles.btnPrimary}
+                        onClick={async () => {
+                          setConsentChangeModal(true);
+                          setConsentTrue(true);
+                          const sessionId = generateRandomId();
+                          const expiresAt = minutes === Infinity ? null : Date.now() + minutes * 60 * 1000;
+                          const encrypted = encryptData({
+                            sessionId,
+                            phone,
+                            email,
+                            expiresAt,
+                          });
+                          const code = await QRCode.toDataURL(
+                            `${
+                              process.env.NEXT_PUBLIC_BASE_URL
+                            }/consent?data=${encodeURIComponent(encrypted)}`
+                          );
+                          setQrCode(code);
+                        }}
+                        style={{ marginTop: "10px" }}
+                      >
+                        Change Consent
+                      </button>
+                    </>
                   )}
-
-                  {/* <label className={styles.checkboxWrapper}>
-        <input
-          type="checkbox"
-          className={styles.checkbox}
-          checked={changeConsent}
-          onChange={(e) => handleConsentChange(e.target.checked)}
-        />
-        <span className={styles.customCheck}></span>
-        Do you want E-Receipt
-      </label> */}
                 </div>
               )}
           </div>
@@ -639,10 +767,11 @@ export default function POSCartSummary({
               {serverLanguage?.payment_type ?? "Payment Type"}:
             </p>
             <select
-              value={paymentType}
-              onChange={(e) => setPaymentType(e.target.value)}
+              value={payment}
+              onChange={(e) => setPayment(e.target.value)}
             >
               <option value="checkmo">{serverLanguage?.cash ?? "Cash"}</option>
+              <option value="credit">{serverLanguage?.credit ?? "Credit"}</option>
             </select>
           </div>
 
@@ -667,29 +796,6 @@ export default function POSCartSummary({
             <input type="text" value={balance} readOnly placeholder="0.00" />
           </div>
 
-          {/* <div className={styles.paymentDetailBlock}>
-            <label className={styles.checkboxWrapper}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                id="consent"
-                value={consent}
-                onChange={handleChangeConsent}
-              />
-              <span className={styles.customCheck}></span>
-              <div>
-                I agree to receive Smart Receipts via WhatsApp and Email and
-                consent to the use of my personal information as{" "}
-                <span
-                  className={styles.consent_popup}
-                  onClick={() => setConsentModal(true)}
-                  style={{ cursor: "pointer", textDecoration: "underline" }}
-                >
-                  described here.
-                </span>
-              </div>
-            </label>
-          </div> */}
           <OrderControls
             cartItems={cartItems}
             addItemsToSuspend={addItemsToSuspend}
@@ -698,11 +804,10 @@ export default function POSCartSummary({
             setCartItems={setCartItems}
             setAmount={setAmount}
           />
+
           <button
             onClick={handlePlaceOrder}
             className={styles.completeButton}
-            // disable while user is entering contact, or while consent API is in-flight,
-            // or when email is provided but invalid
             disabled={
               isInputFocused ||
               consentLoading ||
@@ -745,7 +850,6 @@ export default function POSCartSummary({
         />
       )}
 
-      {/* New modal for consent change */}
       {consentChangeModal && (
         <SimpleAlertModal
           consent={true}

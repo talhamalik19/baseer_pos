@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import style from "../../styles/card.module.scss";
 import Image from "next/image";
-import ProductOptionsModal from "../blocks/Catalog/ProductOptionsModal";
 import {
   getCartItems,
   removeFromCart,
@@ -10,7 +9,6 @@ import {
 } from "@/lib/indexedDB";
 import UpdateProductModal from "../blocks/Catalog/UpdateProductModal";
 import { usePathname } from "next/navigation";
-import { revalidateProducts } from "@/lib/Magento/actions";
 
 export default function Cards({
   item,
@@ -19,6 +17,9 @@ export default function Cards({
   setCartItems,
   currencySymbol,
   serverLanguage,
+  discountIncludingTax,
+  payment,
+  fbrDetails
 }) {
   const pathname = usePathname();
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
@@ -26,7 +27,11 @@ export default function Cards({
   const [errorMessage, setErrorMessage] = useState("");
   const [isHighlighted, setIsHighlighted] = useState(false);
 
-  // Extract qty_increment_step
+  const [quantity, setQuantity] = useState(1);
+  const originalPriceRef = useRef(null);
+  const discountedPriceRef = useRef(null);
+  const [originalPrice, setOriginalPrice] = useState(null);
+
   const getAttribute = (code) => {
     return (
       item?.custom_attributes?.find((attr) => attr.attribute_code === code)
@@ -35,49 +40,57 @@ export default function Cards({
   };
 
   const qtyIncrementStep = parseFloat(getAttribute("qty_increment_step")) || 1;
-  const priceUnit = getAttribute("price_unit") || "each";
   const quantityUnit = getAttribute("quantity_unit") || "kg";
+  const priceUnit = getAttribute("price_unit") || "each";
+  const priceShortDetail = getAttribute("price_short_detail");
   const weightPerUnit =
     parseFloat(getAttribute("weight_per_price_unit")) || 0.2;
-  const priceShortDetail = getAttribute("price_short_detail");
-
-  const [originalPrice, setOriginalPrice] = useState(null);
-  const [quantity, setQuantity] = useState(qtyIncrementStep);
-  const originalPriceRef = useRef(null); // Use ref to maintain original price
 
   useEffect(() => {
     if (item) {
-      const initialPrice =
+      console.log(item)
+      const specialPrice = item?.special_price || 0;
+      const regularPrice =
         item?.price?.regularPrice?.amount?.value ||
         item?.price_range?.minimum_price?.regular_price?.value ||
         0;
 
-      setPriceInput(initialPrice);
+      const basePrice = specialPrice > 0 ? specialPrice : regularPrice;
 
-      // Only set originalPrice once (when it's null)
+      setPriceInput(item?.discounted_price || basePrice);
+
       if (originalPriceRef.current === null) {
-        originalPriceRef.current = initialPrice;
-        setOriginalPrice(initialPrice);
+        originalPriceRef.current = basePrice;
+        setOriginalPrice(basePrice);
+        if(discountIncludingTax != null || discountIncludingTax != undefined){
+        if (discountIncludingTax == 1) {
+          if (payment == "checkmo") {
+            discountedPriceRef.current = (basePrice * fbrDetails?.fbr_offline_discount) / 100;
+          }
+          if (payment == "credit") {
+            discountedPriceRef.current = (basePrice * fbrDetails?.fbr_online_discount) / 100;
+          }
+        } else{
+        } if(discountIncludingTax == null || discountIncludingTax == undefined){
+           discountedPriceRef.current = (basePrice * item?.tax_percent) / 100;
+        }
+      }
       }
 
-      // Set quantity from record or fallback to qtyIncrementStep
       setQuantity(record?.quantity ?? qtyIncrementStep);
     }
-  }, [item, record, qtyIncrementStep]);
+  }, [item, record, discountIncludingTax, payment]);
 
-  const totalWeight = (quantity * weightPerUnit).toFixed(2);
-  const weightDisplay = `${totalWeight} ${quantityUnit} (est.)`;
-  const pricePerUnitDisplay = `${currencySymbol}${(
-    item?.price?.regularPrice?.amount?.value ||
-    item?.price_range?.minimum_price?.regular_price?.value ||
-    0
-  ).toFixed(2)} / ${quantityUnit}`;
-  const weightPerUnitDisplay = `About ${weightPerUnit} ${quantityUnit} / ${priceUnit} (est.)`;
+  const handlePriceChange = (e) => {
+    const value = e.target.value;
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setPriceInput(value);
+    setErrorMessage("");
+  };
 
   const handleQuantityChange = async (productUid, addedAt, newQuantity) => {
     const roundedQuantity =
       Math.round(newQuantity / qtyIncrementStep) * qtyIncrementStep;
-
     setQuantity(roundedQuantity);
 
     if (roundedQuantity < qtyIncrementStep) {
@@ -90,98 +103,96 @@ export default function Cards({
     setCartItems(updatedCart);
   };
 
-  const handlePriceChange = (e) => {
-    const value = e.target.value;
-    if (!/^\d*\.?\d*$/.test(value)) return;
-    setPriceInput(value);
-    setErrorMessage("");
-  };
+const validateDiscount = () => {
+  const basePrice = originalPriceRef.current || 0;
+  const inputPrice = parseFloat(priceInput);
+  const pos_discount_allowed = item?.is_pos_discount_allowed == 1;
+  const maxDiscountPercent = item?.pos_discount_percent || 0;
+  const taxOrDiscountedPrice = discountedPriceRef.current || 0;
+  const effectiveBase = basePrice + taxOrDiscountedPrice;
 
-  const validateDiscount = () => {    
-    const basePrice = originalPriceRef.current;
-    const inputPrice = parseFloat(priceInput);
-    const pos_discount_allowed = item?.is_pos_discount_allowed == 1;
-    const maxDiscountPercent = item?.pos_discount_percent || 0;
-
-    if (!basePrice || basePrice <= 0) {
-      console.error("No valid original price found");
-      setErrorMessage("Unable to validate price - no original price found");
-      return false;
-    }
-
-    if (!pos_discount_allowed && inputPrice !== basePrice) {
-      setErrorMessage("Price changes not allowed for this item");
-      return false;
-    }
-
-    if (pos_discount_allowed && inputPrice < basePrice) {
-      const discountPercent = ((basePrice - inputPrice) / basePrice) * 100;
-      
-      if (discountPercent > maxDiscountPercent) {
-        const minAllowedPrice = (basePrice * (1 - maxDiscountPercent / 100)).toFixed(2);
-        setErrorMessage(
-          `Minimum allowed price is ${currencySymbol}${minAllowedPrice} (based on original price ${currencySymbol}${basePrice.toFixed(2)})`
-        );
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-const handleUpdatePrice = async () => {
-  if (!validateDiscount()) {
-    return;
+  if (!basePrice || basePrice <= 0) {
+    setErrorMessage("Unable to validate price - no original price found");
+    setTimeout(() => setErrorMessage(""), 3000);
+    return false;
   }
 
-  const updatedItem = {
-    ...record,
-    quantity: quantity,
-    product: {
-      ...item,
-      price: {
-        regularPrice: {
-          amount: {
-            value: parseFloat(priceInput) || 0,
-            currency: "USD",
-          },
-        },
-      },
-    },
-  };
+  if (!pos_discount_allowed && inputPrice !== basePrice) {
+    setErrorMessage("Price changes not allowed for this item");
+    setTimeout(() => setErrorMessage(""), 3000);
+    return false;
+  }
 
-  await updateWholeProduct(item?.uid, record?.addedAt, updatedItem);
+  if (pos_discount_allowed && inputPrice < basePrice) {
+    const discountPercent = ((effectiveBase - inputPrice) / effectiveBase) * 100;
 
-  const updatedCart = await getCartItems();
-  setCartItems(updatedCart);
+    if (discountPercent > maxDiscountPercent) {
+      const minAllowedPrice = (
+        effectiveBase *
+        (1 - maxDiscountPercent / 100)
+      ).toFixed(2);
 
+      setErrorMessage(
+        `Minimum allowed price is ${currencySymbol}${minAllowedPrice} (based on original ${currencySymbol}${basePrice.toFixed(
+          2
+        )}${
+          taxOrDiscountedPrice
+            ? ` & Tax ${currencySymbol}${taxOrDiscountedPrice.toFixed(2)}`
+            : ""
+        })`
+      );
 
-  setIsHighlighted(true);
-  setTimeout(() => setIsHighlighted(false), 1000);
+      // ❗ Automatically clear after 5 seconds
+      setTimeout(() => setErrorMessage(""), 3000);
+
+      return false;
+    }
+  }
+
+  return true;
 };
 
 
+  const handleUpdatePrice = async () => {
+    if (!validateDiscount()) return;
+
+    const updatedItem = {
+      ...record,
+      quantity,
+      product: {
+        ...item,
+        discounted_price: parseFloat(priceInput),
+      },
+    };
+
+    await updateWholeProduct(item?.uid, record?.addedAt, updatedItem);
+    const updatedCart = await getCartItems();
+    setCartItems(updatedCart);
+
+    setIsHighlighted(true);
+    setTimeout(() => setIsHighlighted(false), 1000);
+  };
+  console.log(item)
   const isPriceDisabled = () => item?.is_pos_discount_allowed !== 1;
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleUpdatePrice();
-    }
-  };
+  const totalWeight = (quantity * weightPerUnit).toFixed(2);
+  const weightDisplay = `${totalWeight} ${quantityUnit} (est.)`;
+  const pricePerUnitDisplay = `${currencySymbol}${originalPrice?.toFixed(
+    2
+  )} / ${quantityUnit}`;
+  const weightPerUnitDisplay = `About ${weightPerUnit} ${quantityUnit} / ${priceUnit} (est.)`;
+
+  const discounted = parseFloat(item?.discounted_price || 0);
+  const effectivePrice = discounted > 0 ? discounted : originalPrice;
+
+  const showDiscount = discounted > 0 && discounted < originalPrice;
 
   return (
     <div className={`${style.card} ${isHighlighted ? style.highlight : ""}`}>
       <div className={style.top_row}>
-        {item?.special_price && (
+        {showDiscount && (
           <span className={style.discount}>
-            {Math.round(
-              100 -
-                (item.special_price /
-                  (item?.price?.regularPrice?.amount?.value ||
-                    item?.price_range?.minimum_price?.regular_price?.value)) *
-                  100
-            )}
-            %
+            {Math.round(100 - (effectivePrice / originalPrice) * 100)}%
           </span>
         )}
         {pathname !== "/sale" && (
@@ -222,43 +233,29 @@ const handleUpdatePrice = async () => {
 
       <div className={style.product_info}>
         <h3 className={style.name}>{item?.name}</h3>
-        <div className={style.price_unit_display}>{pricePerUnitDisplay}</div>
         {priceShortDetail && (
-          <div className={style.weight_per_unit}>{weightPerUnitDisplay}</div>
+          <>
+            <div className={style.price_unit_display}>{pricePerUnitDisplay}</div>
+            <div className={style.weight_per_unit}>{weightPerUnitDisplay}</div>
+          </>
         )}
       </div>
 
       <div className={style.price_info}>
         <div className={style.price}>
-          {item?.special_price ? (
+          {showDiscount ? (
             <>
               <del className={style.final_price}>
                 {currencySymbol}
-                {(
-                  (item?.price?.regularPrice?.amount?.value ||
-                    item?.price_range?.minimum_price?.regular_price?.value) *
-                  quantity
-                ).toFixed(2)}
+                {originalPrice.toFixed(2)}
               </del>
+            
+                {cards && (
+          <div className={style.link}>
               <span className={style.special_price}>
                 {currencySymbol}
-                {(item.special_price * quantity).toFixed(2)}
+                {effectivePrice.toFixed(2)}
               </span>
-            </>
-          ) : (
-            <span className={style.special_price}>
-              {currencySymbol}
-              {(
-                (item?.price?.regularPrice?.amount?.value ||
-                  item?.price_range?.minimum_price?.regular_price?.value) *
-                quantity
-              ).toFixed(2)}
-            </span>
-          )}
-        </div>
-
-        {cards && (
-          <div className={style.link}>
             <div className={style.itemControls}>
               <div className={style.quantityControls}>
                 <button
@@ -301,12 +298,64 @@ const handleUpdatePrice = async () => {
             </div>
           </div>
         )}
+            </>
+          ) : (
+            <>
+            <span className={style.special_price}>
+              {currencySymbol}
+              {originalPrice?.toFixed(2)}
+            </span>
+              {cards && <div className={style.itemControls}>
+              <div className={style.quantityControls}>
+                <button
+                  className={style.quantityButton}
+                  onClick={() =>
+                    handleQuantityChange(
+                      item?.uid,
+                      record?.addedAt,
+                      quantity - qtyIncrementStep
+                    )
+                  }
+                >
+                  -
+                </button>
+                <input
+                  type="text"
+                  className={style.quantityInput}
+                  value={quantity}
+                  onChange={(e) =>
+                    handleQuantityChange(
+                      item?.uid,
+                      record?.addedAt,
+                      parseFloat(e.target.value) || qtyIncrementStep
+                    )
+                  }
+                />
+                <button
+                  className={style.quantityButton}
+                  onClick={() =>
+                    handleQuantityChange(
+                      item?.uid,
+                      record?.addedAt,
+                      quantity + qtyIncrementStep
+                    )
+                  }
+                >
+                  +
+                </button>
+              </div>
+            </div> }
+            </>
+          )}
+        </div>
+
+      
       </div>
 
       {record && (
         <div className={style.priceInputContainer}>
           <label className={style.priceLabel}>
-            {serverLanguage?.Price ?? "Price"}: {currencySymbol}
+            {serverLanguage?.DiscountedPrice ?? "Discounted Price"}:
           </label>
           <input
             type="text"
@@ -315,7 +364,7 @@ const handleUpdatePrice = async () => {
             }`}
             value={priceInput}
             onChange={handlePriceChange}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
             disabled={isPriceDisabled()}
           />
           <button
@@ -328,6 +377,24 @@ const handleUpdatePrice = async () => {
           {errorMessage && (
             <div className={style.errorMessage}>{errorMessage}</div>
           )}
+
+          {/* ✅ Price Summary */}
+          <div className={style.summary}>
+            <p>
+              <strong>Original Price:</strong> {currencySymbol}
+              {originalPriceRef?.current?.toFixed(2)}
+            </p>
+            {showDiscount && (
+              <p>
+                <strong>Discounted Price:</strong> {currencySymbol}
+                {effectivePrice.toFixed(2)}
+              </p>
+            )}
+            <p>
+              <strong>Total:</strong> {currencySymbol}
+              {(effectivePrice * quantity).toFixed(2)}
+            </p>
+          </div>
         </div>
       )}
 

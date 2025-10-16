@@ -4,6 +4,7 @@ import style from "../../../app/(main)/form.module.scss";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { deleteAllOrders } from "@/lib/indexedDB";
+import { encryptData } from "@/lib/crypto";
 
 export default function LoginForm({ handleSubmit, serverLanguage }) {
   const [email, setEmail] = useState("");
@@ -29,7 +30,17 @@ export default function LoginForm({ handleSubmit, serverLanguage }) {
         localStorage.setItem("role", result.role);
       }
       if(result?.posDetail){
-        localStorage.setItem("loginDetail", JSON.stringify(result?.posDetail))
+          const { smtp_config, ...rest } = result.posDetail;
+
+  const encryptedSMTP = encryptData(smtp_config);
+
+  // Save the encrypted SMTP config
+  const safeData = {
+    ...rest,
+    smtp_config: encryptedSMTP,
+  };
+
+  localStorage.setItem("loginDetail", JSON.stringify(safeData));
       }
 
       await deleteAllOrders();

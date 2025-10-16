@@ -13,13 +13,16 @@ export default function ProductTable({
   styles,
   currencySymbol,
   serverLanguage,
+  discountIncludingTax,
+  payment,
+  fbrDetails,
 }) {
   const [inputs, setInputs] = useState([]);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [errorMessages, setErrorMessages] = useState([]);
   const originalPricesRef = useRef([]); // Store original prices for each item
+  const discountedPricesRef = useRef([]); // Store discounted (tax) prices per item
 
-  // Helper function to get product attribute
   const getAttribute = (item, code) => {
     return (
       item?.product?.custom_attributes?.find(
@@ -33,30 +36,57 @@ export default function ProductTable({
       const initialInputs = cartItems.map((item, index) => {
         const qtyStepAttr = getAttribute(item, "qty_increment_step");
         const initialQty = qtyStepAttr ? parseFloat(qtyStepAttr) : 1;
-        
-        const currentPrice = 
+
+        // ✅ Determine base price
+        const specialPrice = item?.product?.special_price || 0;
+        const regularPrice =
           item?.product?.price?.regularPrice?.amount?.value ||
           item?.product?.price_range?.minimum_price?.regular_price?.value ||
           0;
 
-        // Only set original price if it hasn't been set for this index
+        const basePrice = specialPrice > 0 ? specialPrice : regularPrice;
+
+        // ✅ Initialize refs only once
         if (!originalPricesRef.current[index]) {
-          originalPricesRef.current[index] = currentPrice;
+          originalPricesRef.current[index] = basePrice;
+
+          if (discountIncludingTax != null && discountIncludingTax != undefined) {
+            if (discountIncludingTax == 1) {
+              if (payment == "checkmo") {
+                discountedPricesRef.current[index] =
+                  (basePrice * fbrDetails?.fbr_offline_discount) / 100;
+              }
+              if (payment == "credit") {
+                discountedPricesRef.current[index] =
+                  (basePrice * fbrDetails?.fbr_online_discount) / 100;
+              }
+            } 
+            // else {
+            //   // ✅ If discountIncludingTax is explicitly 0, apply normal tax
+            //   discountedPricesRef.current[index] =
+            //     (basePrice * item?.product?.tax_percent) / 100;
+            // }
+          } else {
+            // ✅ Fallback if discountIncludingTax is null/undefined
+            discountedPricesRef.current[index] =
+              (basePrice * item?.product?.tax_percent) / 100;
+          }
         }
 
         return {
-          price: currentPrice,
+          price: item?.product?.discounted_price || basePrice,
           quantity: item.quantity || initialQty,
           qtyIncrementStep: initialQty,
         };
       });
+
       setInputs(initialInputs);
       setErrorMessages(Array(cartItems.length).fill(""));
     }
-  }, [cartItems]);
+  }, [cartItems, discountIncludingTax, payment]);
+
 
   const handleInputChange = (index, field, value) => {
-    // Ensure we only accept numeric inputs with optional decimal point
     if (field === "price" && !/^\d*\.?\d*$/.test(value)) return;
     if (field === "quantity" && !/^\d*\.?\d*$/.test(value)) return;
 
@@ -64,7 +94,6 @@ export default function ProductTable({
     updated[index][field] = value;
     setInputs(updated);
 
-    // Clear error message when input changes
     const updatedErrors = [...errorMessages];
     updatedErrors[index] = "";
     setErrorMessages(updatedErrors);
@@ -76,54 +105,83 @@ export default function ProductTable({
     }
   };
 
-  const validateDiscount = (index) => {
-    const currentItem = cartItems[index];
-    
-    // Use the preserved original price from ref
-    const originalPrice = originalPricesRef.current[index];
-    const inputPrice = parseFloat(inputs[index].price);
-    const pos_discount_allowed =
-      currentItem?.product?.is_pos_discount_allowed == 1;
-    const maxDiscountPercent = currentItem?.product?.pos_discount_percent || 0;
+const validateDiscount = (index) => {
+  const currentItem = cartItems[index];
+  const basePrice = originalPricesRef.current[index] || 0;
+  const inputPrice = parseFloat(inputs[index].price);
+  const pos_discount_allowed =
+    currentItem?.product?.is_pos_discount_allowed == 1;
+  const maxDiscountPercent = currentItem?.product?.pos_discount_percent || 0;
+  const taxOrDiscountedPrice = discountedPricesRef.current[index] || 0;
+  const effectiveBase = basePrice + taxOrDiscountedPrice;
 
-    // Check if we have a valid original price
-    if (!originalPrice || originalPrice <= 0) {
-      const updatedErrors = [...errorMessages];
-      updatedErrors[index] = "Unable to validate price - no original price found";
+  const updatedErrors = [...errorMessages];
+
+  if (!basePrice || basePrice <= 0) {
+    updatedErrors[index] = "Unable to validate price - no original price found";
+    setErrorMessages(updatedErrors);
+    setTimeout(() => {
+      setErrorMessages((prev) => {
+        const newErrors = [...prev];
+        newErrors[index] = "";
+        return newErrors;
+      });
+    }, 3000);
+    return false;
+  }
+
+  if (!pos_discount_allowed && inputPrice !== basePrice) {
+    updatedErrors[index] = "Price changes not allowed for this item";
+    setErrorMessages(updatedErrors);
+    setTimeout(() => {
+      setErrorMessages((prev) => {
+        const newErrors = [...prev];
+        newErrors[index] = "";
+        return newErrors;
+      });
+    }, 3000);
+    return false;
+  }
+
+  if (pos_discount_allowed && inputPrice < basePrice) {
+    const discountPercent =
+      ((effectiveBase - inputPrice) / effectiveBase) * 100;
+
+    if (discountPercent > maxDiscountPercent) {
+      const minAllowedPrice = (
+        effectiveBase *
+        (1 - maxDiscountPercent / 100)
+      ).toFixed(2);
+
+      updatedErrors[
+        index
+      ] = `Minimum allowed price is ${currencySymbol}${minAllowedPrice} (based on original ${currencySymbol}${basePrice.toFixed(
+        2
+      )}${
+        taxOrDiscountedPrice
+          ? ` & Tax ${currencySymbol}${taxOrDiscountedPrice.toFixed(2)}`
+          : ""
+      })`;
+
       setErrorMessages(updatedErrors);
+      // ⏱️ Auto-clear message after 5 seconds
+      setTimeout(() => {
+        setErrorMessages((prev) => {
+          const newErrors = [...prev];
+          newErrors[index] = "";
+          return newErrors;
+        });
+      }, 3000);
+
       return false;
     }
+  }
 
-    if (!pos_discount_allowed && inputPrice !== originalPrice) {
-      const updatedErrors = [...errorMessages];
-      updatedErrors[index] = "Price changes not allowed for this item";
-      setErrorMessages(updatedErrors);
-      return false;
-    }
+  return true;
+};
 
-    if (pos_discount_allowed && inputPrice < originalPrice) {
-      const discountPercent =
-        ((originalPrice - inputPrice) / originalPrice) * 100;
-      
-      if (discountPercent > maxDiscountPercent) {
-        const minAllowedPrice = (
-          originalPrice *
-          (1 - maxDiscountPercent / 100)
-        ).toFixed(2);
-        const updatedErrors = [...errorMessages];
-        updatedErrors[
-          index
-        ] = `Maximum discount ${maxDiscountPercent}% allowed (min price: ${currencySymbol}${minAllowedPrice} based on original ${currencySymbol}${originalPrice.toFixed(2)})`;
-        setErrorMessages(updatedErrors);
-        return false;
-      }
-    }
-
-    return true;
-  };
 
   const triggerUpdate = async (index) => {
-    // Validate discount before updating
     if (!validateDiscount(index)) {
       return;
     }
@@ -138,14 +196,7 @@ export default function ProductTable({
       quantity: finalQuantity,
       product: {
         ...cartItems[index].product,
-        price: {
-          regularPrice: {
-            amount: {
-              value: parseFloat(inputs[index].price) || 0,
-              currency: "USD",
-            },
-          },
-        },
+        discounted_price: parseFloat(inputs[index].price),
       },
     };
 
@@ -166,7 +217,6 @@ export default function ProductTable({
     return item?.product?.is_pos_discount_allowed !== 1;
   };
 
-  // Calculate display values for each item
   const getDisplayValues = (item) => {
     const priceShortDetail = getAttribute(item, "price_short_detail");
     const quantityUnit = getAttribute(item, "quantity_unit") || "kg";
@@ -203,11 +253,15 @@ export default function ProductTable({
             const quantity = inputs[index]?.quantity ?? "";
             const isDisabled = isPriceDisabled(item);
             const displayValues = getDisplayValues(item);
-            
-            // Get original price from ref for display purposes
+
             const originalPrice = originalPricesRef.current[index] || 0;
+            const currentItemDiscountedPrice = item?.product?.discounted_price;
             const specialPrice = item?.product?.special_price;
-            const showDiscount = specialPrice && specialPrice < originalPrice;
+
+            // Use discounted_price if it exists and differs from original, otherwise use specialPrice
+            const effectivePrice =
+              currentItemDiscountedPrice || specialPrice || originalPrice;
+            const showDiscount = effectivePrice < originalPrice;
 
             return (
               <tr
@@ -238,8 +292,8 @@ export default function ProductTable({
                   )}
                   {showDiscount && (
                     <div className={styles.discountBadge}>
-                      {Math.round(100 - (specialPrice / originalPrice) * 100)}%
-                      OFF
+                      {Math.round(100 - (effectivePrice / originalPrice) * 100)}
+                      % OFF
                     </div>
                   )}
                 </td>
@@ -266,7 +320,7 @@ export default function ProductTable({
                       </del>
                       <span className={styles.specialTotal}>
                         {currencySymbol}
-                        {(specialPrice * quantity).toFixed(2)}
+                        {(effectivePrice * quantity).toFixed(2)}
                       </span>
                     </>
                   ) : (
@@ -287,7 +341,6 @@ export default function ProductTable({
                     className={styles.deleteBtn}
                     onClick={async () => {
                       await deleteFromCart(item?.product?.uid);
-                      // Clear the original price for this item when deleted
                       originalPricesRef.current.splice(index, 1);
                       const updatedCart = await getCartItems();
                       onCartChange(updatedCart);

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import CustomerListing from "@/components/blocks/Customer";
 import CurrencyProvider from "@/components/global/CurrencyProvider";
 import LanguageProvider from "@/components/global/LanguageProvider";
+import ProtectedRoute from "@/components/shared/ProtectedRoute";
 
 export default async function Customer() {
   const cookieStore = await cookies();
@@ -20,8 +21,10 @@ export default async function Customer() {
   
   return (
     <>
+      <ProtectedRoute requiredPermission={"customers_manage"}>
       <PageHead pageName={serverLanguage?.csvTranslations?.customer ?? 'Customer'} firstName={firstname} lastName={lastname} initials={initials}  serverCurrency={serverCurrency} serverLanguage={serverLanguage}/>
       <CustomerListing jwt={jwt} customer={res} total_count={total_count} serverLanguage={serverLanguage?.csvTranslations}/>
+      </ProtectedRoute>
     </>
   );
 }

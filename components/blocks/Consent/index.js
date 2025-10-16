@@ -1,5 +1,4 @@
 "use client";
-import SimpleAlertModal from "@/components/global/alertModal";
 import { submitConsentAction } from "@/lib/Magento/actions";
 import React, { useEffect, useState } from "react";
 
@@ -11,7 +10,8 @@ export default function Consent({
   consentValue,
   expiresAt,
 }) {
-  // Default checked based on consentValue
+  const [isClient, setIsClient] = useState(false);
+  const [isConsentSubmitted, setIsConsentSubmitted] = useState(false);
   const [checked, setChecked] = useState(
     consentValue
       ? consentValue?.[0]?.success && consentValue?.[0]?.consent === "no"
@@ -20,10 +20,18 @@ export default function Consent({
       : ""
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(Number(expiresAt) - Date.now());
+  const [timeLeft, setTimeLeft] = useState(
+    expiresAt ? Number(expiresAt) - Date.now() : null
+  );
 
   useEffect(() => {
+    setIsClient(true);
+    const saved = sessionStorage.getItem("consent_submitted");
+    if (saved === "true") setIsConsentSubmitted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!expiresAt) return;
     const interval = setInterval(() => {
       const diff = Number(expiresAt) - Date.now();
       setTimeLeft(diff > 0 ? diff : 0);
@@ -31,12 +39,14 @@ export default function Consent({
     return () => clearInterval(interval);
   }, [expiresAt]);
 
-  if (timeLeft <= 0) {
+  if (!isClient) return null;
+
+  if (expiresAt && timeLeft <= 0 && !isConsentSubmitted) {
     return (
       <div className={style.consent_page}>
         <div className={style.consent_container}>
           <div>This consent link has expired</div>
-        </div>{" "}
+        </div>
       </div>
     );
   }
@@ -45,16 +55,10 @@ export default function Consent({
   const seconds = Math.floor((timeLeft % 60000) / 1000);
 
   const handleSubmit = async () => {
-    // if (!checked) {
-    //   alert("Please agree to the terms first");
-    //   return;
-    // }
-
     if (!sessionId) {
       alert("Invalid session ID");
       return;
     }
-
     if (!checked) {
       alert("Please select an option");
       return;
@@ -68,47 +72,51 @@ export default function Consent({
       phone_number: phone?.length ? phone : "",
       consent: checked,
     };
+
     const res = await submitConsentAction(payload);
+
     if (res?.[0]?.success) {
-      setIsOpen(true);
-      setIsSubmitting(false);
+      sessionStorage.setItem("consent_submitted", "true");
+      setIsConsentSubmitted(true);
     }
 
-    // try {
-    //   const response = await fetch("/api/consent", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       sessionId,
-    //       email: email,
-    //       phone: phone.length ? phone : "",
-    //       consent: checked,
-    //     }),
-    //   });
-
-    //   const result = await response.json();
-    //   console.log("API response:", result);
-
-    //   if (result.success) {
-    //     alert("Consent submitted successfully! ✅");
-    //   } else {
-    //     alert("Failed to notify POS");
-    //   }
-    // } catch (err) {
-    //   console.error("❌ Error submitting consent:", err);
-    //   alert("Network error");
-    // } finally {
-    //   setIsSubmitting(false);
-    // }
+    setIsSubmitting(false);
   };
+
+  if (isConsentSubmitted) {
+    return (
+      <div className={style.consent_page}>
+        <div className={style.consent_container}>
+          <div className={style.thank}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6" width={90} height={90}>
+  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" stroke="green" />
+</svg>
+
+          <h2>Thank You!</h2>
+          <p>Thank you for submitting your consent.</p>
+          {/* <button
+            onClick={() => {
+              sessionStorage.removeItem("consent_submitted");
+              setIsConsentSubmitted(false);
+            }}
+          >
+            OK
+          </button> */}
+        </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={style.consent_page}>
       <div className={style.consent_container}>
         <h2>Consent Certificate</h2>
-        <p style={{ fontWeight: "bold", color: "red" }}>
-          ⏳ Expires in {minutes}:{seconds.toString().padStart(2, "0")}
-        </p>
+        {expiresAt != null && (
+          <p style={{ fontWeight: "bold", color: "red" }}>
+            ⏳ Expires in {minutes}:{seconds.toString().padStart(2, "0")}
+          </p>
+        )}
         <p>
           By signing/submitting this form, I confirm that the information
           provided is accurate and complete to the best of my knowledge.
@@ -142,7 +150,6 @@ export default function Consent({
           </li>
         </ul>
 
-        {/* Radio buttons instead of checkbox */}
         <div className={style.cb}>
           <label>
             <input
@@ -180,13 +187,6 @@ export default function Consent({
           {isSubmitting ? "Submitting..." : "Submit"}
         </button>
       </div>
-
-      <SimpleAlertModal
-        isOpen={isOpen}
-        onClose={() => setIsOpen((prev) => !prev)}
-        title={"Consent Submitted"}
-        message={"Thank You For Submitting your consent.."}
-      />
     </div>
   );
 }

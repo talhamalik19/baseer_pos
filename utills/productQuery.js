@@ -7,9 +7,13 @@ const productQuery = (id, sort) => `
         uid
         name
         sku
+         fbr_tax_applied
+    apply_tax_after_discount
+    catalog_prices_including_tax
+    discount_including_tax
+    is_pos_discount_allowed
         stock_status
           tax_percent
-      is_pos_discount_allowed
       pos_discount_percent
       apply_discount_on
       custom_price

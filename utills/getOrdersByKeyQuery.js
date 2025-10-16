@@ -12,9 +12,11 @@ const getOrdersByKeyQuery = (key, pageSize = 10, page = 1) =>
         customer_email
         order_grandtotal
         increment_id
+        admin_user
         customer_firstname
         customer_lastname
         order_status
+        fbr_invoice_id
         shipping_address {
           firstname
           lastname
@@ -40,6 +42,9 @@ const getOrdersByKeyQuery = (key, pageSize = 10, page = 1) =>
           image_url
           item_price
           item_qty_ordered
+              item_row_total
+          item_row_total_incl_tax
+          item_price_incl_tax
           category {
             id
             name

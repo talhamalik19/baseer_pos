@@ -35,7 +35,8 @@ export default async function Sales() {
   const serverCurrency = await CurrencyProvider();
   const currencySymbol = cookieStore.get("currency_symbol")?.value;
   const currency = cookieStore.get("currency_code")?.value;
-    const serverLanguage = await LanguageProvider()
+    const serverLanguage = await LanguageProvider();
+  const warehouseId = cookieStore?.get("warehouse_id")?.value || "" 
 
     return (
     <>
@@ -58,6 +59,7 @@ export default async function Sales() {
           currencySymbol={currencySymbol}
           currency={currency}
           serverLanguage={serverLanguage?.csvTranslations}
+          warehouseId={warehouseId}
         />
         <SyncHandler />
         <ServiceWorkerRegister />

@@ -17,7 +17,6 @@ export default async function Login() {
       const res = await loginAdminMagento({ email, password });
       if (res?.data) {
         const [token, posDetail] = res.data;
-
         if (token) {
           // Auth token
           cookieStore.set("jwt", token, {

@@ -13,6 +13,7 @@ import Link from "next/link";
 import { getAllOrders } from "@/lib/indexedDB";
 import { usePathname } from "next/navigation";
 import { printOrderDetail } from "@/lib/printOrderDetail";
+import { printReceipt } from "@/lib/printReceipt";
 
 export default function OrderDetail({ jwt, orderResponse, onBack }) {
   const [order, setOrder] = useState(orderResponse);
@@ -24,6 +25,8 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   const [pdfResponse, setPdfResponse] = useState({});
 
   const [responseMessage, setResponseMessage] = useState("");
+  const warehouseId = JSON.parse(localStorage.getItem("loginDetail"))?.warehouse
+    ?.warehouse_id;
 
   useEffect(() => {
     async function fetchOrders() {
@@ -94,15 +97,12 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
 
   const handleActionSubmit = async (actionData, entity_id, pos_code) => {
     const res = await submitRefundAction(actionData, entity_id, pos_code);
-    if (res) {
+    if (res && !res.message) {
       setResponseMessage("Order Refunded Successfully.");
     }
-    // if (actionData.actionType === 'refund') {
-    // }
-    // } else if (actionData.actionType === 'cancel') {
-    //   const res = await submitCancelAction(jwt, {...actionData, comment: actionData?.description})
-    //   setResponseMessage(res?.[0]?.message)
-    // }
+    if (res.message) {
+      setResponseMessage(res?.message);
+    }
   };
 
   const handleEmailInvoice = async (id) => {
@@ -110,20 +110,126 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
     if (res == true) {
       setResponseMessage("Email Sent");
     } else {
-      setResponseMessage(res?.message)
+      setResponseMessage(res?.message);
     }
   };
 
   // Add this function to your OrderDetail component
 
   const handlePrint = () => {
-    printOrderDetail(orderResponse, pdfResponse);
+    const order = orderResponse;
+    if (!order) return;
+
+    let subtotal = 0;
+    let totalTax = 0;
+
+    const cart = order.items.map((item) => {
+      const quantity = parseFloat(item.item_qty_ordered) || 1;
+      const rowTotal = parseFloat(item.item_row_total) || 0;
+      const rowTotalInclTax =
+        parseFloat(item.item_row_total_incl_tax) || rowTotal;
+      const taxAmount = rowTotalInclTax - rowTotal;
+
+      subtotal += rowTotal;
+      totalTax += taxAmount;
+
+      return {
+        addedAt: Date.now(),
+        uid: Number(item.item_id),
+        quantity,
+        selected_options: [],
+        product: {
+          uid: btoa(item.product_id.toString()),
+          id: Number(item.product_id),
+          name: item.product_name,
+          sku: item.product_sku,
+          stock_status: "IN_STOCK",
+          apply_discount_on: "both",
+          price: {
+            regularPrice: {
+              amount: { value: parseFloat(item.item_price), currency: "PKR" },
+            },
+          },
+          price_range: {
+            minimum_price: {
+              final_price: {
+                value: parseFloat(item.item_price),
+                currency: "PKR",
+              },
+            },
+          },
+          special_price: parseFloat(item.item_price),
+          tax_percent: 0,
+          pos_discount_percent: 0,
+          pos_stock: null,
+          is_pos_discount_allowed: null,
+          categories: item.category || [],
+          image: { url: item.image_url, label: item.product_name },
+          thumbnail: { url: item.image_url, label: item.product_name },
+          small_image: { url: item.image_url, label: item.product_name },
+          custom_price: null,
+          custom_attributes: null,
+          options: null,
+          __typename: "SimpleProduct",
+        },
+        taxAmount,
+      };
+    });
+
+    // Calculate cart-level discount automatically
+    const grandTotal =
+      parseFloat(order.order_grandtotal) || subtotal + totalTax;
+    const cartDiscount = subtotal + totalTax - grandTotal;
+
+    const totalAmount = grandTotal;
+    const amountPaid = totalAmount;
+    const balance = 0;
+
+    const customerDetails = {
+      name:
+        order.customer_firstname && order.customer_lastname
+          ? `${order.customer_firstname} ${order.customer_lastname}`
+          : `${order.shipping_address?.firstname || ""} ${
+              order.shipping_address?.lastname || ""
+            }`,
+      email: order.customer_email,
+      phone: order.shipping_address?.telephone,
+      city: order.shipping_address?.city,
+      country: order.shipping_address?.country_id,
+    };
+
+    printReceipt(
+      cart,
+      totalAmount,
+      amountPaid,
+      balance,
+      customerDetails,
+      pdfResponse || null,
+      order.increment_id,
+      "",
+      warehouseId,
+      order.fbr_invoice_id || null
+    );
   };
 
   const handlePrintInvoice = async (id) => {
-    const res = await printInvoiceAction(id);
-    if (res?.status == 200) {
-      window.open(res?.data?.url, "_blank");
+    // Open a blank tab immediately — within user click
+    const newTab = window.open("about:blank", "_blank");
+
+    try {
+      const res = await printInvoiceAction(id);
+
+      if (res?.status === 200 && res?.data?.url) {
+        // Redirect the already opened tab to the invoice URL
+        newTab.location.href = res.data.url;
+      } else {
+        newTab.close();
+        alert("Failed to generate invoice link.");
+      }
+    } catch (error) {
+      console.error("Error printing invoice:", error);
+      if (newTab) newTab.close();
+      alert("An error occurred while printing the invoice.");
     }
   };
 
@@ -158,17 +264,17 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
             </span>
           </span>
         </div>
-                <div className={styles.totalHeader}>
-        <span className={styles.totalHeaderText}>
-          Increment ID:{" "}
-          <span className={styles.totalAmount}>{order.increment_id}</span>
-        </span>
+        <div className={styles.totalHeader}>
+          <span className={styles.totalHeaderText}>
+            Increment ID:{" "}
+            <span className={styles.totalAmount}>{order.increment_id}</span>
+          </span>
         </div>
         <div className={styles.totalHeader}>
-        <span className={styles.totalHeaderText}>
-          Order Status:{" "}
-          <span className={styles.totalAmount}>{order.order_status}</span>
-        </span>
+          <span className={styles.totalHeaderText}>
+            Order Status:{" "}
+            <span className={styles.totalAmount}>{order.order_status}</span>
+          </span>
         </div>
         <table className={styles.receiptTable}>
           <tbody>
@@ -245,51 +351,57 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
                 </table>
               </td>
             </tr>
-            {/* Items Ordered row */}
             <tr className={styles.tableRow}>
               <td colSpan="2" className={styles.sectionCell}>
                 <div className={styles.sectionTitle}>Items Ordered</div>
                 {order.items &&
-                  order.items.map((item, index) => (
-                    <table key={index} className={styles.innerTable}>
-                      <tbody>
-                        <tr className={styles.innerTableRow}>
-                          <td className={styles.itemDetailsCell}>
-                            <span className={styles.itemName}>
-                              {item.product_name}
-                            </span>
-                            <br />
-                            <span className={styles.itemSku}>
-                              [{item.product_sku}]
-                            </span>
-                            <br />
-                            <span className={styles.itemQuantity}>
-                              Ordered: {item.item_qty_ordered || item?.qty}
-                            </span>
-                          </td>
-                          <td className={styles.itemPriceCell}>
-                            <span className={styles.priceTotal}>
-                              $
-                              {(
-                                (item.item_price || item?.base_price) *
-                                (item.item_qty_ordered || item?.qty)
-                              ).toFixed(2)}
-                            </span>
-                            <br />
-                            <span className={styles.priceDetail}>
-                              Origin Price: $
-                              {item?.item_price || item?.base_price}
-                            </span>
-                            <br />
-                            <span className={styles.priceDetail}>
-                              Price: ${item.item_price || item?.base_price}
-                            </span>
-                            <br />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  ))}
+                  order.items.map((item, index) => {
+                    const quantity = item.item_qty_ordered || item?.qty || 1;
+                    const price = parseFloat(
+                      item.item_price || item?.base_price || 0
+                    );
+                    const rowTotal = parseFloat(item.item_row_total || 0);
+                    const rowTotalInclTax = parseFloat(
+                      item.item_row_total_incl_tax || rowTotal
+                    );
+                    const tax = rowTotalInclTax - rowTotal;
+                    const totalAmount = rowTotalInclTax; // price * quantity + tax
+
+                    return (
+                      <table key={index} className={styles.innerTable}>
+                        <tbody>
+                          <tr className={styles.innerTableRow}>
+                            <td className={styles.itemDetailsCell}>
+                              <span className={styles.itemName}>
+                                {item.product_name}
+                              </span>
+                              <br />
+                              <span className={styles.itemSku}>
+                                [{item.product_sku}]
+                              </span>
+                              <br />
+                              <span className={styles.itemQuantity}>
+                                Ordered: {quantity}
+                              </span>
+                            </td>
+                            <td className={styles.itemPriceCell}>
+                              <span className={styles.priceDetail}>
+                                Price: ${price.toFixed(2)}
+                              </span>
+                              <br />
+                              <span className={styles.priceDetail}>
+                                Tax: ${tax.toFixed(2)}
+                              </span>
+                              <br />
+                              <span className={styles.priceTotal}>
+                                Total: ${totalAmount.toFixed(2)}
+                              </span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    );
+                  })}
               </td>
             </tr>
             {/* Payment and Shipping method row */}

@@ -48,9 +48,9 @@ const OrderControls = ({ cartItems, addItemsToSuspend, clearCart, getCartItems, 
   const acl = loginDetail?.admin_acl;
 
   const isSuperAdmin = Array.isArray(acl) && acl.length === 0;
-  const hasSuspendPermission = acl?.suspend_orders === true;
+  const hasSuspendPermission = acl?.orders_suspend === false;
 
-  return (isSuperAdmin || hasSuspendPermission);
+  return (isSuperAdmin || (!isSuperAdmin && !hasSuspendPermission));
 })() && (
   <p 
     className={styles.hold_orders} 

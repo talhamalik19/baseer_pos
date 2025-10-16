@@ -71,23 +71,23 @@ export default function OrderActionModal({
         qty: item.qty
       }));
 
-    const payload = {
-      items: refundItems,
-      notify: true,
-      arguments: {
-        shipping_amount: 0,
-        adjustment_positive: 0,
-        adjustment_negative: 0,
-        extension_attributes: {
-          return_to_stock_items: returnToStock
-        }
-      },
-      reason,
-      description,
-      email: order?.customer_email,
-      name: `${order.customer_firstname ? order.customer_firstname : "POS"} ${order?.customer_lastname ? order.customer_lastname : "Customer"}`
-    };
-    const entity_id = order?.entity_id;
+  const payload = {
+  items: refundItems.map(item => ({
+    order_item_id: item.order_item_id,
+    qty: item.qty
+  })),
+  notify: true,
+  extension_attributes: {
+    comment: reason || "Refund processed - customer returned damaged item",
+    return_to_stock_items: returnToStock
+  },
+  arguments: {
+    shipping_amount: 0,
+    adjustment_positive: 0,
+    adjustment_negative: 0
+  }
+};
+const entity_id = order?.entity_id;
     onSubmit(payload, entity_id, pos_code);
     resetAndClose();
   };

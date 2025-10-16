@@ -4,7 +4,7 @@ export function middleware(request) {
   const jwt = request.cookies.get("jwt")?.value;
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/" || pathname.startsWith("/forgetpassword") || pathname.startsWith("/changepassword") || pathname.startsWith("/feedback") || pathname.startsWith("/images/**") || pathname.startsWith("/consent") || pathname.startsWith("/invoice")) {
+  if (pathname === "/" || pathname.startsWith("/forgetpassword") || pathname.startsWith("/changepassword") || pathname.startsWith("/feedback") || pathname.startsWith(`${process.env.NEXT_PUBLIC_BASE_URL}/images/**`) || pathname.startsWith("/consent") || pathname.startsWith("/invoice")) {
     return NextResponse.next();
   }
   if (!jwt) {

@@ -1,28 +1,54 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { addToCart, getAllOrders, getCartItems, getPDFSettings, saveMultipleOrders, getViewMode, saveProducts } from '@/lib/indexedDB';
-import { getProducts } from '@/lib/Magento';
-import ProductView from './ProductView';
-import styles from './sales.module.scss';
-import { checkPOSCodeExists, getPOSData } from '@/lib/acl';
+import React, { useEffect, useState } from "react";
+import {
+  addToCart,
+  getAllOrders,
+  getCartItems,
+  getPDFSettings,
+  saveMultipleOrders,
+  getViewMode,
+  saveProducts,
+} from "@/lib/indexedDB";
+import { getProducts } from "@/lib/Magento";
+import ProductView from "./ProductView";
+import styles from "./sales.module.scss";
+import { checkPOSCodeExists, getPOSData } from "@/lib/acl";
 
-export default function SalesDetail({ jwt, productItems, ordersResponse, macAddress, username, currencySymbol, currency, serverLanguage }) {
+export default function SalesDetail({
+  jwt,
+  productItems,
+  ordersResponse,
+  macAddress,
+  username,
+  currencySymbol,
+  currency,
+  serverLanguage,
+  warehouseId,
+}) {
   const [products, setProducts] = useState([]);
+
+  const applyTaxAfterDiscount = parseInt(
+    JSON.parse(localStorage.getItem("loginDetail"))?.apply_tax_after_discount
+  );
+  const discountIncludingTax = parseInt(
+    JSON.parse(localStorage.getItem("loginDetail"))?.discount_including_tax
+  );
+  console.log(applyTaxAfterDiscount, discountIncludingTax)
+  const [payment, setPayment] = useState("checkmo");
   const [cartItems, setCartItems] = useState([]);
   const [pdfResponse, setPdfResponse] = useState({});
   const [orders, setOrders] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("");
-  const [posDetail, setPosDetail] = useState({})
-
+  const [posDetail, setPosDetail] = useState({});
 
   useEffect(() => {
     const fetchViewMode = async () => {
       const mode = await getViewMode();
       const data = localStorage.getItem("pos_code");
-      if(data){
-        setPosDetail(data)
+      if (data) {
+        setPosDetail(data);
       }
       setViewMode(mode);
     };
@@ -37,9 +63,9 @@ export default function SalesDetail({ jwt, productItems, ordersResponse, macAddr
     //   }
     // }
     // getPdf();
-    if(typeof window != undefined){
-      const res = JSON.parse(localStorage.getItem("jsonData"))
-      setPdfResponse(res)
+    if (typeof window != undefined) {
+      const res = JSON.parse(localStorage.getItem("jsonData"));
+      setPdfResponse(res);
     }
   }, []);
 
@@ -53,7 +79,7 @@ export default function SalesDetail({ jwt, productItems, ordersResponse, macAddr
           setProducts(offlineProducts);
         } else {
           setProducts(productItems?.items || []);
-          saveProducts(productItems?.items)
+          saveProducts(productItems?.items);
         }
       } catch (err) {
         console.error("IndexedDB Error:", err);
@@ -94,15 +120,18 @@ export default function SalesDetail({ jwt, productItems, ordersResponse, macAddr
   }, [ordersResponse]);
 
   // Handle adding product to cart
-  const handleAddToCart = async (product, options, quantity) => {
-    await addToCart(product, options, quantity);
+  const handleAddToCart = async (product, options, quantity, taxAmount) => {
+    await addToCart(product, options, quantity, taxAmount);
     const updatedCart = await getCartItems();
     setCartItems(updatedCart);
   };
 
+  const loginDetails = JSON.parse(localStorage.getItem("loginDetail"));
+  const fbrDetails = loginDetails?.fbr_tax?.[posDetail];
+
   return (
-    <div className='page_detail'>
-      <ProductView 
+    <div className="page_detail">
+      <ProductView
         products={products}
         setIsOpen={setIsOpen}
         handleAddToCart={handleAddToCart}
@@ -118,6 +147,12 @@ export default function SalesDetail({ jwt, productItems, ordersResponse, macAddr
         currencySymbol={currencySymbol}
         currency={currency}
         serverLanguage={serverLanguage}
+        warehouseId={warehouseId}
+        payment={payment}
+        setPayment={setPayment}
+        applyTaxAfterDiscount={applyTaxAfterDiscount}
+        discountIncludingTax={discountIncludingTax}
+        fbrDetails={fbrDetails}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import styles from "@/components/blocks/Reports/report.module.scss"
 import Suspend from '@/components/blocks/suspend';
 import CurrencyProvider from '@/components/global/CurrencyProvider';
 import LanguageProvider from '@/components/global/LanguageProvider';
+import ProtectedRoute from '@/components/shared/ProtectedRoute';
 
 export default async function SuspendedOrders({ params, searchParams }) {
     const cookieStore = await cookies();
@@ -22,6 +23,8 @@ export default async function SuspendedOrders({ params, searchParams }) {
 
   return (
     <>
+          <ProtectedRoute requiredPermission="orders_suspend">
+    
    <PageHead
            pageName={serverLanguage?.csvTranslations?.on_hold_orders ?? "On-Hold Orders"}
            firstName={firstname}
@@ -31,6 +34,7 @@ export default async function SuspendedOrders({ params, searchParams }) {
            serverLanguage={serverLanguage}
          />
     <Suspend serverLanguage={serverLanguage?.csvTranslations}/>
+    </ProtectedRoute>
     </>
   );
 }
