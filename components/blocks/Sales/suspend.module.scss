@@ -12,7 +12,11 @@
 }
 
   .hold_orders{
-          color: #4db6ac; font-weight: 500; text-decoration: underline; padding-top: 20px; cursor: pointer; text-align: center;
+          color: #4db6ac; font-weight: 500; padding-top: 20px; cursor: pointer; text-align: center;     cursor: not-allowed;
+    background-color: unset;
+    color: #00BBA7;
+    border: 1px solid #00BBA7;
+    margin-top: 15px;
         }
 
 .confirmation_modal {

@@ -74,7 +74,7 @@ export default function SalesDetail({
       if (typeof window === "undefined") return;
 
       try {
-        const offlineProducts = await getProducts();
+        const offlineProducts = await getProducts({});
         if (offlineProducts.length > 0) {
           setProducts(offlineProducts);
         } else {
@@ -130,7 +130,6 @@ export default function SalesDetail({
   const fbrDetails = loginDetails?.fbr_tax?.[posDetail];
 
   return (
-    <div className="page_detail">
       <ProductView
         products={products}
         setIsOpen={setIsOpen}
@@ -154,6 +153,5 @@ export default function SalesDetail({
         discountIncludingTax={discountIncludingTax}
         fbrDetails={fbrDetails}
       />
-    </div>
   );
 }

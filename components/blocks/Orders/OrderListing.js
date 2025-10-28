@@ -267,7 +267,6 @@ export default function OrderListing({ initialOrders, jwt, customerOrders, serve
   </ul>
 </div>
 
-      <div className="page_detail section_padding">
         <div className="search_row">
           <Search 
             jwt={jwt} 
@@ -310,6 +309,7 @@ export default function OrderListing({ initialOrders, jwt, customerOrders, serve
             {filtersApplied ? serverLanguage?.remove_filter ?? "Remove Filter" : serverLanguage?.apply_filter ?? "Apply Filter"}
           </button>
         </div>
+      <div className="page_detail section_padding">
 
         <OrderList 
           showCta={false} 

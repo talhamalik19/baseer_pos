@@ -60,10 +60,10 @@
    box-shadow: 0px 1px 3px 0px #0000001A; border-radius: 8px;
 
   .invoice_item{
-background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
+background: white;
     padding: 30px 20px; text-align: center;
     display: flex;
-    justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; flex-direction: column; gap: 10px;
+    justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; flex-direction: column; gap: 10px; border-radius: 8px;
     .company_detail{
           img{
             color: transparent; border: 1px solid #E2E8F0; padding: 9px; background-color: white; border-radius: 8px;
@@ -94,7 +94,7 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
     }
   }
   .address{
-        display: flex; align-items: center; gap: 10px; margin: 0px; padding: 15px 20px; background-color: #F8FAFC; font-size: 14px;
+        display: flex; align-items: center; gap: 10px; margin: 0px; background-color: #fff; font-size: 14px;
     color: #314158; justify-content: center;
   }
 }
@@ -102,7 +102,7 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
   .sales_invoice_box{
         padding: 24px 20px; margin: 12px 0px; background: white; box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A; border-radius: 8px; border: 1px solid #E2E8F0;
         & > div{
-          display: flex; align-items: center;  justify-content: space-between;
+          display: flex; align-items: center;  justify-content: center;   align-items: center;
           .sales_title{
                 display: flex; align-items: center; gap: 20px;
                 svg{
@@ -127,7 +127,7 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
           }
         }
         .invoice_num{
-          border: 1px solid #F8FAFC; padding: 10px; margin-top: 15px;  background: #F8FAFC; border-radius: 8px;
+          // border: 1px solid #F8FAFC; padding: 10px; margin-top: 15px;  background: #F8FAFC; border-radius: 8px;
           p{
             margin: 0; font-size: 16px; line-height: 26px; color: #0F172B; font-weight: 500;
           }
@@ -138,8 +138,8 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
             @media screen and (max-width: 767px) {
               & > div{
                 flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
+    // align-items: flex-start;
+    // gap: 20px;
     .invoice_num{
       flex-direction: column;
     }
@@ -150,7 +150,11 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
   .cashier_customer{
     display: flex; justify-content: space-between; flex-direction: column; gap: 20px;
     .cashier, .customer{
-      display: flex; align-items: center; gap: 20px; padding: 24px 20px; background: white; flex: 1;  border-radius: 8px;
+      // display: flex; align-items: center; gap: 20px;
+       padding: 24px 20px; background: white; flex: 1;  border-radius: 8px;
+      .cashier_detail{
+        display: flex; justify-content: space-between; align-items: center;
+      }
       svg{
         background-color: #EFF6FF; padding: 10px; border-radius: 8px;
       }
@@ -166,8 +170,8 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
   .feedback_section {
   margin-top: 20px;
   padding: 20px;
-  background: #fff9f0;
-  border: 1px solid #fcd9b6;
+  background: #fff;
+  // border: 1px solid #fcd9b6;
   border-radius: 10px;
   text-align: center;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
@@ -190,21 +194,22 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
       color: #d1d5db;
       cursor: pointer;
       transition: all 0.2s ease;
+       border: 1px solid #D1D5DC;
+    padding: 0px 3px; border-radius: 8px;
 
       &:hover {
-        color: #f59e0b;
-        transform: scale(1.2);
+border: 1px solid black; background-color: #f3f4f6;  
       }
     }
 
     .active {
-      color: #f59e0b;
+      color: #1e2939;
     }
   }
 
   .rating_text {
     font-size: 14px;
-    color: #ef4444;
+    color: #1e2939;
     margin-bottom: 15px;
   }
 
@@ -246,7 +251,7 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
   .submit_btn {
     margin-top: 15px;
     width: 100%;
-    background: #f59e0b;
+    background: #1e2939;
     color: white;
     padding: 12px;
     border: none;
@@ -257,7 +262,7 @@ background: linear-gradient(90deg, #F8FAFC 0%, #F1F5F9 100%);
     transition: all 0.2s ease;
 
     &:hover {
-      background: #ea580c;
+      background: #1e2939;
     }
   }
 }
@@ -373,7 +378,9 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
   .summary_total{
     padding: 10px 0px;
     .summary_total_block{
-      padding: 10px; display: flex; align-items: center; justify-content: space-between; font-weight: 500;
+      padding: 10px; display: flex; align-items: center; justify-content: space-between; font-weight: 500; border: 1px solid #E5E7EB;
+    margin-bottom: 10px;
+    border-radius: 8px; background: #fff;
       // &:first-child{
       //   border: 1px solid #A4F4CF; border-radius: 8px;
       // }
@@ -385,7 +392,7 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
 .fbr_social{
       display: flex;
     gap: 15px;
-    margin-top: 20px;
+    margin-top: 20px; flex-direction: column;
   .social{
    & > p{
       padding-bottom: 16px;
@@ -458,7 +465,7 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
       }
     }
     .bottom{
-      font-weight: 500; text-align: center;
+      font-weight: 500; text-align: center; display: flex; gap: 10px; align-items: center; justify-content: center; color: #4A5565;
     }
     .answer_wrapper {
   max-height: 0;
@@ -490,7 +497,7 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
 }
 
 .question_opened .toggle_icon {
-  transform: rotate(180deg);
+  transform: rotate(90deg);
 }
 
 
@@ -704,20 +711,37 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
 
 .swiper{
   position: relative; margin-top: 20px;
+  .swiperImage{
+    position: relative; width: 100%; height: 300px;
+    .overlay{
+      background: #00000066;
+    position: absolute;
+    top: 0px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    }
+  }
   img{
     border-radius: 8px;
   }
   .banner_text{
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;
     .banner_title{
-      color: #f68e53; font-weight: 700; font-size: 40px; line-height: 50px;
+      color: #fff; font-weight: 500; font-size: 24px; line-height: 34px;
     }
     .banner_desc{
-      color: black; font-size: 20px; font-weight: 500;
+      color: white; font-size: 20px; font-weight: 500;
     }
   }
 }
 
 .thank{
   text-align: center;
+}
+.baseer{
+  font-size: 24px; line-height: 34px; font-weight: 500; color: #101828;
+}
+.privacyLink{
+  font-size: 16px; line-height: 26px; color: #4A5565; font-weight: 500;
 }

@@ -71,6 +71,7 @@ const tableHead = {
         currentPage * pageSize
       );
 
+  
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
     setPage?.(newPage);
@@ -108,21 +109,27 @@ const tableHead = {
           <tbody>
             {paginatedOrders.map((order) => (
               <tr key={order.increment_id}>
-                <td>{order.increment_id}</td>
-                <td className={styles.name}>
-                  {`${order.customer_firstname ?? 'POS'} ${order.customer_lastname ?? "Customer"}`}
-                </td>
+                <td    className={`${styles.id} ${  order?.order_status === "complete"
+        ? styles.complete
+        : order?.order_status === "pending"
+        ? styles.pending
+        : styles.cancelled}`}>{order.increment_id}</td>
+                    <td className={styles.name}> <div><div><span>{order?.customer_firstname ? order?.customer_firstname?.charAt(0) : "P"}</span><span>{order?.customer_lastname ? order?.customer_lastname?.charAt(0) : "C"}</span></div></div>
+      {`${order?.customer_firstname ?? "POS"} ${
+        order?.customer_lastname ?? "Customer"
+      }`}
+    </td>
                 <td>
                   {order.items.map(item => item.product_name).join(", ")}
                 </td>
                 <td className={styles.amount}>${order.order_grandtotal}</td>
-                <td className={styles.amount}>
+                <td>
                   {order.increment_id.startsWith("POS") || order.increment_id.startsWith("ORD") ? "POS" : "Web/Mobile"}
                 </td>
-                <td className={styles.amount}>
+                <td>
                   {formatDate(order.created_at)}
                 </td>
-                <td className={styles.amount}>
+                <td>
                   {order?.shipping_address?.telephone || 'N/A'}
                 </td>
                 <td>

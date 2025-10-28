@@ -325,8 +325,11 @@ export default function Invoice({
                   {warehouseInitialDetails?.closing_hrs ?? ""}
                 </div>
               )}
+              <p className={style.address}>
+                {warehouseInitialDetails?.store_address}
+              </p>
             </div>
-            <p className={style.address}>
+            {/* <p className={style.address}>
               <svg
                 width="17"
                 height="17"
@@ -350,13 +353,13 @@ export default function Invoice({
                 />
               </svg>
               {warehouseInitialDetails?.store_address}
-            </p>
+            </p> */}
           </div>
 
           <div className={style.sales_invoice_box}>
             <div>
               <div className={style.sales_title}>
-                <svg
+                {/* <svg
                   width="21"
                   height="21"
                   viewBox="0 0 21 21"
@@ -384,30 +387,30 @@ export default function Invoice({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                </svg>
+                </svg> */}
                 <div className={style.sales_title_text}>
                   <p className={style.text}>Sales Invoice</p>
-                  <p>Transaction Details</p>
+                  {/* <p>Transaction Details</p> */}
                 </div>
               </div>
               <div className={style.sales_summary}>
-                <p className={style.date}>
+                <span className={style.date}>
                   {order?.created_at?.split(" ")?.[0]}
-                </p>
-                <p className={style.time}>
+                </span>
+                <span className={style.time}>
                   {order?.created_at?.split(" ")?.[1]}
-                </p>
+                </span>
               </div>
             </div>
             <div className={style.invoice_num}>
-              <p className={style.title}>Invoice Number</p>
-              <p>{order?.increment_id}</p>
+              {/* <p className={style.title}>Invoice Number</p> */}
+              <p>{`Invoice# ${order?.increment_id}`}</p>
             </div>
           </div>
 
           <div className={style.cashier_customer}>
             <div className={style.cashier}>
-              <svg
+              {/* <svg
                 width="17"
                 height="17"
                 viewBox="0 0 17 17"
@@ -428,8 +431,8 @@ export default function Invoice({
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-              </svg>
-              <div>
+              </svg> */}
+              <div className={style.cashier_detail}>
                 <p className={style.text}>Cashier</p>
                 <p className={style.name}>
                   {order?.admin_user
@@ -438,8 +441,12 @@ export default function Invoice({
                     : ""}
                 </p>
               </div>
+              <div className={style.cashier_detail}>
+                <p className={style.text}>Email</p>
+                <p className={style.name}>{order?.customer_email}</p>
+              </div>
             </div>
-            <div className={style.customer}>
+            {/* <div className={style.customer}>
               <svg
                 width="17"
                 height="17"
@@ -460,7 +467,7 @@ export default function Invoice({
                 <p className={style.text}>{order?.customer_email}</p>
                 <p className={style.name}>Email</p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Feedback Rating Section */}
@@ -653,7 +660,7 @@ export default function Invoice({
                   </Link>
                 ))}
               </div>
-              <p>Follow for updates</p>
+              {/* <p>Follow for updates</p> */}
             </div>
           </div>
 
@@ -694,7 +701,39 @@ export default function Invoice({
                 >
                   {item?.title}
                   <span className={style.toggle_icon}>
-                    {accordionOpen === index ? "−" : "+"}
+                    {accordionOpen === index ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="17"
+                        height="17"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="lucide lucide-chevron-right h-4 w-4 text-gray-400 transition-transform duration-200 rotate-90"
+                        aria-hidden="true"
+                      >
+                        <path d="m9 18 6-6-6-6"></path>
+                      </svg>
+                    ) : (
+                      <svg
+                        width="17"
+                        height="17"
+                        viewBox="0 0 17 17"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M6.5 12.5781L10.5 8.57813L6.5 4.57812"
+                          stroke="#99A1AF"
+                          stroke-width="1.33333"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        />
+                      </svg>
+                    )}
                   </span>
                 </p>
                 <div
@@ -713,13 +752,46 @@ export default function Invoice({
               </div>
             ))}
 
-            <div className={style.bottom}>Customer satisfaction guaranteed</div>
+            <div className={style.bottom}>
+              <svg
+                width="17"
+                height="17"
+                viewBox="0 0 17 17"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M15.1512 7.24478C15.4556 8.73898 15.2387 10.2924 14.5364 11.646C13.8342 12.9996 12.6891 14.0715 11.2922 14.683C9.89527 15.2945 8.33093 15.4086 6.86004 15.0064C5.38916 14.6041 4.10064 13.7097 3.20936 12.4724C2.31808 11.2351 1.87793 9.72961 1.96229 8.20704C2.04665 6.68447 2.65043 5.23684 3.67294 4.10557C4.69546 2.97429 6.0749 2.22774 7.58122 1.99042C9.08754 1.7531 10.6297 2.03936 11.9505 2.80145"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M6.61719 7.91154L8.61719 9.91154L15.2839 3.24487"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              Customer satisfaction guaranteed
+            </div>
           </div>
+          {console.log(copyrightLines)}
           <div className={style.footer}>
-            {copyrightLines?.map((line, index) => (
-              <p key={index}>{line}</p>
-            ))}
-          </div>
+  <p>
+    Powered by <Link className={style.baseer} href={'https://web.baseer.ca'} target="_blank">{copyrightLines?.[1] || "Baseer"}</Link>
+  </p>
+  <p>{copyrightLines?.[2]}</p>
+  <p>
+    <Link target="_blank" href="https://baseer.ca/privacy-policy" className={style.privacyLink}>
+      {copyrightLines?.[3] || "Privacy Policy"}
+    </Link>
+  </p>
+  <p>{copyrightLines?.[4]}</p>
+</div>
+
         </div>
       </div>
       <SimpleAlertModal

@@ -133,23 +133,18 @@ export default function EmployeeDetail({ jwt, employee, user, warehouseCodes, se
   }, [permissions]);
 
   return (
-    <div className="page_detail">
+    <>
       <div className="search">
         <Search
           placeholder={serverLanguage?.search_employee ?? "Search Employee"}
           isEmployee={true}
           employee={originalEmployees}
           setEmployeeRecord={handleSearch}
+          canAddEmployee={canAddEmployee}
+          handleEmployeeCreate={handleEmployeeCreate} serverLanguage={serverLanguage}
         />
-        {canAddEmployee && (
-          <button
-            onClick={handleEmployeeCreate}
-            className={dashboardStyles.employee_button}
-          >
-            {serverLanguage?.add_new_employee ?? 'Add New Employee'}
-          </button>
-        )}
       </div>
+    <div className="page_detail">
 
       <div className={dashboardStyles.orders}>
         <div className={dashboardStyles.order_head}>
@@ -233,5 +228,6 @@ export default function EmployeeDetail({ jwt, employee, user, warehouseCodes, se
         />
       )}
     </div>
+      </>
   );
 }

@@ -30,13 +30,13 @@ export default async function Sales() {
     lastname?.charAt(0) || ""
   }`.toUpperCase();
 
-  const products = await getProducts({ id: "", pos_code: pos_code });
-  // ordersResponse = await getOrders();
   const serverCurrency = await CurrencyProvider();
   const currencySymbol = cookieStore.get("currency_symbol")?.value;
   const currency = cookieStore.get("currency_code")?.value;
     const serverLanguage = await LanguageProvider();
   const warehouseId = cookieStore?.get("warehouse_id")?.value || "" 
+  const products = await getProducts({ id: "", pos_code: pos_code, currency: currency });
+  // ordersResponse = await getOrders();
 
     return (
     <>

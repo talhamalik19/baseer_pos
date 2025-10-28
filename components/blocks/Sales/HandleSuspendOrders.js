@@ -52,13 +52,13 @@ const OrderControls = ({ cartItems, addItemsToSuspend, clearCart, getCartItems, 
 
   return (isSuperAdmin || (!isSuperAdmin && !hasSuspendPermission));
 })() && (
-  <p 
+  <button 
     className={styles.hold_orders} 
     onClick={openConfirmModal}
     style={{ cursor: cartItems?.length > 0 ? 'pointer' : 'not-allowed' }}
   >
     Hold Order
-  </p>
+  </button>
 )}
 
       {/* Confirmation Modal */}

@@ -12,6 +12,7 @@ import {
   getOrdersAction,
   searchProductsAction,
 } from "@/lib/Magento/actions";
+import { getViewMode, saveViewMode } from "@/lib/indexedDB";
 
 export default function Search({
   isProduct,
@@ -36,11 +37,34 @@ export default function Search({
   posDetail,
   total_count,
   originalCustomers,
+  styles,
+  viewMode,
+  setViewMode,
+  canAddEmployee,
+  handleEmployeeCreate,
+  serverLanguage
 }) {
   const code = posDetail;
   const router = useRouter();
   const searchRef = useRef(null);
   const resultsRef = useRef(null);
+
+    // const [viewMode, setViewMode] = useState("cards"); // Default to cards view
+  
+    useEffect(() => {
+      const fetchViewMode = async () => {
+        const mode = await getViewMode();
+        if (mode) {
+          setViewMode(mode);
+        }
+      };
+      fetchViewMode();
+    }, []);
+  
+    const handleViewChange = async (mode) => {
+      setViewMode(mode);
+      await saveViewMode(mode);
+    };
 
   const [searchValue, setSearchValue] = useState("");
   const [searchResults, setLocalSearchResults] = useState([]);
@@ -318,6 +342,53 @@ useEffect(() => {
         aria-label="Search"
         autoComplete="off"
       />
+
+      {isEmployee && canAddEmployee && (
+          <button
+            onClick={handleEmployeeCreate}
+            className="add_employee_btn"
+          >
+            {serverLanguage?.add_new_employee ?? 'Add New Employee'}
+          </button>
+        )}
+      {isPos &&  <div className={styles.view_controls}>
+            <div className={styles.view_selector}>
+              <button
+                className={`${styles.view_btn} ${
+                  viewMode === "cards" ? styles.active : ""
+                }`}
+                onClick={() => handleViewChange("cards")}
+                aria-label="Cards View"
+              >
+               <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.6667 2H3.33333C2.59695 2 2 2.59695 2 3.33333V12.6667C2 13.403 2.59695 14 3.33333 14H12.6667C13.403 14 14 13.403 14 12.6667V3.33333C14 2.59695 13.403 2 12.6667 2Z" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2 6H14" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2 10H14" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6 2V14" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M10 2V14" stroke="white" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+              </button>
+
+              <button
+                className={`${styles.view_btn} ${
+                  viewMode === "table" ? styles.active : ""
+                }`}
+                onClick={() => handleViewChange("table")}
+                aria-label="Table View"
+              >
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M2 3.33334H2.00667" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2 8H2.00667" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2 12.6667H2.00667" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.33325 3.33334H13.9999" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.33325 8H13.9999" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M5.33325 12.6667H13.9999" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
+              </button>
+            </div>
+          </div>}
 
       {showPopup && searchResults.length > 0 && (
         <div className="search-suggestions" ref={resultsRef}>

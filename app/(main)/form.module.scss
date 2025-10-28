@@ -4,42 +4,39 @@
     padding: 45px 0px 0px 70px; background-color: style.$backgroundColor;
 }
 .footer{
-    @include style.flex(space-between, center, 0); padding: 40px 70px; background-color: #1A2432; color: style.$whiteColor; box-sizing: border-box;
+    @include style.flex(space-between, center, 0); padding: 40px; background-color: style.$footerBgColor; color: style.$FooterTextColor; box-sizing: border-box;
     & > div{
         @include style.flex(flex-start, center, 20px); width: max-content; font-size: 16px; line-height: 24px; font-weight: normal; color: #B1BBC9;
         p{
           a{  padding-left: 5px;}
         }
         span{
-            color: #D1DAF4
+            color: style.$FooterTextColor;
         }
         ul{
             @include style.flex(flex-start, center, 20px);
         }
     }
     a{
-        color: #B1BBC9;
+        color: style.$FooterTextColor;
     }
 }
   
 .form{
     height: calc(100vh - 207px); display: flex; align-items: center; justify-content: center; background-color: style.$backgroundColor; text-align: left;
     .title {
-      font-size: 26px; font-weight: 600; font-weight: 600; line-height: 36px; margin-bottom: 10px;
+      font-size: 26px; font-weight: 600; font-weight: 600; line-height: 36px; margin-bottom: 10px; color: style.$PrimaryHeading;
     }
     .subtitle {
-      color: #667085; font-size: 17px; line-height: 24px; font-weight: 480; margin-bottom: 40px;
+      color: style.$TextColor; font-size: 16px; line-height: 24px; font-weight: 480; margin-bottom: 40px;
     }
     .form_block{
         max-width: 450px; width: 100%;
     }
-    .login_form{
-        border-bottom: 1px solid #D0D5DD; padding-bottom: 40px;
-    }
     .forgotPassword{
-        margin-top: 40px; 
+        margin-block: 24px; text-align: right;
         a{
-            color: #475467; font-size: 16px; line-height: 24px; font-weight: 500;
+            color: style.$LinkColor; font-size: 14px; line-height: 24px; font-weight: 400;
         }
     }
 }
@@ -47,22 +44,22 @@
   
  /* INPUT FIELDS */
 .input_box {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    margin: 20px 0;
-    .label, svg {
-        position: absolute; top: 50%;  left: 20px; transform: translateY(-50%); color: #535354; transition: 0.2s; cursor: text;
+    position: relative; display: flex; flex-direction: column;  margin: 20px 0;
+    svg {
+        position: absolute; top: 63%;  left: 20px; transform: translateY(-50%); color: #535354; transition: 0.2s; cursor: text;
     }
     .label{
-        left: 50px;
+        padding-bottom: 8px; color: style.$LabelColor;
     }
   }
   
   .input_field {
-   height: 64px; font-size: 16px; color: #000; padding: 0 20px 0px 50px; border: 2px solid #D8DCE2; transition: 0.3s; background-color: style.$whiteColor; border-radius: 10px;
+   height: 55px; font-size: 16px; color: #000; padding: 0 20px 0px 50px; border: 2px solid #D8DCE2; transition: 0.3s; background-color: style.$whiteColor; border-radius: 14px;
     &:focus{
-        background-color: unset; border: 2px solid style.$PrimaryColor; border-radius: 10px; outline: none;
+        background-color: unset; border: 2px solid style.$PrimaryColor; border-radius: 14px; outline: none;
+    }
+    &::placeholder{
+        color: style.$PlaceholderColor;
     }
     &:focus, &:valid{
         & ~ .label{
@@ -72,26 +69,15 @@
 }
 
 .submit_btn{
-    @include style.flex(flex-end, center, 0px); color: style.$whiteColor; width: 100%;
+    @include style.flex(flex-end, center, 0px); color: style.$whiteColor; width: 100%; 
+    .btn_submit {
+     padding: 15px; background-color: style.$PrimaryColor; color: #fff; font-size: 18px; font-weight: 500;  border: none; line-height: 28px; border-radius: 8px; cursor: pointer;  transition: 0.3s; width: 100%; box-shadow: 0px 4px 6px -4px #00BBA740; box-shadow: 0px 10px 15px -3px #00BBA740; width: 100%;
+      &:disabled{
+          opacity: 0.6;
+      }
+    }
 }
   
-  .btn_submit {
-   padding: 15px;
-    background-color: style.$PrimaryColor;
-    color: #fff;
-    font-size: 18px;
-    font-weight: 500;
-    border: none;
-    line-height: 28px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: 0.3s;
-    max-width: 110px;
-    width: 100%;
-    &:disabled{
-        opacity: 0.6;
-    }
-  }
 
 @media screen and (min-width: 200px) and (max-width: 1024px) {
     .header{

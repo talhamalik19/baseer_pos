@@ -42,10 +42,10 @@ export default function ProductView({
     fetchViewMode();
   }, []);
 
-  const handleViewChange = async (mode) => {
-    setViewMode(mode);
-    await saveViewMode(mode);
-  };
+  // const handleViewChange = async (mode) => {
+  //   setViewMode(mode);
+  //   await saveViewMode(mode);
+  // };
 
   return (
     <>
@@ -59,13 +59,16 @@ export default function ProductView({
           ordersResponse={orders}
           isPos={true}
           posDetail={posDetail}
+          styles={styles}
+          setViewMode={setViewMode}
+          viewMode={viewMode}
           // payment={payment}
         />
       </div>
-
+      <div className="page_detail">
       <div className={styles.cart_summary}>
         <div className={styles.table_block_cart}>
-          <div className={styles.view_controls}>
+          {/* <div className={styles.view_controls}>
             <div className={styles.view_selector}>
               <button
                 className={`${styles.view_btn} ${
@@ -135,7 +138,7 @@ export default function ProductView({
                 </svg>
               </button>
             </div>
-          </div>
+          </div> */}
 
           {cartItems?.length > 0 ? (
             <>
@@ -155,9 +158,9 @@ export default function ProductView({
               ) : (
                 <div className={styles.grid_wrapper}>
                   <div className={styles.grid_4}>
-                    {cartItems.map((item, index) => (
+                    {cartItems.map((item) => (
                       <Cards
-                        key={index}
+    key={item?.addedAt || item?.product?.uid}
                         item={item?.product}
                         record={item}
                         cards={true}
@@ -202,6 +205,7 @@ export default function ProductView({
             fbrDetails={fbrDetails}
           />
         </div>
+      </div>
       </div>
     </>
   );

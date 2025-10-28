@@ -1,4 +1,4 @@
-import { Wix_Madefor_Display } from "next/font/google";
+import { Inter, Wix_Madefor_Display } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
 import style from "@/app/(main)/form.module.scss";
@@ -6,6 +6,11 @@ import "@/styles/global.scss"
 import LanguageProvider from "@/components/global/LanguageProvider";
 
 const wixMadeForDisplay = Wix_Madefor_Display({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
+const inter = Inter({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
@@ -21,7 +26,7 @@ export default async function RootLayout({ children }) {
   const serverLanguage = langugae?.csvTranslations;
   return (
     <html lang="en">
-   <body className={wixMadeForDisplay?.className}>
+   <body className={inter?.className}>
       <header className={style.header}>
         <Link href="/dashboard">
           <Image

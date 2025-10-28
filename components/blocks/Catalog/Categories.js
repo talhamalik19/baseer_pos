@@ -15,6 +15,7 @@ import {
 import PageHead from "@/components/global/PageHead";
 import { fetchProductsAction as fetchMagentoProducts, getCategoriesAction as fetchMagentoCategories } from "@/lib/Magento/actions";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import Search from "@/components/shared/Search";
 
 // Helper function to normalize categories
 const normalizeCategories = (categories) => {
@@ -295,6 +296,22 @@ export default function Categories({
   const handleAddToCart = useCallback(async (product, options, quantity) => {
     await addToCart(product, options, quantity);
   }, []);
+
+    const handleSearch = (results) => {
+      if (results.length > 0) {
+        // Filter search results to only show simple products
+        // const simpleResults = results.filter((item) => item?.__typename === "SimpleProduct");
+        setDisplayedProducts(results);
+      } else {
+        // When search is cleared, show all simple products
+        setDisplayedProducts(displayedProducts);
+      }
+    };
+
+      const handleSelectChange = (event) => {
+    const selectedValue = event.target.value;
+    setSort(selectedValue);
+  };
   return (
     <>
       <PageHead
@@ -354,6 +371,28 @@ export default function Categories({
               );
             })}
           </div>
+           <div className="search_row">
+        <Search
+          isProduct={true}
+          handleAddToCart={handleAddToCart}
+          products={products} 
+          placeholder={language?.search_products ?? "Search Products"}
+          setProducts={handleSearch}
+        />
+
+        <div className="sort-button section_padding">
+        <p className="sort">Sort by:</p>
+          <div className="sort-dropdown">
+            <select onChange={handleSelectChange}>
+              <option value="">{language?.default ?? 'Default'}</option>
+              <option value="sort: { name: ASC }">{language?.name_asc ?? 'Name (ASC)'}</option>
+               <option value="sort: { name: DESC }">{language?.name_desc ?? 'Name (DESC)'}</option>
+              <option value="sort: { price: ASC }">{language?.price_asc ?? 'Price (ASC)'}</option>
+              <option value="sort: { price: DESC }">{language?.price_desc ?? 'Price (DESC)'}</option>
+            </select>
+          </div>
+        </div>
+      </div>
 
           <Products
             products={products}

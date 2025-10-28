@@ -170,6 +170,7 @@ export default function RegisterPOS({
     return (
       <div className={`${style.block} page_detail`} style={containerStyle}>
         <div className={style.header}>
+          <div className={style.secHead}>
           <h2 className={`${style.title} ${style.manage_title}`}>
             {`${serverLanguage?.pos_details ?? "POS Details"} ${warehouseDetail && `${serverLanguage?.for ?? "for"} ${warehouseDetail?.name}`}`}
           </h2>
@@ -179,12 +180,20 @@ export default function RegisterPOS({
               `● ${serverLanguage?.inactive ?? "Inactive"}`
             }
           </div>
+          </div>
+            <p className={style.des}>Complete information about this POS location</p>
         </div>
         
         <div className={style.cardsGrid}>
           {/* Basic Information Card */}
           <div className={style.card}>
             <h3 className={style.cardTitle}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M10.6667 6.66667C10.6667 7.37392 10.3858 8.05219 9.88566 8.55229C9.38556 9.05239 8.70728 9.33334 8.00004 9.33334C7.2928 9.33334 6.61452 9.05239 6.11442 8.55229C5.61433 8.05219 5.33337 7.37392 5.33337 6.66667" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2.0686 4.02266H13.9313" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2.26667 3.64466C2.09357 3.87546 2 4.15617 2 4.44466V13.3333C2 13.6869 2.14048 14.0261 2.39052 14.2761C2.64057 14.5262 2.97971 14.6667 3.33333 14.6667H12.6667C13.0203 14.6667 13.3594 14.5262 13.6095 14.2761C13.8595 14.0261 14 13.6869 14 13.3333V4.44466C14 4.15617 13.9064 3.87546 13.7333 3.64466L12.4 1.86666C12.2758 1.70107 12.1148 1.56666 11.9296 1.47409C11.7445 1.38152 11.5403 1.33333 11.3333 1.33333H4.66667C4.45967 1.33333 4.25552 1.38152 4.07038 1.47409C3.88524 1.56666 3.7242 1.70107 3.6 1.86666L2.26667 3.64466Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
               {serverLanguage?.basic_information ?? "Basic Information"}
             </h3>
             
@@ -201,12 +210,12 @@ export default function RegisterPOS({
               
               <div className={style.infoRow}>
                 <span className={style.label}>{serverLanguage?.phone ?? "Phone:"}</span>
-                <span className={style.value}>{existingPosData.pos_phone}</span>
+                <a href={`tel:${existingPosData.pos_phone}`} className={`${style.value} ${style.link}`}>{existingPosData.pos_phone}</a>
               </div>
               
               <div className={style.infoRow}>
                 <span className={style.label}>{serverLanguage?.email ?? "Email:"}</span>
-                <span className={`${style.value} ${style.breakAll}`}>{existingPosData.pos_email}</span>
+                <a href={`mailto:${existingPosData?.pos_email}`} className={`${style.value} ${style.link} ${style.breakAll}`}>{existingPosData.pos_email}</a>
               </div>
               
               <div className={style.infoRow}>
@@ -219,25 +228,30 @@ export default function RegisterPOS({
           {/* Location Information Card */}
           <div className={style.card}>
             <h3 className={style.cardTitle}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.3334 6.66666C13.3334 9.99533 9.64069 13.462 8.40069 14.5327C8.28517 14.6195 8.14455 14.6665 8.00002 14.6665C7.85549 14.6665 7.71487 14.6195 7.59935 14.5327C6.35935 13.462 2.66669 9.99533 2.66669 6.66666C2.66669 5.25217 3.22859 3.89562 4.22878 2.89543C5.22898 1.89523 6.58553 1.33333 8.00002 1.33333C9.41451 1.33333 10.7711 1.89523 11.7713 2.89543C12.7715 3.89562 13.3334 5.25217 13.3334 6.66666Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 8.66667C9.10457 8.66667 10 7.77124 10 6.66667C10 5.5621 9.10457 4.66667 8 4.66667C6.89543 4.66667 6 5.5621 6 6.66667C6 7.77124 6.89543 8.66667 8 8.66667Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
               {serverLanguage?.location_address ?? "Location & Address"}
             </h3>
             
             <div className={style.cardContent}>
               <div className={style.addressSection}>
-                <span className={style.addressLabel}>{serverLanguage?.address ?? "Address:"}</span>
+                <span className={style.label}>{serverLanguage?.address ?? "Address:"}</span>
                 <p className={style.addressValue}>
                   {formatAddress(existingPosData.pos_address)}
                 </p>
               </div>
               
-              <div className={style.infoRow}>
+              <div className={style.addressSection}>
                 <span className={style.label}>{serverLanguage?.coordinates ?? "Coordinates:"}</span>
                 <span className={style.value}>
                   {existingPosData.latitude}, {existingPosData.longitude}
                 </span>
               </div>
               
-              <div className={style.infoRow}>
+              <div className={style.addressSection}>
                 <span className={style.label}>{serverLanguage?.ip_address ?? "IP Address:"}</span>
                 <span className={`${style.value} ${style.ipAddress}`}>
                   {existingPosData.ip_address}
@@ -249,6 +263,11 @@ export default function RegisterPOS({
           {/* Settings & Permissions Card */}
           <div className={style.card}>
             <h3 className={style.cardTitle}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M13.3334 6.66666C13.3334 9.99533 9.64069 13.462 8.40069 14.5327C8.28517 14.6195 8.14455 14.6665 8.00002 14.6665C7.85549 14.6665 7.71487 14.6195 7.59935 14.5327C6.35935 13.462 2.66669 9.99533 2.66669 6.66666C2.66669 5.25217 3.22859 3.89562 4.22878 2.89543C5.22898 1.89523 6.58553 1.33333 8.00002 1.33333C9.41451 1.33333 10.7711 1.89523 11.7713 2.89543C12.7715 3.89562 13.3334 5.25217 13.3334 6.66666Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 8.66667C9.10457 8.66667 10 7.77124 10 6.66667C10 5.5621 9.10457 4.66667 8 4.66667C6.89543 4.66667 6 5.5621 6 6.66667C6 7.77124 6.89543 8.66667 8 8.66667Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
               {serverLanguage?.settings_permissions ?? "Settings & Permissions"}
             </h3>
             <div className={style.cardContent}>
@@ -287,19 +306,24 @@ export default function RegisterPOS({
           {/* Timestamps Card */}
           <div className={style.card}>
             <h3 className={style.cardTitle}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 4V8L10.6667 9.33333" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M7.99998 14.6666C11.6819 14.6666 14.6666 11.6819 14.6666 7.99998C14.6666 4.31808 11.6819 1.33331 7.99998 1.33331C4.31808 1.33331 1.33331 4.31808 1.33331 7.99998C1.33331 11.6819 4.31808 14.6666 7.99998 14.6666Z" stroke="#009689" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
               {serverLanguage?.timestamps ?? "Timestamps"}
             </h3>
             
             <div className={style.cardContent}>
-              <div className={style.timestampSection}>
-                <span className={style.timestampLabel}>{serverLanguage?.created ?? "Created:"}</span>
+              <div className={style.addressSection}>
+                <span className={style.label}>{serverLanguage?.created ?? "Created:"}</span>
                 <span className={style.value}>
                   {new Date(existingPosData.created_at).toLocaleString()}
                 </span>
               </div>
               
-              <div className={style.timestampSection}>
-                <span className={style.timestampLabel}>{serverLanguage?.last_updated ?? "Last Updated:"}</span>
+              <div className={style.addressSection}>
+                <span className={style.label}>{serverLanguage?.last_updated ?? "Last Updated:"}</span>
                 <span className={style.value}>
                   {new Date(existingPosData.updated_at).toLocaleString()}
                 </span>
@@ -309,6 +333,10 @@ export default function RegisterPOS({
         </div>
         
         <div className={style.buttonContainer}>
+          <div className={style.text}>
+            <p>Need to Make Changes?</p>
+                <p>Update POS settings, reassign location, or modify permissions</p>
+          </div>
           <button 
             onClick={handleReAssign}
             className={style.reassignButton}

@@ -20,6 +20,7 @@ export default async function Home() {
   const response = await getAdminDetail();
   const user = response;
   const products = await getProducts({id:"", sort: '', currency: currency});
+  console.log("====", products)
   const productItems = products?.items?.filter((item) => 
     item?.stock_status === "IN_STOCK") || [];
   const { firstname, lastname } = user?.data?.data;

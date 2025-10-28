@@ -48,7 +48,6 @@ export default function Cards({
 
   useEffect(() => {
     if (item) {
-      console.log(item)
       const specialPrice = item?.special_price || 0;
       const regularPrice =
         item?.price?.regularPrice?.amount?.value ||
@@ -172,7 +171,6 @@ const validateDiscount = () => {
     setIsHighlighted(true);
     setTimeout(() => setIsHighlighted(false), 1000);
   };
-  console.log(item)
   const isPriceDisabled = () => item?.is_pos_discount_allowed !== 1;
 
   const totalWeight = (quantity * weightPerUnit).toFixed(2);
@@ -189,13 +187,16 @@ const validateDiscount = () => {
 
   return (
     <div className={`${style.card} ${isHighlighted ? style.highlight : ""}`}>
-      <div className={style.top_row}>
+      
         {showDiscount && (
+          <div className={style.discount_sec}>
           <span className={style.discount}>
             {Math.round(100 - (effectivePrice / originalPrice) * 100)}%
           </span>
+          </div>
         )}
         {pathname !== "/sale" && (
+          <div className={style.top_row}>
           <span
             className={style.svg}
             onClick={() => setIsUpdateModalOpen(true)}
@@ -217,8 +218,9 @@ const validateDiscount = () => {
               />
             </svg>
           </span>
+            </div>
         )}
-      </div>
+    
 
       <div className={style.image_container}>
         <Image
@@ -241,122 +243,80 @@ const validateDiscount = () => {
         )}
       </div>
 
-      <div className={style.price_info}>
-        <div className={style.price}>
-          {showDiscount ? (
-            <>
-              <del className={style.final_price}>
-                {currencySymbol}
-                {originalPrice.toFixed(2)}
-              </del>
-            
-                {cards && (
-          <div className={style.link}>
-              <span className={style.special_price}>
-                {currencySymbol}
-                {effectivePrice.toFixed(2)}
-              </span>
-            <div className={style.itemControls}>
-              <div className={style.quantityControls}>
-                <button
-                  className={style.quantityButton}
-                  onClick={() =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      quantity - qtyIncrementStep
-                    )
-                  }
-                >
-                  -
-                </button>
-                <input
-                  type="text"
-                  className={style.quantityInput}
-                  value={quantity}
-                  onChange={(e) =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      parseFloat(e.target.value) || qtyIncrementStep
-                    )
-                  }
-                />
-                <button
-                  className={style.quantityButton}
-                  onClick={() =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      quantity + qtyIncrementStep
-                    )
-                  }
-                >
-                  +
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-            </>
-          ) : (
-            <>
-            <span className={style.special_price}>
-              {currencySymbol}
-              {originalPrice?.toFixed(2)}
-            </span>
-              {cards && <div className={style.itemControls}>
-              <div className={style.quantityControls}>
-                <button
-                  className={style.quantityButton}
-                  onClick={() =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      quantity - qtyIncrementStep
-                    )
-                  }
-                >
-                  -
-                </button>
-                <input
-                  type="text"
-                  className={style.quantityInput}
-                  value={quantity}
-                  onChange={(e) =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      parseFloat(e.target.value) || qtyIncrementStep
-                    )
-                  }
-                />
-                <button
-                  className={style.quantityButton}
-                  onClick={() =>
-                    handleQuantityChange(
-                      item?.uid,
-                      record?.addedAt,
-                      quantity + qtyIncrementStep
-                    )
-                  }
-                >
-                  +
-                </button>
-              </div>
-            </div> }
-            </>
-          )}
-        </div>
+     <div className={style.price_info}>
+  <div className={style.price}>
+    {showDiscount ? (
+      <>
+        <del className={style.final_price}>
+          {currencySymbol}
+          {originalPrice.toFixed(2)}
+        </del>
+        <span className={style.special_price}>
+          {currencySymbol}
+          {effectivePrice.toFixed(2)}
+        </span>
+      </>
+    ) : (
+      <span className={style.special_price}>
+        {currencySymbol}
+        {originalPrice?.toFixed(2)}
+      </span>
+    )}
+  </div>
 
-      
+  {cards && (
+    <div className={style.link}>
+      <div className={style.itemControls}>
+        <div className={style.quantityControls}>
+          <button
+            className={style.NegQuantityButton}
+            onClick={() =>
+              handleQuantityChange(
+                item?.uid,
+                record?.addedAt,
+                quantity - qtyIncrementStep
+              )
+            }
+          >
+            -
+          </button>
+          <input
+            type="text"
+            className={style.quantityInput}
+            value={quantity}
+            onChange={(e) =>
+              handleQuantityChange(
+                item?.uid,
+                record?.addedAt,
+                parseFloat(e.target.value) || qtyIncrementStep
+              )
+            }
+          />
+          <button
+            className={style.quantityButton}
+            onClick={() =>
+              handleQuantityChange(
+                item?.uid,
+                record?.addedAt,
+                quantity + qtyIncrementStep
+              )
+            }
+          >
+            +
+          </button>
+        </div>
       </div>
+    </div>
+  )}
+</div>
+
 
       {record && (
         <div className={style.priceInputContainer}>
-          <label className={style.priceLabel}>
+          {/* <label className={style.priceLabel}>
             {serverLanguage?.DiscountedPrice ?? "Discounted Price"}:
-          </label>
+          </label> */}
+          <p className={style.currency}>{currencySymbol}</p>
           <input
             type="text"
             className={`${style.priceInput} ${
@@ -372,14 +332,18 @@ const validateDiscount = () => {
             onClick={handleUpdatePrice}
             disabled={isPriceDisabled()}
           >
-            🔁
+            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M2.59375 8.09375C2.59375 9.28044 2.94564 10.4405 3.60493 11.4272C4.26422 12.4139 5.20129 13.1829 6.29765 13.637C7.39401 14.0912 8.60041 14.21 9.76429 13.9785C10.9282 13.747 11.9973 13.1755 12.8364 12.3364C13.6755 11.4973 14.247 10.4282 14.4785 9.26429C14.71 8.10041 14.5912 6.89401 14.137 5.79765C13.6829 4.70129 12.9139 3.76422 11.9272 3.10493C10.9405 2.44564 9.78044 2.09375 8.59375 2.09375C6.91638 2.10006 5.3064 2.75457 4.10042 3.92042L2.59375 5.42708" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M2.59375 2.09375V5.42708H5.92708" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+
           </button>
           {errorMessage && (
             <div className={style.errorMessage}>{errorMessage}</div>
           )}
 
           {/* ✅ Price Summary */}
-          <div className={style.summary}>
+          {/* <div className={style.summary}>
             <p>
               <strong>Original Price:</strong> {currencySymbol}
               {originalPriceRef?.current?.toFixed(2)}
@@ -394,7 +358,7 @@ const validateDiscount = () => {
               <strong>Total:</strong> {currencySymbol}
               {(effectivePrice * quantity).toFixed(2)}
             </p>
-          </div>
+          </div> */}
         </div>
       )}
 

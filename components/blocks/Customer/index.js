@@ -50,8 +50,8 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
   };
 
   return (
-    <div className="page_detail">
-      <p>{responseMessage}</p>
+    <>
+    <div className='customer_search'>
       <Search 
   placeholder={serverLanguage?.search_customer ?? 'Search Customer'} 
   isCustomer={true} 
@@ -61,6 +61,9 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
   originalCustomers={originalCustomers}  // Add this
   total_count={totalCount}  // Add this
 />
+</div>
+    <div className="page_detail">
+      <p>{responseMessage}</p>
       
       <div className={dashboardStyles.orders}>
         <div className={dashboardStyles.order_head}>
@@ -123,5 +126,6 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
         </div>
       </div>
     </div>
+    </>
   );
 }

@@ -18,7 +18,10 @@ import SimpleAlertModal from "@/components/global/alertModal";
 import generateReceiptPDF from "@/lib/generatePDF";
 import QRCode from "qrcode";
 import { decryptData, encryptData } from "@/lib/crypto";
-import { getCustomerConsentAction, submitConsentAction } from "@/lib/Magento/actions";
+import {
+  getCustomerConsentAction,
+  submitConsentAction,
+} from "@/lib/Magento/actions";
 import { submitRecordToFbr } from "@/lib/submitInvoiceToFbr";
 
 export default function POSCartSummary({
@@ -35,9 +38,9 @@ export default function POSCartSummary({
   setPayment,
   disocuntIncludingTax,
   applyTaxAfterDiscount,
-  fbrDetails
+  fbrDetails,
 }) {
-  const companyDetail = JSON.parse(localStorage?.getItem("company_detail"))
+  const companyDetail = JSON.parse(localStorage?.getItem("company_detail"));
   const consentTimerStorage = JSON.parse(localStorage.getItem("loginDetail"));
   const decryptedSmtp = decryptData(consentTimerStorage?.smtp_config);
   const consentTimer = consentTimerStorage?.consent_timer;
@@ -68,6 +71,7 @@ export default function POSCartSummary({
   const [changeConsent, setChangeConsent] = useState(false);
   const [consentChangeModal, setConsentChangeModal] = useState(false);
   const [consentTrue, setConsentTrue] = useState(false);
+  const [customerDropdown, setCustomerDropdown] = useState(false);
 
   useEffect(() => {
     setConsentStatus(null);
@@ -82,72 +86,97 @@ export default function POSCartSummary({
 
   // ✅ Calculate tax per product globally
   const cartItemsWithTax = useMemo(() => {
-    return cartItems?.map((item) => {
-      const discountedPrice = item?.product?.discounted_price;
-      const specialPrice = item?.product?.special_price || 0;
-      const regularPrice =
-        item?.product?.price?.regularPrice?.amount?.value ||
-        item?.product?.price_range?.minimum_price?.regular_price?.value ||
-        0;
+    return (
+      cartItems?.map((item) => {
+        const discountedPrice = item?.product?.discounted_price;
+        const specialPrice = item?.product?.special_price || 0;
+        const regularPrice =
+          item?.product?.price?.regularPrice?.amount?.value ||
+          item?.product?.price_range?.minimum_price?.regular_price?.value ||
+          0;
 
-      const basePrice = discountedPrice
-        ? parseFloat(discountedPrice)
-        : specialPrice > 0
-        ? specialPrice
-        : regularPrice;
+        const basePrice = discountedPrice
+          ? parseFloat(discountedPrice)
+          : specialPrice > 0
+          ? specialPrice
+          : regularPrice;
 
-      const qty = item?.quantity || 0;
-      const rowTotal = basePrice * qty;
+        const qty = item?.quantity || 0;
+        const rowTotal = basePrice * qty;
 
-      let taxRate = 0;
-      let taxAmount = 0;
+        let taxRate = 0;
+        let taxAmount = 0;
 
-      if (item?.product?.fbr_tax_applied == null || item?.product?.fbr_tax_applied == undefined) {
-        taxRate = item?.product?.tax_percent || 0;
-        taxAmount = (rowTotal * taxRate) / 100;
-      }
-      if (item?.product?.fbr_tax_applied == 1) {
-        if(payment == "checkmo"){
-          taxRate = fbrDetails?.fbr_offline_discount 
-        } else {
-          taxRate = fbrDetails?.fbr_online_discount
+        if (
+          item?.product?.fbr_tax_applied == null ||
+          item?.product?.fbr_tax_applied == undefined
+        ) {
+          taxRate = item?.product?.tax_percent || 0;
+          taxAmount = (rowTotal * taxRate) / 100;
         }
-        if(applyTaxAfterDiscount == 0){
-        taxAmount = ((item?.product?.special_price) && item?.product?.special_price > 0 ? (item?.product?.special_price * taxRate) / 100 : (regularPrice * taxRate) / 100) * qty;
-        } if(applyTaxAfterDiscount == 1){
-          taxAmount = (rowTotal * taxRate) / 100
+        if (item?.product?.fbr_tax_applied == 1) {
+          if (payment == "checkmo") {
+            taxRate = fbrDetails?.fbr_offline_discount;
+          } else {
+            taxRate = fbrDetails?.fbr_online_discount;
+          }
+          if (applyTaxAfterDiscount == 0) {
+            taxAmount =
+              (item?.product?.special_price && item?.product?.special_price > 0
+                ? (item?.product?.special_price * taxRate) / 100
+                : (regularPrice * taxRate) / 100) * qty;
+          }
+          if (applyTaxAfterDiscount == 1) {
+            taxAmount = (rowTotal * taxRate) / 100;
+          }
+          // taxRate = payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount;
         }
-        // taxRate = payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount;
-      }
 
-      return {
-        ...item,
-        basePrice,
-        rowTotal,
-        taxRate,
-        taxAmount,
-      };
-    }) || [];
+        return {
+          ...item,
+          basePrice,
+          rowTotal,
+          taxRate,
+          taxAmount,
+        };
+      }) || []
+    );
   }, [cartItems, payment]);
 
-  const { subtotal, discountAmount, taxAmount, total, grandTotal, taxRate, totalWithoutTax } =
-    useMemo(() => {
-      let subtotal = 0;
-      let totalTaxAmount = 0;
-      let lastTaxRate = 0;
+  const {
+    subtotal,
+    discountAmount,
+    taxAmount,
+    total,
+    grandTotal,
+    taxRate,
+    totalWithoutTax,
+  } = useMemo(() => {
+    let subtotal = 0;
+    let totalTaxAmount = 0;
+    let lastTaxRate = 0;
 
-      cartItemsWithTax?.forEach((item) => {
-        subtotal += item.rowTotal;
-        totalTaxAmount += item.taxAmount;
-        lastTaxRate = item.taxRate;
-      });
+    cartItemsWithTax?.forEach((item) => {
+      subtotal += item.rowTotal;
+      totalTaxAmount += item.taxAmount;
+      lastTaxRate = item.taxRate;
+    });
 
-      const discountAmount = (subtotal * discountPercent) / 100;
-      const total = subtotal - discountAmount + totalTaxAmount;
-      const totalWithoutTax = subtotal - discountAmount;
-      const grandTotal = total + totalTaxAmount;
-      return { subtotal, discountAmount, taxAmount: totalTaxAmount, total, grandTotal, taxRate: lastTaxRate, totalWithoutTax };
-    }, [cartItemsWithTax, discountPercent]);
+    const discountAmount =
+      ((subtotal + totalTaxAmount) * discountPercent) / 100;
+    const total = subtotal - discountAmount + totalTaxAmount;
+    const totalWithoutTax = subtotal - discountAmount;
+    const grandTotal = total + totalTaxAmount;
+    return {
+      subtotal,
+      discountAmount,
+      taxAmount: totalTaxAmount,
+      total,
+      grandTotal,
+      taxRate: lastTaxRate,
+      totalWithoutTax,
+    };
+  }, [cartItemsWithTax, discountPercent]);
 
   useEffect(() => {
     if (amountInputRef.current) {
@@ -281,30 +310,35 @@ export default function POSCartSummary({
       payment,
     };
 
-         const totalDiscount = cartItems.reduce((sum, item) => {
-        const product = item?.product;
-        const regularPrice = product?.price?.regularPrice?.amount?.value || 0;
-        const actualPrice = product?.special_price && product?.special_price > 0 ? product?.special_price : regularPrice;
-        const discountedPrice = product?.discounted_price || actualPrice;
-        const itemDiscount = (actualPrice - discountedPrice) * item.quantity;
-        return sum + itemDiscount;
-      }, 0);
+    const totalDiscount = cartItems.reduce((sum, item) => {
+      const product = item?.product;
+      const regularPrice = product?.price?.regularPrice?.amount?.value || 0;
+      const actualPrice =
+        product?.special_price && product?.special_price > 0
+          ? product?.special_price
+          : regularPrice;
+      const discountedPrice = product?.discounted_price || actualPrice;
+      const itemDiscount = (actualPrice - discountedPrice) * item.quantity;
+      return sum + itemDiscount;
+    }, 0);
 
     const items = cartItems.map((item, index) => {
       const itemWithTax = cartItemsWithTax[index];
       const quantity = item.quantity || 1;
       const discountPercent = item?.product?.pos_discount_percent || 0;
 
-      const priceInclTax = itemWithTax.basePrice + (itemWithTax.taxAmount / quantity);
+      const priceInclTax =
+        itemWithTax.basePrice + itemWithTax.taxAmount / quantity;
       const rowTotalInclTax = itemWithTax.rowTotal + itemWithTax.taxAmount;
 
-      
       return {
         product_id: item?.product?.id || item?.product?.product_id,
         product_sku: item?.product?.sku || "",
         product_name: item?.product?.name || "",
         price: itemWithTax.basePrice.toFixed(2),
-        original_price: (item?.product?.price?.regularPrice?.amount?.value || 0).toFixed(2),
+        original_price: (
+          item?.product?.price?.regularPrice?.amount?.value || 0
+        ).toFixed(2),
         qty: quantity,
         row_total: itemWithTax.rowTotal.toFixed(2),
         discount_percent: discountPercent,
@@ -332,8 +366,11 @@ export default function POSCartSummary({
       order_grandtotal: total.toFixed(2),
       discount: discountPercent,
       order_date: new Date().toISOString(),
-      fbr_tax_percent: payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount,
-      order_tax_amount: taxAmount.toFixed(2)
+      fbr_tax_percent:
+        payment == "checkmo"
+          ? fbrDetails?.fbr_offline_discount
+          : fbrDetails?.fbr_online_discount,
+      order_tax_amount: taxAmount.toFixed(2),
     };
 
     try {
@@ -343,7 +380,10 @@ export default function POSCartSummary({
         USIN: companyDetail?.usin ?? "USIN0",
         DateTime: new Date().toISOString().replace("T", " ").slice(0, 19),
         TotalBillAmount: parseFloat(orderData.order_grandtotal),
-        TotalQuantity: cartItemsWithTax.reduce((sum, item) => sum + item.quantity, 0),
+        TotalQuantity: cartItemsWithTax.reduce(
+          (sum, item) => sum + item.quantity,
+          0
+        ),
         TotalSaleValue: parseFloat(orderData.order_subtotal),
         TotalTaxCharged: orderData?.order_tax_amount,
         Discount: parseFloat(totalDiscount),
@@ -352,13 +392,17 @@ export default function POSCartSummary({
         InvoiceType: 1,
         Items: cartItems.map((item, index) => {
           const product = item?.product;
-          const actualPrice = product?.special_price && product?.special_price > 0 ? product?.special_price : product?.price?.regularPrice?.amount?.value;
-      const itemWithTax = cartItemsWithTax[index];
-      const quantity = item.quantity || 1;
-      const discountPercent = item?.product?.pos_discount_percent || 0;
+          const actualPrice =
+            product?.special_price && product?.special_price > 0
+              ? product?.special_price
+              : product?.price?.regularPrice?.amount?.value;
+          const itemWithTax = cartItemsWithTax[index];
+          const quantity = item.quantity || 1;
+          const discountPercent = item?.product?.pos_discount_percent || 0;
 
-      const priceInclTax = itemWithTax.basePrice + (itemWithTax.taxAmount / quantity);
-      const rowTotalInclTax = itemWithTax.rowTotal + itemWithTax.taxAmount;
+          const priceInclTax =
+            itemWithTax.basePrice + itemWithTax.taxAmount / quantity;
+          const rowTotalInclTax = itemWithTax.rowTotal + itemWithTax.taxAmount;
           return {
             ItemCode: product.sku || "",
             ItemName: product.name || "",
@@ -367,14 +411,14 @@ export default function POSCartSummary({
             TaxRate: itemWithTax.taxRate,
             SaleValue: actualPrice.toFixed(2),
             TotalAmount: priceInclTax.toFixed(2),
-            TaxCharged: ((itemWithTax.taxAmount)/quantity).toFixed(2),
+            TaxCharged: (itemWithTax.taxAmount / quantity).toFixed(2),
             Discount: actualPrice - product?.discounted_price || 0.0,
             FurtherTax: 0.0,
             InvoiceType: 1,
           };
         }),
       };
-console.log(fbrPayload)
+      console.log(fbrPayload);
       try {
         const res = await fetch("/api/fbr", {
           method: "POST",
@@ -382,7 +426,7 @@ console.log(fbrPayload)
           body: JSON.stringify({
             token: companyDetail?.fbr_token ?? "123456",
             mode: consentTimerStorage?.pos_mode?.mode,
-            ...fbrPayload
+            ...fbrPayload,
           }),
         });
 
@@ -399,7 +443,6 @@ console.log(fbrPayload)
         console.error("Network error calling FBR:", error);
         orderData.fbr_invoice_id = null;
       }
-
     } catch (fbrErr) {
       console.error("Error sending FBR record:", fbrErr);
       orderData.fbr_invoice_id = null;
@@ -439,7 +482,7 @@ console.log(fbrPayload)
           increment_id: generateRandomId(),
           customer_email: email,
           phone_number: phone.length ? phone : "",
-          consent: "no"
+          consent: "no",
         });
         if (thermalPrint) {
           await printReceipt(
@@ -506,7 +549,8 @@ console.log(fbrPayload)
         }
         setConsentModal(true);
         const sessionId = orderData?.increment_id;
-        const expiresAt = minutes === Infinity ? null : Date.now() + minutes * 60 * 1000;
+        const expiresAt =
+          minutes === Infinity ? null : Date.now() + minutes * 60 * 1000;
         const encrypted = encryptData({
           sessionId,
           phone,
@@ -540,7 +584,7 @@ console.log(fbrPayload)
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id,
+            orderData?.fbr_invoice_id
           );
         }
         await saveOrder(orderData);
@@ -554,7 +598,7 @@ console.log(fbrPayload)
           return;
         }
       }
-
+      console.log("fallback")
       try {
         const delayedJobData = {
           email,
@@ -574,7 +618,7 @@ console.log(fbrPayload)
                 sid: twilioRec?.sid,
                 auth_token: twilioRec?.auth_token,
                 auth_phone: twilioRec?.phone,
-                warehouseId: warehouseId
+                warehouseId: warehouseId,
               }
             : null,
         };
@@ -635,90 +679,182 @@ console.log(fbrPayload)
         <h2>
           {currencySymbol}
           {total.toFixed(2)}
-          <p>{currencySymbol}{totalWithoutTax.toFixed(2)}</p>
+          {/* <p>{currencySymbol}{totalWithoutTax.toFixed(2)}</p> */}
         </h2>
 
         <div className={styles.paymentDetails}>
           <div className={styles.customerDetailsSection}>
-            <h3 className={styles.sectionTitle}>
-              {serverLanguage?.customer_details ?? "Customer Details"}
-            </h3>
-            <div className={styles.paymentDetailBlock}>
-              <p className={styles.paymentTitle}>
-                {serverLanguage?.phone ?? "Phone"}:
-              </p>
-              <input
-                type="tel"
-                value={phone}
-                onChange={handlePhoneInput}
-                placeholder="(555) 123-4567"
-                onFocus={handleFocusContact}
-                onBlur={handleBlurContact}
-              />
-            </div>
-            <div className={styles.paymentDetailBlock}>
-              <p className={styles.paymentTitle}>
-                {serverLanguage?.email ?? "Email"}:
-              </p>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="customer@example.com"
-                className={validateEmail(email) ? "" : styles.invalidInput}
-                onFocus={handleFocusContact}
-                onBlur={handleBlurContact}
-              />
-            </div>
-
-            {(consentStatus === "yes" || consentStatus === "no") &&
-              (email || phone) && (
-                <div
-                  className={`${styles.paymentDetailBlock} ${styles.paymentConsentBlock}`}
+            <div
+              className={styles.customerDetail}
+              onClick={() => setCustomerDropdown((prev) => !prev)}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10.6667 14V12.6667C10.6667 11.9594 10.3858 11.2811 9.88566 10.781C9.38556 10.281 8.70728 10 8.00004 10H4.00004C3.2928 10 2.61452 10.281 2.11442 10.781C1.61433 11.2811 1.33337 11.9594 1.33337 12.6667V14"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M10.6666 2.08534C11.2385 2.23359 11.7449 2.56752 12.1064 3.03472C12.4679 3.50192 12.6641 4.07594 12.6641 4.66668C12.6641 5.25742 12.4679 5.83144 12.1064 6.29863C11.7449 6.76583 11.2385 7.09976 10.6666 7.24801"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M14.6666 14V12.6667C14.6662 12.0758 14.4695 11.5019 14.1075 11.0349C13.7455 10.5679 13.2387 10.2344 12.6666 10.0867"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M6.00004 7.33333C7.4728 7.33333 8.66671 6.13943 8.66671 4.66667C8.66671 3.19391 7.4728 2 6.00004 2C4.52728 2 3.33337 3.19391 3.33337 4.66667C3.33337 6.13943 4.52728 7.33333 6.00004 7.33333Z"
+                  stroke="#4A5565"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <div className={styles.customerDetailName}>
+                <h3 className={styles.sectionTitle}>
+                  {serverLanguage?.customer_details ?? "Customer Details"}
+                </h3>
+                <p>{`${
+                  customerDropdown
+                    ? "Click to add customer info"
+                    : "Click to hide details"
+                }`}</p>
+              </div>
+              {!customerDropdown ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-chevron-down h-4 w-4 text-gray-600"
+                  aria-hidden="true"
                 >
-                  {consentStatus == "yes" ? (
-                    <label className={styles.checkboxWrapper}>
-                      <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        checked={!changeConsent}
-                        onChange={(e) => handleConsentChange(e.target.checked)}
-                      />
-                      <span className={styles.customCheck}></span>
-                      I do not wish to receive an e-receipt.
-                    </label>
-                  ) : (
-                    <>
-                      <p>{"The customer don't want to receive E-Receipts."}</p>
-                      <button
-                        type="button"
-                        className={styles.btnPrimary}
-                        onClick={async () => {
-                          setConsentChangeModal(true);
-                          setConsentTrue(true);
-                          const sessionId = generateRandomId();
-                          const expiresAt = minutes === Infinity ? null : Date.now() + minutes * 60 * 1000;
-                          const encrypted = encryptData({
-                            sessionId,
-                            phone,
-                            email,
-                            expiresAt,
-                          });
-                          const code = await QRCode.toDataURL(
-                            `${
-                              process.env.NEXT_PUBLIC_BASE_URL
-                            }/consent?data=${encodeURIComponent(encrypted)}`
-                          );
-                          setQrCode(code);
-                        }}
-                        style={{ marginTop: "10px" }}
-                      >
-                        Change Consent
-                      </button>
-                    </>
-                  )}
-                </div>
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-chevron-up h-4 w-4 text-gray-600"
+                  aria-hidden="true"
+                >
+                  <path d="m18 15-6-6-6 6"></path>
+                </svg>
               )}
+            </div>
+            {customerDropdown && (
+              <div className={styles.customer}>
+                <div className={styles.paymentDetailBlock}>
+                  <p className={styles.paymentTitle}>
+                    {serverLanguage?.phone ?? "Phone"}:
+                  </p>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={handlePhoneInput}
+                    placeholder="(555) 123-4567"
+                    onFocus={handleFocusContact}
+                    onBlur={handleBlurContact}
+                  />
+                </div>
+                <div className={styles.paymentDetailBlock}>
+                  <p className={styles.paymentTitle}>
+                    {serverLanguage?.email ?? "Email"}:
+                  </p>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="customer@example.com"
+                    className={validateEmail(email) ? "" : styles.invalidInput}
+                    onFocus={handleFocusContact}
+                    onBlur={handleBlurContact}
+                  />
+                </div>
+
+                {(consentStatus === "yes" || consentStatus === "no") &&
+                  (email || phone) && (
+                    <div
+                      className={`${styles.paymentDetailBlock} ${styles.paymentConsentBlock}`}
+                    >
+                      {consentStatus == "yes" ? (
+                        <label className={styles.checkboxWrapper}>
+                          <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            checked={!changeConsent}
+                            onChange={(e) =>
+                              handleConsentChange(e.target.checked)
+                            }
+                          />
+                          <span className={styles.customCheck}></span>I do not
+                          wish to receive an e-receipt.
+                        </label>
+                      ) : (
+                        <>
+                          <p>
+                            {"The customer don't want to receive E-Receipts."}
+                          </p>
+                          <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={async () => {
+                              setConsentChangeModal(true);
+                              setConsentTrue(true);
+                              const sessionId = generateRandomId();
+                              const expiresAt =
+                                minutes === Infinity
+                                  ? null
+                                  : Date.now() + minutes * 60 * 1000;
+                              const encrypted = encryptData({
+                                sessionId,
+                                phone,
+                                email,
+                                expiresAt,
+                              });
+                              const code = await QRCode.toDataURL(
+                                `${
+                                  process.env.NEXT_PUBLIC_BASE_URL
+                                }/consent?data=${encodeURIComponent(encrypted)}`
+                              );
+                              setQrCode(code);
+                            }}
+                            style={{ marginTop: "10px" }}
+                          >
+                            Change Consent
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+              </div>
+            )}
           </div>
 
           <div className={styles.paymentDetailBlock}>
@@ -754,10 +890,12 @@ console.log(fbrPayload)
               </p>
               <input
                 type="number"
+                min={0}
                 value={discountPercent}
-                onChange={(e) =>
-                  setDiscountPercent(parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  console.log(parseFloat(e.target.value) || 0);
+                  setDiscountPercent(parseFloat(e.target.value) || 0);
+                }}
               />
             </div>
           )}
@@ -771,7 +909,9 @@ console.log(fbrPayload)
               onChange={(e) => setPayment(e.target.value)}
             >
               <option value="checkmo">{serverLanguage?.cash ?? "Cash"}</option>
-              <option value="credit">{serverLanguage?.credit ?? "Credit"}</option>
+              <option value="credit">
+                {serverLanguage?.credit ?? "Credit"}
+              </option>
             </select>
           </div>
 

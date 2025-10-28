@@ -37,6 +37,9 @@
   display: flex;
   gap: 8px;
   color: #4FACB8;
+  // button{
+  //   background: unset;
+  // }
 }
 
 .updateBtn, .deleteBtn {
@@ -86,17 +89,17 @@
     margin: 20px;
     
     .modalHeader {
-      background-color: #f8f9fa;
+      // background-color: #f8f9fa;
       color: #333;
       padding: 20px;
       padding-top: 30px;
       padding-inline: 40px;
+      // border-bottom: 1px solid #dee2e6;
+      position: relative;
+      border-radius: 8px;
       @media screen and (max-width: 767px) {
         padding-inline: 20px;
       }
-      border-bottom: 1px solid #dee2e6;
-      position: relative;
-      border-radius: 8px;
 
       h2 {
         margin: 0;
@@ -113,8 +116,8 @@
         line-height: 1;
         padding: 0;
         position: absolute;
-        top: -10px;
-        right: -10px;
+        top: 17px;
+        right: 17px;
         background-color: #4FACB8;
         height: 30px;
         width: 30px;
@@ -187,7 +190,7 @@
       gap: 10px;
       margin-top: 20px;
       padding-top: 20px;
-      border-top: 1px solid #e9ecef;
+      // border-top: 1px solid #e9ecef;
       position: sticky;
       bottom: 0;
       background: white;

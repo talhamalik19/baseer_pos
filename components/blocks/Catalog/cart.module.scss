@@ -232,18 +232,18 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 35px;
+    padding: 25px;
     background-color: white;
-    
+    box-sizing: border-box;
     h2 {
-      background-color: #4FACB8;
+background: linear-gradient(90deg, #00BBA7 0%, #009689 100%);
       color: white;
       text-align: center;
       padding: 15px;
       border-radius: 8px;
       font-size: 24px;
       margin-bottom: 20px;
-      min-height: 140px;
+      min-height: 84px;
       font-size: 40px;
       display: flex;
       align-items: center;
@@ -256,20 +256,38 @@
       display: flex;
       flex-direction: column;
       flex-grow: 1;
+
+      .customerDetailsSection{
+        border: 1px solid #E5E7EB; padding: 25px; border-radius: 14px;
+        .customerDetail{
+              display: flex;
+    justify-content: space-between;
+    align-items: center; gap: 20px; cursor: pointer;
+    div{
+      flex: 1;
+      p{
+        font-size: 12px; line-height: 22px; color: #6A7282;
+      }
+    }
+    svg{
+      background-color: #F3F4F6; border-radius: 50%; padding: 10px;
+    }
+  }
+      }
     
       .paymentDetailBlock{
-        display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 500; line-height: 26px; color: #000; padding-block: 20px; position: relative;
-        &:after{
-          content: "";
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 1px;
-    background-image: linear-gradient(to right, #ADADAD 6px, transparent 0px);
-    background-size: 12px 1px;
-    background-repeat: repeat-x;
-        }
+        display: flex; align-items: center; justify-content: space-between; font-size: 16px; font-weight: 500; line-height: 26px; color: #000; padding-top: 15px; position: relative;
+    //     &:after{
+    //       content: "";
+    // position: absolute;
+    // bottom: 0;
+    // left: 0;
+    // width: 100%;
+    // height: 1px;
+    // background-image: linear-gradient(to right, #ADADAD 6px, transparent 0px);
+    // background-size: 12px 1px;
+    // background-repeat: repeat-x;
+    //     }
         &.paymentConsentBlock{
           flex-direction: column; align-items: flex-start; 
           button{
@@ -286,7 +304,10 @@
         }
         
         input, select{
-          background: #EAF4EA; width: 50%; width: 100%; width: 170px; box-sizing: border-box; height: 50px; border-radius: 8px;
+          background: #ECECF0; width: 50%; width: 100%; width: 170px; box-sizing: border-box; height: 40px; border-radius: 8px;
+          &:focus{
+            background: #96F7E4; border: 1px solid #96F7E4;
+          }
         }
         .paymentTitle{
           width: 50%;

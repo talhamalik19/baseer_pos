@@ -68,12 +68,14 @@
 
 // Header section
 .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  gap: 30px;
+  padding-bottom: 20px;
+  .secHead{
+    display: flex;
+    // justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+
+  }
 }
 
 .title {
@@ -121,24 +123,27 @@
 // Card styling
 .card {
   background-color: #ffffff;
-  padding: 24px;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  // padding: 24px;
+  border-radius: 10px;
+ border: 1px solid style.$borderColor; box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A;
+
 }
 
 .cardTitle {
-  margin: 0 0 20px 0;
   color: #495057;
-  font-size: 18px;
-  font-weight: 600;
-  padding-bottom: 8px;
+  font-size: 16px; color: style.$pageTitle;
+  font-weight: 400;
+  padding: 15px 20px 15px 20px; @include style.flex(flex-start, center, 10px);
+  border-bottom: 1px solid #F3F4F6;
+  svg{
+    background-color: #CBFBF1; padding: 8px; border-radius: 8px;
+  }
 }
 
 .cardContent {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 12px; padding-inline: 20px; padding-bottom: 30px;
 }
 
 // Info rows with 30px gap
@@ -147,25 +152,27 @@
   justify-content: space-between;
   align-items: center;
   gap: 30px;
+  border-bottom: 1px solid #F9FAFB; padding: 12px 0px 8px 0px;
+  &:last-child{
+    border-bottom: transparent;
+  }
 }
 
 .label {
-  color: #6c757d;
-  font-weight: 500;
-   @media screen and (max-width: 767px) {
-    font-size: 14px;
-  }
+  color: style.$TextColor; font-size: 14px; line-height: 24px; font-weight: 400;
+
 }
 
 .value {
-  font-weight: 600;
-  color: #2c3e50;
-  @media screen and (max-width: 767px) {
-    font-size: 14px;
-  }
+  font-weight: 400;
+  color: style.$pageTitle; font-size: 14px; font-weight: 400; line-height: 24px;
 
   &.breakAll {
     word-break: break-all;
+  }
+
+  &.link{
+    color: style.$LinkColor;
   }
 
   &.success {
@@ -181,14 +188,18 @@
 .addressSection {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 4px; border-bottom: 1px solid #F9FAFB;
+    padding: 12px 0px 8px 0px;
+      &:last-child{
+    border-bottom: transparent;
+  }
 }
 
-.addressLabel {
-  color: #6c757d;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
+// .addressLabel {
+//   color: #6c757d;
+//   font-weight: 500;
+//   margin-bottom: 4px;
+// }
 
 .addressValue {
   margin: 0;
@@ -222,7 +233,18 @@
 
 // Button section
 .buttonContainer {
-  margin-top: 30px;
+  margin-top: 30px; @include style.flex(space-between, center, 0px); padding: 17px; background: linear-gradient(90deg, #F0FDFA 0%, #ECFEFF 100%); border: 1px solid #CBFBF1;
+  .text{
+   p:first-child {
+      font-size: 16px; line-height: 26px; font-weight: 400; color: style.$pageTitle;
+    }
+      p:last-child {
+      font-size: 14px; line-height: 26px; font-weight: 400; color: style.$pageTitle;
+    }
+  }
+  @media screen and (max-width: 767px) {
+    flex-direction: column; align-items: flex-start; gap: 20px;
+  }
 }
 
 .reassignButton {
@@ -268,7 +290,12 @@
 }
 
 .manage_title{
-  @media screen and (max-width: 767px) {
-    font-size: 22px !important;
-  }
+  font-size: 20px; color: style.$pageTitle; line-height: 26px; font-weight: 400; width: unset;
+  // @media screen and (max-width: 767px) {
+  //   font-size: 22px !important;
+  // }
+}
+
+.des{
+  color: style.$settingDes; font-size: 14px; line-height: 24px; font-weight: 400;
 }
