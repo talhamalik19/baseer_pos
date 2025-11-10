@@ -65,7 +65,7 @@ export default function ProductView({
           // payment={payment}
         />
       </div>
-      <div className="page_detail">
+      <div className="page_detail sale_page">
       <div className={styles.cart_summary}>
         <div className={styles.table_block_cart}>
           {/* <div className={styles.view_controls}>

@@ -1,60 +1,31 @@
 @use "../../../styles/variable.scss" as style;
 
 .form {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 24px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex; flex-direction: column; gap: 24px; padding: 24px; background-color: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   .sectionHeading {
-    font-size: 18px;
-    font-weight: 600;
-    color: style.$TextColor;
-    margin-bottom: 16px;
-    border-bottom: 1px solid #e9ecef;
-    padding-bottom: 8px;
+    font-size: 18px; font-weight: 600; color: style.$TextColor; margin-bottom: 16px; border-bottom: 1px solid #e9ecef; padding-bottom: 8px;
   }
 
   .row {
-    display: flex;
-    gap: 16px;
+    display: flex; gap: 16px;
     
     @media (max-width: 768px) {
-      flex-direction: column;
-      gap: 20px;
-    }
+      flex-direction: column; gap: 20px; }
   }
 
   .inputField {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1;
+    display: flex; flex-direction: column; gap: 8px; flex: 1;
 
     label {
-      font-size: 14px;
-      font-weight: 500;
-      color: #374151;
-      margin-bottom: 4px;
+      font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;
     }
 
     .formControl {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid #D8DCE2;
-      min-height: 55px;
-      border-radius: 8px;
-      // background-color: #F6F6F6;
-      font-size: 14px;
-      transition: border-color 0.15s;
-      box-sizing: border-box;
+      width: 100%; padding: 10px 12px; border: 1px solid #D8DCE2; min-height: 55px; border-radius: 8px; font-size: 14px; transition: border-color 0.15s; box-sizing: border-box;
 
       &:focus {
-        outline: none;
-        border-color: #4FACB8;
+        outline: none; border-color: #4FACB8;
       }
 
       &.error {
@@ -64,49 +35,104 @@
   }
 
   .readOnlyInput {
-    background-color: #f5f5f5;
-    color: #666;
-    cursor: not-allowed;
+    background-color: #f5f5f5; color: #666; cursor: not-allowed;
     
     &:focus {
       border-color: #D8DCE2;
     }
   }
 
+  // Upload Area Styles
+  .uploadArea {
+    border: 2px solid #CAD5E2; border-radius: 8px; background-color: #FAFBFC; padding: 40px 20px; text-align: center; transition: all 0.3s ease; position: relative; min-height: 120px; display: flex; align-items: center; justify-content: center;
+
+    &.dragActive {
+      border-color: #4FACB8; background-color: #F0F9FA;
+    }
+  }
+
+  .fileInput {
+    position: absolute; width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; z-index: -1;
+  }
+
+  .uploadLabel {
+    cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;
+  }
+
+  .uploadIcon {
+    color: #9CA3AF; display: flex; align-items: center; justify-content: center;
+    
+    svg {
+      width: 24px; height: 24px;
+    }
+  }
+
+  .uploadText {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+
+  .chooseFile {
+    color: #4FACB8; font-weight: 500; font-size: 14px; background-color: #F1F5F9; color: style.$TextColor; font-size: 14px; line-height: 24px; padding: 8px; border-radius: 10px;
+  }
+
+  .noFile {
+    color: #6B7280; font-size: 13px;
+  }
+
+  .previewContainer {
+    display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 10px;
+  }
+
+  .logoPreview {
+    max-width: 150px; max-height: 150px; object-fit: contain; border-radius: 4px; border: 1px solid #E5E7EB;
+  }
+
+  .removeBtn {
+    padding: 8px 16px; background-color: #EF4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #DC2626;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+    }
+  }
+
   .preview {
-    margin-top: 16px;
-    padding: 16px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
+    margin-top: 16px; 
+    padding: 16px; 
+    background-color: #f8f9fa; 
+    border-radius: 8px; 
     border: 1px solid #e9ecef;
     
     p {
-      margin: 0 0 8px 0;
-      font-weight: 500;
+      margin: 0 0 8px 0; 
+      font-weight: 500; 
       color: #374151;
     }
     
     img {
-      border-radius: 4px;
+      border-radius: 4px; 
       border: 1px solid #ddd;
     }
   }
 
   .buttonContainer {
-    display: flex;
-    justify-content: flex-end;
+    display: flex; 
+    justify-content: flex-end; 
     margin-top: 24px;
 
     .submitButton {
-      background-color: style.$PrimaryColor;
-      color: style.$whiteColor;
-      font-weight: 600;
-      padding: 15px 20px;
-      border-radius: 8px;
-      border: none;
-      font-size: 15px;
-      border-radius: 8px;
-      cursor: pointer;
+      background-color: style.$PrimaryColor; 
+      color: style.$whiteColor; 
+      font-weight: 600; 
+      padding: 15px 20px; 
+      border-radius: 8px; 
+      border: none; 
+      font-size: 15px; 
+      cursor: pointer; 
       transition: background-color 0.2s ease;
 
       &:hover {
@@ -121,12 +147,12 @@
   }
 
   .success {
-    color: green;
-    font-weight: 500;
-    margin-top: 10px;
-    padding: 12px;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
+    color: green; 
+    font-weight: 500; 
+    margin-top: 10px; 
+    padding: 12px; 
+    background-color: #d4edda; 
+    border: 1px solid #c3e6cb; 
     border-radius: 8px;
   }
 }

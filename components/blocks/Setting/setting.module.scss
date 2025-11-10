@@ -156,6 +156,9 @@
   &:last-child{
     border-bottom: transparent;
   }
+  div{
+    @include style.flex(flex-start, center, 8px)
+  }
 }
 
 .label {
@@ -192,6 +195,9 @@
     padding: 12px 0px 8px 0px;
       &:last-child{
     border-bottom: transparent;
+  }
+    div{
+    @include style.flex(flex-start, center, 8px)
   }
 }
 
@@ -287,6 +293,13 @@
   @media screen and (max-width: 500px) {
     flex-direction: column;
   }
+}
+
+.success_response{
+  padding: 10px; color: style.$successColor;
+}
+.error_response{
+  padding: 10px; color: style.$errorColor;
 }
 
 .manage_title{

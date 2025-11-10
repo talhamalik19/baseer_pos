@@ -1,5 +1,6 @@
 "use client";
 import { submitConsentAction } from "@/lib/Magento/actions";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 
 export default function Consent({
@@ -111,9 +112,10 @@ export default function Consent({
   return (
     <div className={style.consent_page}>
       <div className={style.consent_container}>
+            <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`} alt="Logo" width={148} height={40} />
         <h2>Consent Certificate</h2>
         {expiresAt != null && (
-          <p style={{ fontWeight: "bold", color: "red" }}>
+          <p className={style.timer}>
             ⏳ Expires in {minutes}:{seconds.toString().padStart(2, "0")}
           </p>
         )}
@@ -134,11 +136,10 @@ export default function Consent({
           unauthorized third parties.
         </p>
         <p>I acknowledge that:</p>
-        <ul style={{ textAlign: "left", margin: "10px 0 0 20px" }}>
+        <ul style={{ textAlign: "left", margin: "10px 0px 10px 45px" }}>
           <li>I have read and understood the purpose of this consent.</li>
           <li>
-            I may withdraw my consent at any time by contacting [support
-            email/phone].
+            I may withdraw my consent at any time.
           </li>
           <li>
             Upon withdrawal, no further Smart Receipts or related communications

@@ -73,6 +73,7 @@ export default async function Order({ searchParams }) {
         customerOrders={customerResponse}
         jwt={jwt}
         serverLanguage={serverLanguage?.csvTranslations}
+        params={params?.customer_email}
       />
       <SyncHandler />
       <ServiceWorkerRegister />

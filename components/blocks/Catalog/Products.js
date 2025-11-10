@@ -12,9 +12,10 @@ export default function Products({
   handleAddToCart,
   currencySymbol,
   currency,
-  language
+  language,
+  sort,
+  setSort
 }) {
-  const [sort, setSort] = useState("");
   // Store only simple products in originalProducts
   // const originalProducts = useMemo(() => 
   //   (products || []).filter((item) => item?.__typename === "SimpleProduct"), 

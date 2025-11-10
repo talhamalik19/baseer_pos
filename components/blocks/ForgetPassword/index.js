@@ -49,6 +49,9 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
           autoComplete="off"
         >
           <div className={`${style.input_box} ${email ? "has-value" : ""}`}>
+            <label htmlFor="log-email" className={style.label}>
+              {serverLanguage?.email ?? "Email"}
+            </label>
             <input
               type="email"
               className={style.input_field}
@@ -57,6 +60,7 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="off"
+              placeholder="Enter Your Email"
             />
             <svg
               width="17"
@@ -72,9 +76,6 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
                 fill="#98A2B3"
               />
             </svg>
-            <label htmlFor="log-email" className={style.label}>
-              {serverLanguage?.email ?? "Email"}
-            </label>
           </div>
 
           {message && (
@@ -89,7 +90,11 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
               </Link>
             </p>
           )}
-
+          <div className={style.forgotPassword}>
+            <Link href="/">
+              {serverLanguage?.back_to_login ?? "Back to Login"}
+            </Link>
+          </div>
           <div className={style.submit_btn}>
             <button
               type="submit"
@@ -102,12 +107,6 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
             </button>
           </div>
         </form>
-
-        <div className={style.forgotPassword}>
-          <Link href="/">
-            {serverLanguage?.back_to_login ?? "Back to Login"}
-          </Link>
-        </div>
       </div>
     </div>
   );

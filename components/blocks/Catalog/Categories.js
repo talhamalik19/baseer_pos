@@ -75,6 +75,7 @@ export default function Categories({
     id: "",
     level: 0,
   });
+  const [sort, setSort] = useState('')
   const [selectedParent, setSelectedParent] = useState(null);
   const [products, setProducts] = useState(productItems);
   const [categories, setCategories] = useState([
@@ -405,6 +406,8 @@ export default function Categories({
             isLoading={isLoading}
             // onRefresh={performFullSync}
             lastSyncTime={lastSyncTime}
+            sort={sort}
+            setSort={setSort}
           />
         </div>
       </div>

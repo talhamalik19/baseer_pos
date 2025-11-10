@@ -36,11 +36,11 @@ flex: 1;    overflow-x: auto;
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 14px;
-      tr{
-                border-bottom: 1px solid #ddd;
+      font-size: 14px; background-color: #F9FAFB; border-radius: 10px;
+      // tr{
+      //           border-bottom: 1px solid #ddd;
 
-      }
+      // }
       .flex_td{
         display: flex;
         .updateBtn, .deleteBtn{
@@ -54,16 +54,22 @@ flex: 1;    overflow-x: auto;
   
       thead {
         background-color: #f5f5f5;
+        tr{
+          border-bottom: 1px solid #E5E7EB
+        }
   
         th {
-          font-weight: 600;
-          color: #333;
+          font-weight: 500;
+          color: style.$TextColor; font-size: 14px; line-height: 24px;
         }
       }
   
       tbody {
-        tr:hover {
-          background-color: #fff;
+        // tr:hover {
+        //   background-color: #fff;
+        // }
+        tr:not(:last-child){
+          border-bottom: 1px solid #F3F4F6
         }
         .highlight {
             background-color: #e6f7ff !important;
@@ -72,7 +78,11 @@ flex: 1;    overflow-x: auto;
           
   
         td {
+          color: style.$pageTitle; font-size: 14px; line-height: 24px; font-weight: 400;
           vertical-align: middle; min-width: 5rem;
+          del{
+            padding-right: 10px;
+          }
           &:nth-child(4), &:nth-child(5){
             min-width: 7rem;
           }

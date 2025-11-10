@@ -17,7 +17,7 @@ async function syncData() {
     
     const result = await response.json();
     const res = result?.res;
-    if(res.length > 0){
+    if(res?.length > 0){
       await clearOrders()
     }
     // Clear existing orders and save the newly fetched ones

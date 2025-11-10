@@ -141,16 +141,16 @@ export default async function Statistics({ serverLanguage }) {
                     <path
                       d="M9.33334 4.08334H12.8333V7.58334"
                       stroke="#009966"
-                      stroke-width="1.16667"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.16667"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                     <path
                       d="M12.8333 4.08334L7.87499 9.04168L4.95832 6.12501L1.16666 9.91668"
                       stroke="#009966"
-                      stroke-width="1.16667"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.16667"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 ) : (
@@ -164,16 +164,16 @@ export default async function Statistics({ serverLanguage }) {
                     <path
                       d="M9.33337 9.91666H12.8334V6.41666"
                       stroke="#FFA2A2"
-                      stroke-width="1.16667"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.16667"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                     <path
                       d="M12.8333 9.91668L7.87496 4.95834L4.95829 7.87501L1.16663 4.08334"
                       stroke="#FFA2A2"
-                      stroke-width="1.16667"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
+                      strokeWidth="1.16667"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
                     />
                   </svg>
                 )}

@@ -1,6 +1,7 @@
-"use client";
-
+"use client"
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import styles from "./order.module.scss";
 import OrderActionModal from "./OrderActionModal";
 import {
@@ -9,15 +10,13 @@ import {
   submitCancelAction,
   submitRefundAction,
 } from "@/lib/Magento/actions";
-import Link from "next/link";
 import { getAllOrders } from "@/lib/indexedDB";
-import { usePathname } from "next/navigation";
 import { printOrderDetail } from "@/lib/printOrderDetail";
 import { printReceipt } from "@/lib/printReceipt";
 
 export default function OrderDetail({ jwt, orderResponse, onBack }) {
   const [order, setOrder] = useState(orderResponse);
-  const pathname = usePathname();
+  const location = usePathname();
   const [modalInfo, setModalInfo] = useState({
     isOpen: false,
     actionType: null,
@@ -34,13 +33,11 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
         const data = await getAllOrders();
         if (order == undefined) {
           setOrder(
-            data.find((item) => item?.increment_id == pathname?.split("/")?.[2])
+            data.find((item) => item?.increment_id == location.pathname?.split("/")?.[2])
           );
         }
       } catch (err) {
         console.error("Error fetching orders:", err);
-      } finally {
-        // setLoading(false);
       }
     }
 
@@ -48,13 +45,6 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   }, [order]);
 
   useEffect(() => {
-    // async function getPdf() {
-    //   const result = ;
-    //   if(result) {
-    //     setPdfResponse(result);
-    //   }
-    // }
-    // getPdf();
     if (typeof window != undefined) {
       const res = JSON.parse(localStorage.getItem("jsonData"));
       setPdfResponse(res);
@@ -69,7 +59,6 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
     );
   }
 
-  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -96,7 +85,9 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   const handleActionSubmit = async (actionData, entity_id, pos_code) => {
+    console.log(actionData, entity_id, pos_code)
     const res = await submitRefundAction(actionData, entity_id, pos_code);
+    console.log(res)
     if (res && !res.message) {
       setResponseMessage("Order Refunded Successfully.");
     }
@@ -113,8 +104,6 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
       setResponseMessage(res?.message);
     }
   };
-
-  // Add this function to your OrderDetail component
 
   const handlePrint = () => {
     const order = orderResponse;
@@ -176,7 +165,6 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
       };
     });
 
-    // Calculate cart-level discount automatically
     const grandTotal =
       parseFloat(order.order_grandtotal) || subtotal + totalTax;
     const cartDiscount = subtotal + totalTax - grandTotal;
@@ -213,14 +201,12 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   const handlePrintInvoice = async (id) => {
-    // Open a blank tab immediately — within user click
     const newTab = window.open("about:blank", "_blank");
 
     try {
       const res = await printInvoiceAction(id);
 
       if (res?.status === 200 && res?.data?.url) {
-        // Redirect the already opened tab to the invoice URL
         newTab.location.href = res.data.url;
       } else {
         newTab.close();
@@ -234,9 +220,10 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   return (
-    <div className="page_detail section_padding">
+    <div className="page_detail">
+    <div className={styles.pageWrapper}>
       <div className={styles.pageHeader}>
-        <Link href={"/order"} className={styles.backButton}>
+        <Link href="/order" className={styles.backButton}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="20"
@@ -255,257 +242,211 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
           Back to Orders
         </Link>
       </div>
-      <div className={styles.receiptContainer}>
-        <div className={styles.totalHeader}>
-          <span className={styles.totalHeaderText}>
-            Total Price:{" "}
-            <span className={styles.totalAmount}>
-              ${order.order_grandtotal}
-            </span>
-          </span>
-        </div>
-        <div className={styles.totalHeader}>
-          <span className={styles.totalHeaderText}>
-            Increment ID:{" "}
-            <span className={styles.totalAmount}>{order.increment_id}</span>
-          </span>
-        </div>
-        <div className={styles.totalHeader}>
-          <span className={styles.totalHeaderText}>
-            Order Status:{" "}
-            <span className={styles.totalAmount}>{order.order_status}</span>
-          </span>
-        </div>
-        <table className={styles.receiptTable}>
-          <tbody>
-            {/* First row with order info and totals */}
-            <tr className={styles.tableRow}>
-              <td className={styles.sectionCell}>
-                <table className={styles.innerTable}>
-                  <tbody>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Order Date:</td>
-                      <td className={styles.valueCell}>
-                        {formatDate(order.created_at)}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Location:</td>
-                      <td className={styles.valueCell}>
-                        {order.shipping_address?.country_id || "N/A"}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Customer:</td>
-                      <td className={styles.valueCell}>{`${
-                        order.shipping_address?.firstname || ""
-                      } ${order.shipping_address?.lastname || ""}`}</td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Email:</td>
-                      <td className={styles.valueCell}>
-                        {order?.customer_email}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Staff:</td>
-                      <td className={styles.valueCell}>Admin</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-              <td className={styles.sectionCell}>
-                <table className={styles.innerTable}>
-                  <tbody>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Subtotal</td>
-                      <td className={styles.amountCell}>
-                        ${order.subtotal || order.order_grandtotal}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Discount</td>
-                      <td className={styles.amountCell}>
-                        ${order.discount_amount || "0.00"}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Shipping</td>
-                      <td className={styles.amountCell}>
-                        ${order.shipping_amount || "0.00"}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Grand Total</td>
-                      <td className={styles.amountCell}>
-                        ${order.order_grandtotal}
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.labelCell}>Total Paid</td>
-                      <td className={styles.amountCell}>
-                        ${order.total_paid || order.order_grandtotal}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-            <tr className={styles.tableRow}>
-              <td colSpan="2" className={styles.sectionCell}>
-                <div className={styles.sectionTitle}>Items Ordered</div>
-                {order.items &&
-                  order.items.map((item, index) => {
-                    const quantity = item.item_qty_ordered || item?.qty || 1;
-                    const price = parseFloat(
-                      item.item_price || item?.base_price || 0
-                    );
-                    const rowTotal = parseFloat(item.item_row_total || 0);
-                    const rowTotalInclTax = parseFloat(
-                      item.item_row_total_incl_tax || rowTotal
-                    );
-                    const tax = rowTotalInclTax - rowTotal;
-                    const totalAmount = rowTotalInclTax; // price * quantity + tax
 
-                    return (
-                      <table key={index} className={styles.innerTable}>
-                        <tbody>
-                          <tr className={styles.innerTableRow}>
-                            <td className={styles.itemDetailsCell}>
-                              <span className={styles.itemName}>
-                                {item.product_name}
-                              </span>
-                              <br />
-                              <span className={styles.itemSku}>
-                                [{item.product_sku}]
-                              </span>
-                              <br />
-                              <span className={styles.itemQuantity}>
-                                Ordered: {quantity}
-                              </span>
-                            </td>
-                            <td className={styles.itemPriceCell}>
-                              <span className={styles.priceDetail}>
-                                Price: ${price.toFixed(2)}
-                              </span>
-                              <br />
-                              <span className={styles.priceDetail}>
-                                Tax: ${tax.toFixed(2)}
-                              </span>
-                              <br />
-                              <span className={styles.priceTotal}>
-                                Total: ${totalAmount.toFixed(2)}
-                              </span>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    );
-                  })}
-              </td>
-            </tr>
-            {/* Payment and Shipping method row */}
-            <tr className={styles.tableRow}>
-              <td className={styles.sectionCell}>
-                <div className={styles.sectionTitle}>Payment Method</div>
-                <table className={styles.innerTable}>
-                  <tbody>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.paymentMethodCell}>
-                        {order.payment?.method || "Cash"} (
-                        {formatDate(order.created_at)})
-                      </td>
-                    </tr>
-                    <tr className={styles.innerTableRow}>
-                      <td colSpan="2" className={styles.totalCell}>
-                        ${order.order_grandtotal}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-              <td className={styles.sectionCell}>
-                <div className={styles.sectionTitle}>Shipping Method</div>
-                <table className={styles.innerTable}>
-                  <tbody>
-                    <tr className={styles.innerTableRow}>
-                      <td className={styles.shippingMethodCell}>
-                        {order.shipping_description || "Pickup at store"}
-                      </td>
-                      <td className={styles.amountCell}>
-                        ${order.shipping_amount || "0.00"}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-            {/* Address row */}
-            <tr className={styles.tableRow}>
-              <td className={styles.sectionCell}>
-                <div className={styles.sectionTitle}>Shipping Address</div>
-                <div className={styles.addressBox}>
-                  <div className={styles.addressLine}>{`${
-                    order.shipping_address?.firstname || ""
-                  } ${order.shipping_address?.lastname || ""}`}</div>
-                  <div className={styles.addressLine}>
-                    {order.shipping_address?.street || ""}
+      <div className={styles.container}>
+        {/* Header Info */}
+        <div className={styles.headerInfo}>
+          <div className={styles.headerItem}>
+            <span className={styles.headerLabel}>Total Price:</span>
+            <span className={styles.headerValue}>${order.order_grandtotal}</span>
+          </div>
+          <div className={styles.headerItem}>
+            <span className={styles.headerLabel}>Increment ID:</span>
+            <span className={styles.headerValue}>{order.increment_id}</span>
+          </div>
+          <div className={styles.headerItem}>
+            <span className={styles.headerLabel}>Order Status:</span>
+            <span className={styles.headerValue}>{order.order_status}</span>
+          </div>
+        </div>
+
+        {/* Order Info and Totals */}
+        <div className={styles.twoColumnGrid}>
+          <div className={styles.card}>
+            <div className={styles.cardRow}>
+            <div className={styles.cardColumn}>
+              <span className={styles.cardLabel}>Order Date:</span>
+              <span className={styles.cardValue}>{formatDate(order.created_at)}</span>
+            </div>
+            <div className={styles.cardColumn}>
+              <span className={styles.cardLabel}>Location:</span>
+              <span className={styles.cardValue}>
+                {order.shipping_address?.country_id || "N/A"}
+              </span>
+            </div>
+            </div>
+            <div className={styles.cardRow}>
+            <div className={styles.cardColumn}>
+              <span className={styles.cardLabel}>Customer:</span>
+              <span className={styles.cardValue}>{`${
+                order.shipping_address?.firstname || ""
+              } ${order.shipping_address?.lastname || ""}`}</span>
+            </div>
+            <div className={styles.cardColumn}>
+              <span className={styles.cardLabel}>Email:</span>
+              <span className={styles.cardValue}>{order?.customer_email}</span>
+            </div>
+            </div>
+            <div className={styles.cardColumn}>
+              <span className={styles.cardLabel}>Staff:</span>
+              <span className={styles.cardValue}>Admin</span>
+            </div>
+          </div>
+
+          <div className={`${styles.card} ${styles.totalCard}`}>
+            <div className={styles.cardRow}>
+              <span className={styles.cardLabel}>Subtotal</span>
+              <span className={styles.cardValue}>
+                ${order.subtotal || order.order_grandtotal}
+              </span>
+            </div>
+            <div className={styles.cardRow}>
+              <span className={styles.cardLabel}>Discount</span>
+              <span className={styles.cardValue}>
+                ${order.discount_amount || "0.00"}
+              </span>
+            </div>
+            <div className={styles.cardRow}>
+              <span className={styles.cardLabel}>Shipping</span>
+              <span className={styles.cardValue}>
+                ${order.shipping_amount || "0.00"}
+              </span>
+            </div>
+            <div className={styles.cardRow}>
+              <span className={styles.cardLabel}>Grand Total</span>
+              <span className={styles.cardValue}>${order.order_grandtotal}</span>
+            </div>
+            <div className={styles.cardRow}>
+              <span className={styles.cardLabel}>Total Paid</span>
+              <span className={styles.cardValue}>
+                ${order.total_paid || order.order_grandtotal}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Items Ordered */}
+        <div className={styles.twoColumnGrid}>
+          <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Items Ordered</h3>
+          {order.items &&
+            order.items.map((item, index) => {
+              const quantity = item.item_qty_ordered || item?.qty || 1;
+              const price = parseFloat(
+                item.item_price || item?.base_price || 0
+              );
+              const rowTotal = parseFloat(item.item_row_total || 0);
+              const rowTotalInclTax = parseFloat(
+                item.item_row_total_incl_tax || rowTotal
+              );
+              const tax = rowTotalInclTax - rowTotal;
+              const totalAmount = rowTotalInclTax;
+
+              return (
+                <div key={index} className={styles.itemsContainer}>
+                  <div className={styles.itemLeft}>
+                    <div className={styles.itemName}>{item.product_name}</div>
+                    <div className={styles.itemSku}>({item.product_sku})</div>
+                    <div className={styles.itemQuantity}>Ordered: {quantity}</div>
                   </div>
-                  <div className={styles.addressLine}>
-                    {[
-                      order.shipping_address?.city,
-                      order.shipping_address?.region,
-                      order.shipping_address?.postcode,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")}
-                  </div>
-                  <div className={styles.addressLine}>
-                    {order.shipping_address?.country_id}
+                  <div className={styles.itemRight}>
+                    <div className={styles.itemPrice}>Price: ${price.toFixed(2)}</div>
+                    <div className={styles.itemTax}>Tax: ${tax.toFixed(2)}</div>
+                    <div className={styles.itemTotal}>Total: ${totalAmount.toFixed(2)}</div>
                   </div>
                 </div>
-              </td>
-            </tr>
-            {/* Button row */}
-            <tr className={styles.tableRow}>
-              <td colSpan="2" className={styles.actionButtonsRow}>
-                {orderResponse?.order_status == "complete" && (
-                  <button
-                    className={styles.actionButton}
-                    onClick={() => openModal("refund")}
-                  >
-                    Refund
-                  </button>
-                )}
-                {/* <button className={styles.actionButton} onClick={() => openModal('cancel')}>Cancel</button>
-                <button className={styles.actionButton}>Email</button> */}
-                <button className={styles.actionButton} onClick={handlePrint}>
-                  Print
-                </button>
-                <button
-                  className={styles.actionButton}
-                  onClick={() =>
-                    handlePrintInvoice(orderResponse?.invoice?.[0]?.invoice_id)
-                  }
-                >
-                  Download Invoice
-                </button>
-                <button
-                  className={`${styles.actionButton} loading_action`}
-                  onClick={() =>
-                    handleEmailInvoice(orderResponse?.invoice?.[0]?.invoice_id)
-                  }
-                >
-                  Email Invoice
-                </button>
-              </td>
-            </tr>
-            <p style={{ color: "#47AF48" }}></p> {responseMessage}
-          </tbody>
-        </table>
+              );
+            })}
+            </div>
+ <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Payment Method</h3>
+            <div className={styles.methodInfo}>
+              <div className={styles.methodText}>
+                {order.payment?.method || "Cash"} ({formatDate(order.created_at)})
+              </div>
+              <div className={styles.methodAmount}>${order.order_grandtotal}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment and Shipping */}
+        {/* <div className={styles.twoColumnGrid}> */}
+         
+
+          <div className={styles.twoColumnGrid}>
+            <div className={styles.card}>
+            <h3 className={styles.cardTitle}>Shipping Method</h3>
+            <div className={styles.cardRow}>
+              <div className={styles.methodText}>
+                {order.shipping_description || "Pickup at store"}
+              </div>
+              <div className={styles.methodAmount}>
+                ${order.shipping_amount || "0.00"}
+              </div>
+            </div>
+            </div>
+          </div>
+        {/* </div> */}
+
+        {/* Shipping Address */}
+        <div className={`${styles.twoColumnGrid} ${styles.shipping}`}>
+          <div className={styles.card}>
+          <h3 className={styles.cardTitle}>Shipping Address</h3>
+          <div className={styles.addressContent}>
+            <div>{`${
+              order.shipping_address?.firstname || ""
+            } ${order.shipping_address?.lastname || ""}`}</div>
+            <div>{order.shipping_address?.street || ""}</div>
+            <div>
+              {[
+                order.shipping_address?.city,
+                order.shipping_address?.region,
+                order.shipping_address?.postcode,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </div>
+            <div>{order.shipping_address?.country_id}</div>
+          </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className={styles.actionButtons}>
+          {orderResponse?.order_status == "complete" && (
+            <button
+              className={styles.actionButton}
+              onClick={() => openModal("refund")}
+            >
+              Refund
+            </button>
+          )}
+          <button className={styles.actionButton} onClick={handlePrint}>
+            Print
+          </button>
+          <button
+            className={styles.actionButton}
+            onClick={() =>
+              handlePrintInvoice(orderResponse?.invoice?.[0]?.invoice_id)
+            }
+          >
+            Download Invoice
+          </button>
+          <button
+            className={`${styles.actionButton} loading_action`}
+            onClick={() =>
+              handleEmailInvoice(orderResponse?.invoice?.[0]?.invoice_id)
+            }
+          >
+            Email Invoice
+          </button>
+        </div>
+
+        {responseMessage && (
+          <p className={styles.responseMessage}>{responseMessage}</p>
+        )}
       </div>
 
-      {/* Order Action Modal */}
       <OrderActionModal
         isOpen={modalInfo.isOpen}
         onClose={closeModal}
@@ -514,6 +455,7 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
         onSubmit={handleActionSubmit}
         styles={styles}
       />
+    </div>
     </div>
   );
 }

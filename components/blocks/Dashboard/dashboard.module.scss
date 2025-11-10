@@ -141,6 +141,17 @@
 
 .orders { 
     background: style.$whiteColor; padding: 20px; border-radius: 10px; overflow-x: auto; box-shadow: 0px 4px 6px -4px #0000001A; box-shadow: 0px 10px 15px -3px #0000001A; border-radius: 14px;
+    .order_header{
+      td{
+      font-size: 14px; line-height: 24px; font-weight: 400; color: #6A7282; padding-bottom: 3px;
+      svg, strong{
+         vertical-align: middle;
+      }
+      svg{
+        padding-right: 10px
+      }
+      }
+    }
     .order_head { 
        @include style.flex(space-between, center, 0px); padding-bottom: 48px;
        & > div{
@@ -192,7 +203,7 @@
       }
     }
 
-    tbody {
+    tbody, tfoot {
       tr {
         background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); border-bottom: 1px solid #E2E8F0;
 
@@ -242,6 +253,19 @@
         }
         .viewDetailBtn{
           color: style.$LinkColor;
+        }
+         &.no_border {
+          border-bottom: none; box-shadow : unset;
+        }
+        &.shadow{
+          box-shadow: unset;
+        }
+      }
+    }
+    tfoot{
+      tr{
+        &:last-child{
+          border-bottom: unset;
         }
       }
     }

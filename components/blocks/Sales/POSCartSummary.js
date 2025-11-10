@@ -185,9 +185,13 @@ export default function POSCartSummary({
   }, []);
 
   useEffect(() => {
+    if(amount > 0) {
     const numericAmount = parseFloat(amount) || 0;
     const calculatedBalance = (numericAmount - total).toFixed(2);
     setBalance(calculatedBalance);
+    } else {
+      setBalance("")
+    }
   }, [amount, total]);
 
   const validateEmail = (email) => {
@@ -231,7 +235,9 @@ export default function POSCartSummary({
     const promise = (async () => {
       setConsentLoading(true);
       try {
-        const res = await getCustomerConsentAction(email, phone);
+          const formattedPhone = phone ? phone.replace(/\+/g, "%2B") : phone;
+const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
+        const res = await getCustomerConsentAction(formattedEmail, formattedPhone);
 
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent) {
           setConsentStatus(res[0].consent);
@@ -464,7 +470,8 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
         await saveOrder(orderData);
@@ -474,6 +481,8 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
+         setCustomerDropdown(false)
+        setDiscountPercent('')
         return;
       }
 
@@ -495,7 +504,8 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
         await saveOrder(orderData);
@@ -505,6 +515,8 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
+         setCustomerDropdown(false)
+        setDiscountPercent('')
         return;
       }
 
@@ -520,7 +532,8 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
         await saveOrder(orderData);
@@ -530,6 +543,8 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
+         setCustomerDropdown(false)
+        setDiscountPercent('')
       }
 
       if (finalConsent === "not_set") {
@@ -544,7 +559,8 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
         setConsentModal(true);
@@ -570,6 +586,8 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
+         setCustomerDropdown(false)
+        setDiscountPercent('')
       }
 
       if (finalConsent == "no") {
@@ -584,7 +602,8 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             warehouseId,
-            orderData?.fbr_invoice_id
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
         await saveOrder(orderData);
@@ -594,6 +613,8 @@ export default function POSCartSummary({
         setAmount("");
         setPhone("");
         setEmail("");
+        setCustomerDropdown(false)
+        setDiscountPercent('')
         if (!consentTrue) {
           return;
         }
@@ -633,7 +654,9 @@ export default function POSCartSummary({
             orderId,
             orderData?.order_key,
             pdfResponse,
-            orderData?.fbr_invoice_id
+            warehouseId,
+            orderData?.fbr_invoice_id,
+            discountPercent
           );
         }
 
@@ -698,30 +721,30 @@ export default function POSCartSummary({
                 <path
                   d="M10.6667 14V12.6667C10.6667 11.9594 10.3858 11.2811 9.88566 10.781C9.38556 10.281 8.70728 10 8.00004 10H4.00004C3.2928 10 2.61452 10.281 2.11442 10.781C1.61433 11.2811 1.33337 11.9594 1.33337 12.6667V14"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
                 <path
                   d="M10.6666 2.08534C11.2385 2.23359 11.7449 2.56752 12.1064 3.03472C12.4679 3.50192 12.6641 4.07594 12.6641 4.66668C12.6641 5.25742 12.4679 5.83144 12.1064 6.29863C11.7449 6.76583 11.2385 7.09976 10.6666 7.24801"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
                 <path
                   d="M14.6666 14V12.6667C14.6662 12.0758 14.4695 11.5019 14.1075 11.0349C13.7455 10.5679 13.2387 10.2344 12.6666 10.0867"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
                 <path
                   d="M6.00004 7.33333C7.4728 7.33333 8.66671 6.13943 8.66671 4.66667C8.66671 3.19391 7.4728 2 6.00004 2C4.52728 2 3.33337 3.19391 3.33337 4.66667C3.33337 6.13943 4.52728 7.33333 6.00004 7.33333Z"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
               <div className={styles.customerDetailName}>
@@ -742,10 +765,10 @@ export default function POSCartSummary({
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-chevron-down h-4 w-4 text-gray-600"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-chevron-down h-4 w-4 text-gray-600"
                   aria-hidden="true"
                 >
                   <path d="m6 9 6 6 6-6"></path>
@@ -758,10 +781,10 @@ export default function POSCartSummary({
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  class="lucide lucide-chevron-up h-4 w-4 text-gray-600"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="lucide lucide-chevron-up h-4 w-4 text-gray-600"
                   aria-hidden="true"
                 >
                   <path d="m18 15-6-6-6 6"></path>

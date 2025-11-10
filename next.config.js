@@ -28,8 +28,8 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'coffee.local',
+        protocol: 'https',
+        hostname: 'web.baseer.ca',
         pathname: '/**',
       },
         {

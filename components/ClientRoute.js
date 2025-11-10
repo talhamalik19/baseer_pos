@@ -24,7 +24,6 @@ export default function ClientRoute({ children,requiredPermission }) {
       //   router.replace('/auth/login');
       //   return;
       // }
-      console.log(posData.admin_acl?.[requiredPermission])
       if (
         !superAdmin &&
         requiredPermission &&

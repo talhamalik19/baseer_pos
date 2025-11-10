@@ -127,23 +127,25 @@
 
 .orders_tab_block {
   .orders_tab_list {
-    @include style.flex(flex-start, center, 50px);
+    @include style.flex(flex-start, center, 12px);
     padding: 0px 50px;
     overflow-x: auto;
     white-space: nowrap;
 
     .orders_tab_item {
-      font-size: 17px;
-      line-height: 27px;
+      font-size: 14px;
+      line-height: 24px;
       font-weight: 500;
       color: style.$TextColor;
-      padding-block: 20px;
       cursor: pointer;
-
+      border: 1px solid #E5E7EB;
+    padding: 8px 35px;
+    border-radius: 8px;
+    margin-top: 15px;
       &.active {
         font-weight: 700;
-        color: style.$blackColor;
-        border-bottom: 2px solid style.$PrimaryColor;
+        color: style.$whiteColor;
+        background-color: #00BBA7; border: transparent;
       }
     }
   }
@@ -157,4 +159,15 @@
       }
     }
   }
+}
+
+.back_main{
+  @include style.flex(flex-start, center, 16px); font-size: 16px; line-height: 26px; color: style.$pageTitle; font-weight: 400;  margin-bottom: 30px;
+}
+.back{
+ @include style.flex(flex-start, center, 10px);
+    color: #0A0A0A;
+    font-size: 14px;
+    line-height: 22px;
+    font-weight: 500;
 }

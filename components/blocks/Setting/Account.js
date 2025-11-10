@@ -90,12 +90,13 @@ export default function Account({ username, email, firstname, lastname, jwt, ser
             onChange={handleChange}
             required
           />
+        
+        </div>
+        <button type="submit">{serverLanguage?.change_password ?? 'Change Password'}</button>
+        {response && <p className={`${response == "Password updated successfully." || response == "Password changed successfully." ? style.success_response : style.error_response}`}>{response}</p>}
           {errors.confirmPassword && (
             <span className={style.error}>{errors.confirmPassword}</span>
           )}
-        </div>
-        <button type="submit">{serverLanguage?.change_password ?? 'Change Password'}</button>
-        {response && <p className={style.response}>{response}</p>}
           {errors.currentPassword && (
             <span className={style.error}>{errors.currentPassword}</span>
           )}

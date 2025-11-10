@@ -1,0 +1,46 @@
+:root {
+  --PrimaryColor: #00BBA7;
+  --PrimaryHeading: #101828;
+  --TextColor: #4A5565;
+  --LinkColor: #009689;
+  --LabelColor: #364153;
+  --PlaceholderColor: #717182;
+  --backgroundColor: #F4F7F4;
+  --footerBgColor: #0F172B;
+  --FooterTextColor: #D1D5DC;
+  --pageTitle: #1D293D;
+  --borderColor: #E2E8F0;
+  --SecondaryColor: #232323;
+  --successColor: #47AF48;
+  --errorColor: #EB3947;
+  --blackColor: #000000;
+  --whiteColor: #ffffff;
+  --TitleColor: #0B2A2C;
+  --StatsAmount: #0F172B;
+  --settingDes: #6A7282;
+  --pageDetailBackground: #F1F5F9;
+}
+
+/* 🌙 Dark Theme */
+[data-theme="dark"] {
+  --PrimaryColor: #00BBA7;
+  --PrimaryHeading: #ffffff;
+  --TextColor: #cfcfcf;
+  --LinkColor: #00d1b2;
+  --LabelColor: #a0a0a0;
+  --PlaceholderColor: #888;
+  --backgroundColor: #1a1a1a;
+  --footerBgColor: #000000;
+  --FooterTextColor: #c2c2c2;
+  --pageTitle: #e5e5e5;
+  --borderColor: #333;
+  --SecondaryColor: #121212;
+  --successColor: #47AF48;
+  --errorColor: #EB3947;
+  --blackColor: #000000;
+  --whiteColor: #ffffff;
+  --TitleColor: #fafafa;
+  --StatsAmount: #e0e0e0;
+  --settingDes: #aaa;
+  --pageDetailBackground: #202020;
+}

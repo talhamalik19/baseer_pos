@@ -1,8 +1,8 @@
 import React from "react";
 import style from "./consent.module.scss";
-import Consent from "@/components/blocks/Consent";
 import { getConsent } from "@/lib/Magento/restAPI";
 import { decryptData } from "@/lib/crypto";
+import Consent from "@/components/blocks/Consent";
 
 export default async function ConsentPage({ searchParams }) {
   const params = await searchParams;

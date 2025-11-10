@@ -172,33 +172,25 @@ $media-query-mediumDesktop: "only screen and (min-width:#{$breakpoints-base}) an
 }
 
 .report_card {
-  background-color: $whiteColor;
-  border-radius: 12px;
-  padding: 40px 30px;
-  text-decoration: none;
-  color: inherit;
-  transition: all 0.3s ease;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  border: 2px solid transparent;
-  
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0px 8px 25px rgba(0, 0, 0, 0.15);
-    border-color: $PrimaryColor;
-  }
+  box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid style.$borderColor;  background: style.$whiteColor;
+  cursor: pointer; padding: 24px; text-decoration: none; border-radius: 14px;
   
   .card_content {
-    @include flex(center, center, 0);
-    text-align: center;
+    @include flex(space-between, center, 0);
+    .arrow_svg{
+      background-color: unset; padding: 0; box-shadow: unset; border: unset;
+    }
   }
   
   .card_title {
-    font-size: 20px;
-    font-weight: 600;
-    color: $blackColor;
-    margin: 0;
-    line-height: 1.4;
+    font-size: 16px; line-height: 26px;
+    font-weight: 500;
+    color: style.$pageTitle; 
+    margin: 0; @include style.flex(flex-start, center, 16px)   
+  }
+  svg{
+    padding: 12px; border-radius: 14px; background-color: #ECFEFF; box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A;
+
   }
 }
 
@@ -222,9 +214,12 @@ $media-query-mediumDesktop: "only screen and (min-width:#{$breakpoints-base}) an
   
   .filter_grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(4, minmax(250px, 1fr));
+    gap: 24px;
     margin-bottom: 30px;
+    @media screen and (max-width: 1400px) {
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    }
   }
   
   .filter_group {
@@ -245,11 +240,12 @@ $media-query-mediumDesktop: "only screen and (min-width:#{$breakpoints-base}) an
     select, input {
       width: 100%;
       padding: 10px;
-      border: 1px solid #ddd;
+      border: 1px solid #CAD5E2;
       border-radius: 8px;
       font-size: 14px;
       box-sizing: border-box;
-      height: 55px;
+      // height: 55px;
+      background-color: unset;
       &:focus {
         outline: none;
         border-color: $PrimaryColor;
@@ -284,11 +280,11 @@ $media-query-mediumDesktop: "only screen and (min-width:#{$breakpoints-base}) an
     }
     
     .export_button {
-      background-color: $PrimaryColor;
-      color: $whiteColor;
+background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%);
+      color: $whiteColor; font-weight: 500;
       border: none;
-     padding: 15px 20px;
-      border-radius: 6px;
+     padding: 10px 32px;
+      border-radius: 2px;
       cursor: pointer;
       font-weight: 500;
       
@@ -316,6 +312,18 @@ $media-query-mediumDesktop: "only screen and (min-width:#{$breakpoints-base}) an
 
 .export_button{
   margin-top: 10px;
+  background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%) !important;
+ background-color: transparent !important;
+      color: $whiteColor; font-weight: 500;
+      border: none;
+     padding: 10px 32px !important;
+      border-radius: 2px;
+      cursor: pointer;
+      font-weight: 500;
+      
+      &:hover {
+        background-color: darken($PrimaryColor, 10%);
+      }
 }
 .table_report_block{
   table{

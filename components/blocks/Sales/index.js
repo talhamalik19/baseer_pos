@@ -34,7 +34,6 @@ export default function SalesDetail({
   const discountIncludingTax = parseInt(
     JSON.parse(localStorage.getItem("loginDetail"))?.discount_including_tax
   );
-  console.log(applyTaxAfterDiscount, discountIncludingTax)
   const [payment, setPayment] = useState("checkmo");
   const [cartItems, setCartItems] = useState([]);
   const [pdfResponse, setPdfResponse] = useState({});

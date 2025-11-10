@@ -2,7 +2,7 @@ import Invoice from "@/components/blocks/Invoice";
 import { getOrdersByKey } from "@/lib/Magento";
 import { getBannerDetails, getWarehouseDetail, magentoRestFetch } from "@/lib/Magento/restAPI";
 import React from "react";
-import style from "../../(auth)/consent/consent.module.scss";
+import style from "../../(consent)/consent/consent.module.scss"
 import { getFeedbackAction } from "@/lib/Magento/actions";
 
 export default async function InvoicePage({ searchParams }) {

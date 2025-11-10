@@ -58,6 +58,7 @@ export default function CustomizePdf({ jwt , serverLanguage}) {
 
   const [form, setForm] = useState(posDetail);
   const [saved, setSaved] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -72,15 +73,42 @@ export default function CustomizePdf({ jwt , serverLanguage}) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleLogoUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
 
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const processFile = (file) => {
+    if (!file) return;
     const reader = new FileReader();
     reader.onloadend = () => {
       setForm((prev) => ({ ...prev, logo: reader.result }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    processFile(file);
+  };
+
+  const handleRemoveLogo = () => {
+    setForm((prev) => ({ ...prev, logo: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -165,22 +193,49 @@ if (status === true) {
         
         <div className={styles.inputField}>
           <label htmlFor="logo">{serverLanguage?.upload_logo ?? 'Upload Logo'}</label>
-          <input
-            id="logo"
-            name="logo"
-            type="file"
-            accept="image/*"
-            onChange={handleLogoUpload}
-            className={styles.formControl}
-          />
-        </div>
-
-        {form.logo && (
-          <div className={styles.preview}>
-            <p>Preview:</p>
-            <img src={form.logo} alt="Logo Preview" width={100} />
+          
+          <div 
+            className={`${styles.uploadArea} ${dragActive ? styles.dragActive : ''}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <input
+              id="logo"
+              name="logo"
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className={styles.fileInput}
+            />
+            
+            {form.logo ? (
+              <div className={styles.previewContainer}>
+                <img src={form.logo} alt="Logo Preview" className={styles.logoPreview} />
+                <button 
+                  type="button" 
+                  onClick={handleRemoveLogo}
+                  className={styles.removeBtn}
+                >
+                  {serverLanguage?.remove ?? 'Remove'}
+                </button>
+              </div>
+            ) : (
+              <label htmlFor="logo" className={styles.uploadLabel}>
+                <div className={styles.uploadIcon}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                  </svg>
+                </div>
+                <div className={styles.uploadText}>
+                  <span className={styles.chooseFile}>{serverLanguage?.choose_file ?? 'Choose File'}</span>
+                  <span className={styles.noFile}>{serverLanguage?.no_file_chosen ?? 'No file chosen'}</span>
+                </div>
+              </label>
+            )}
           </div>
-        )}
+        </div>
 
         <div className={styles.inputField}>
           <label htmlFor="companyName">{serverLanguage?.company_name ?? 'Company Name'}</label>

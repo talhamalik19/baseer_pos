@@ -1,15 +1,26 @@
 
+@use "../../../styles/variable.scss" as style;
 .consent_page{
-    min-height: calc(100vh - 207px); background-color: #f4f7f4; overflow-y: auto; text-align: left; display: flex;  justify-content: center;
+    min-height: 100vh; background-color: #F1F5F9; overflow-y: auto; text-align: left; display: flex;  justify-content: center;
     flex-direction: column; line-height: 26px;
 }
 .consent_container{
-    max-width: 720px; margin: auto; padding-inline: 20px;
+   max-width: 850px; margin: auto; padding-inline: 20px; box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A; border-radius: 10px; background-color: #fff; padding: 40px 50px;
+   img{
+    padding-bottom: 50px;
+   }
     h2{
-        font-size: 26px; line-height: 36px; padding-bottom: 20px; font-weight: 600;
+        font-size: 24px; line-height: 34px; padding-bottom: 10px; font-weight: 400; color: style.$pageTitle;
+    }
+    p, ul, label{
+      font-size: 14px; line-height: 26px; color: #314158; font-weight: 400; padding-bottom: 20px; 
+    }
+    .timer{
+      color: #E7000B; font-size: 14px; line-height: 24px; font-weight: 400; padding-bottom: 30px; 
     }
     button{
-       background-color: #4FACB8; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 15px 20px; border: none;    border-radius: 8px; color: #ffffff; font-weight: 500; cursor: pointer; border-radius: 8px !important; width: 100%; margin-top: 10px; margin-bottom: 20px;
+      display: flex; justify-content: center; align-items: center; gap: 8px; padding: 15px 20px; border: none;    border-radius: 8px; color: #ffffff; font-weight: 500; cursor: pointer; border-radius: 8px !important; width: 100%; margin-top: 10px; margin-bottom: 20px;background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%);
+
     }
     li{
         position: relative;
@@ -18,14 +29,34 @@
         }
     }
     @media screen and (max-width: 767px) {
+      padding: 20px;
+      img{
+        padding-bottom: 20px;
+      }
+      .timer{
+        padding-bottom: 20px;
+      }
+      p, ul, label{
+        padding-bottom: 10px;
+      }
         h2{
             font-size: 20px; line-height: 30px; padding-bottom: 10px;
         }
     }
 }
 .cb{
-    display: flex; align-items: center; gap: 8px; padding-top: 10px;
-.consent_cb{  cursor:pointer;  appearance:none;  -webkit-appearance:none;  -moz-appearance:none;  width:18px;  height:18px;  border:1px solid #4FACB8;  border-radius:4px;  display:inline-block;  position:relative;  background-color:white;  transition:all 0.2s ease;}
+  padding-bottom: 30px;
+  input[type="radio"]{
+    appearance: none; border: none; width: 15px; height: 15px; border: 1px solid black; border-radius: 50%; margin-right: 8px; position: relative;
+    &:checked{
+ border-color: #00bba7;
+  &:after{
+    content: ""; position: absolute; top: 2px; left: 2px; width: 9px; height: 9px; background: style.$PrimaryColor; border-radius: 50%;
+  }
+    }
+  }
+.consent_cb{  cursor:pointer;  appearance:none;  -webkit-appearance:none;  -moz-appearance:none;  width:18px;  height:18px;  border:1px solid #4FACB8;  border-radius:4px;  display:inline-block;  position:relative;  background-color:white;  transition:all 0.2s ease; }
+
 .consent_cb:checked{  background-color:#4FACB8;  border-color:#4FACB8;}
 .consent_cb:checked::after{  content:"";  position:absolute;  top:1px;  left:5px;  width:4px;  height:8px;  border:solid white;  border-width:0 2px 2px 0;  transform:rotate(45deg);}
 
@@ -326,6 +357,7 @@ box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #E2E8F0;
         gap: 16px;
         font-size: 13px;
         color: #374151; align-items: center;
+        justify-content: space-between;
 
         .discount {
           color: #dc2626;

@@ -570,9 +570,9 @@ export default function Invoice({
                   <span className={style.product_code}>{item.product_sku}</span>
                   <div className={style.meta}>
                     <span>Qty: {item.item_qty_ordered}</span>
-                    <span className={style.discount}>
+                  {item?.discount && <span className={style.discount}>
                       Discount: Rs. {item.discount || "0"}
-                    </span>
+                    </span> }
                     <span className={style.tax}>
                       Tax: Rs. {calculateRowTax(item)}
                     </span>
@@ -709,9 +709,9 @@ export default function Invoice({
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                         class="lucide lucide-chevron-right h-4 w-4 text-gray-400 transition-transform duration-200 rotate-90"
                         aria-hidden="true"
                       >
@@ -728,9 +728,9 @@ export default function Invoice({
                         <path
                           d="M6.5 12.5781L10.5 8.57813L6.5 4.57812"
                           stroke="#99A1AF"
-                          stroke-width="1.33333"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
+                          strokeWidth="1.33333"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                         />
                       </svg>
                     )}
@@ -763,22 +763,21 @@ export default function Invoice({
                 <path
                   d="M15.1512 7.24478C15.4556 8.73898 15.2387 10.2924 14.5364 11.646C13.8342 12.9996 12.6891 14.0715 11.2922 14.683C9.89527 15.2945 8.33093 15.4086 6.86004 15.0064C5.38916 14.6041 4.10064 13.7097 3.20936 12.4724C2.31808 11.2351 1.87793 9.72961 1.96229 8.20704C2.04665 6.68447 2.65043 5.23684 3.67294 4.10557C4.69546 2.97429 6.0749 2.22774 7.58122 1.99042C9.08754 1.7531 10.6297 2.03936 11.9505 2.80145"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
                 <path
                   d="M6.61719 7.91154L8.61719 9.91154L15.2839 3.24487"
                   stroke="#4A5565"
-                  stroke-width="1.33333"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                  strokeWidth="1.33333"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
               </svg>
               Customer satisfaction guaranteed
             </div>
           </div>
-          {console.log(copyrightLines)}
           <div className={style.footer}>
   <p>
     Powered by <Link className={style.baseer} href={'https://web.baseer.ca'} target="_blank">{copyrightLines?.[1] || "Baseer"}</Link>

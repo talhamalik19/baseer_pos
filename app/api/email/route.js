@@ -4,20 +4,21 @@ import QRCode from "qrcode";
 import fs from "fs";
 import path from "path";
 
-// Export the email sending logic
 export async function sendEmailLogic(emailData) {
   const { email, orderId, orderData, pdf, pdfResponse, warehouseId, smtp_config } = emailData;
 
+  // Setup transporter
   const transporter = nodemailer.createTransport({
     host: smtp_config?.smtp_host,
     port: smtp_config?.smtp_port,
-    secure: true,
+    secure: smtp_config?.smtp_port == 465, // secure only for 465
     auth: {
       user: smtp_config?.smtp_user,
       pass: smtp_config?.smtp_pass,
     },
   });
 
+  // Load logo
   const logoPath = path.join(process.cwd(), "public", "images", "zaafodesktop.png");
   let logoBase64 = "";
   try {
@@ -27,116 +28,168 @@ export async function sendEmailLogic(emailData) {
     }
   } catch (err) {
     console.error("Logo error:", err.message);
-    logoBase64 = "";
   }
 
   const companyConfig = pdfResponse || {
     title: "Receipt",
     subtitle: "Thank You For Your Purchase",
     logo: logoBase64,
-    companyName: "Store",
     footer: "Thank you for shopping with us!",
     footerText: "Please come again",
   };
 
+  // QR Code
   const qrCodeDataURL = await QRCode.toDataURL(
     `${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${orderData?.order_key}&warehouse=${warehouseId}`
   );
   const qrCodeBuffer = Buffer.from(qrCodeDataURL.split(",")[1], "base64");
 
+  // Build items
   const itemsHtml = orderData.items
     .map((item) => {
       const qty = Number(item.qty) || 1;
-      const price = Number(item.price || item?.product?.price?.regularPrice?.amount?.value) || 0;
+      const price =
+        Number(item.price || item?.product?.price?.regularPrice?.amount?.value) || 0;
       const taxAmount = Number(item.tax_amount) || 0;
-      const totalWithTax = price * qty + taxAmount;
+      const discounted = Number(item.discounted_price) || null;
+      const totalWithTax = ((discounted || price) * qty) + taxAmount;
       const name = item.product_name || item?.product?.name || "Unknown Item";
 
       return `
-        <tr>
-          <td style="padding:10px; border:1px solid #ddd;">${name}</td>
-          <td style="padding:10px; border:1px solid #ddd;">${item.product_sku}</td>
-          <td style="padding:10px; border:1px solid #ddd; text-align:center;">${qty}</td>
-          <td style="padding:10px; border:1px solid #ddd; text-align:right;">$${price.toFixed(2)}</td>
-          <td style="padding:10px; border:1px solid #ddd; text-align:right;">$${taxAmount.toFixed(2)}</td>
-          <td style="padding:10px; border:1px solid #ddd; text-align:right;">$${totalWithTax.toFixed(2)}</td>
+        <!-- Desktop row: VISIBLE by default -->
+        <tr class="desktop-row" style="display:table-row;">
+          <td style="padding:8px; border:1px solid #ddd; vertical-align:top;">${name}</td>
+          <td style="padding:8px; border:1px solid #ddd; vertical-align:top;">${item.product_sku}</td>
+          <td align="center" style="padding:8px; border:1px solid #ddd; vertical-align:top;">${qty}</td>
+          <td align="right" style="padding:8px; border:1px solid #ddd; vertical-align:top;">$${price.toFixed(2)}</td>
+          <td align="right" style="padding:8px; border:1px solid #ddd; vertical-align:top;">$${taxAmount.toFixed(2)}</td>
+          <td align="right" style="padding:8px; border:1px solid #ddd; vertical-align:top;">$${totalWithTax.toFixed(2)}</td>
+        </tr>
+
+        <!-- Mobile stacked row: HIDDEN by default via inline display:none; shown only by media query -->
+        <tr class="mobile-row" style="display:none; mso-hide:all;">
+          <td colspan="6" style="padding:10px; border:1px solid #ddd; line-height:1.4; display:block;">
+            <strong style="font-size:14px; color:#333; display:block;">${name}</strong>
+            <span style="font-size:12px; color:#555; display:block; margin-top:4px;">SKU: ${item.product_sku}</span>
+            <span style="font-size:12px; color:#555; display:block; margin-top:2px;">Qty: ${qty}</span>
+            <span style="font-size:12px; color:#555; display:block; margin-top:2px;">Price: $${price.toFixed(2)}</span>
+            ${
+              discounted && discounted < price
+                ? `<span style="font-size:12px; color:#d9534f; display:block; margin-top:2px;">Discounted: $${discounted.toFixed(2)}</span>`
+                : ``
+            }
+            <span style="font-size:12px; color:#555; display:block; margin-top:2px;">Tax: $${taxAmount.toFixed(2)}</span>
+            <strong style="font-size:13px; color:#2c3e50; display:block; margin-top:6px;">Total: $${totalWithTax.toFixed(2)}</strong>
+          </td>
         </tr>
       `;
     })
     .join("");
 
+  // HTML email template
   const htmlTemplate = `
-    <div style="font-family: Arial, sans-serif; background:#f7f7f7; padding:30px; color:#333; line-height:1.6;">
-      <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-        
-        <div style="background:#FEEEDF; padding:20px; text-align:center;">
-          ${
-            companyConfig.logo
-              ? `<img src="cid:company-logo" alt="Company Logo" style="max-height:60px; max-width:200px; margin-bottom:10px;" />`
-              : ""
-          }
-          <h1 style="color:#2c3e50; margin:0; font-size:22px;">${companyConfig.title}</h1>
-          <p style="color:#555; margin:5px 0 0;">${companyConfig.subtitle}</p>
-        </div>
+    <div style="font-family: Arial, sans-serif; background:#f7f7f7; padding:10px; color:#333;">
+      <!-- Inline styles + media query in body. Mobile rows are display:none inline; desktop rows display:table-row inline.
+           The media query below sets mobile rows to display:table-row !important and hides desktop rows with !important, which
+           overrides the inline display rules in clients that support media queries. -->
+      <style>
+        /* Default: hide mobile rows (already hidden inline), show desktop rows (already visible inline) */
 
-        <div style="padding:20px;">
-          <h2 style="color:#2c3e50;">Invoice #${orderId}</h2>
-          <p><strong>Date:</strong> ${new Date(orderData.order_date).toLocaleDateString()}</p>
-          <p><strong>Customer Phone:</strong> ${orderData.customer_phone || "-"}</p>
-          <p><strong>Customer Email:</strong> ${orderData.customer_email || "-"}</p>
+        /* Use mobile breakpoint to swap layouts */
+        @media only screen and (max-width: 600px) {
+          /* Show stacked mobile rows */
+          .mobile-row { display: table-row !important; }
+          .mobile-row td { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+          /* Hide desktop table rows */
+          .desktop-row { display: none !important; }
+          /* Optional: remove table borders look for stacked rows */
+          .mobile-row td { border:1px solid #ddd !important; padding:10px !important; }
+        }
 
-          <h3 style="margin-top:20px; color:#2c3e50;">Items</h3>
-          <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-            <thead style="background:#FEEEDF; color:#2c3e50;">
-              <tr>
-                <th style="padding:10px; border:1px solid #ddd; text-align:left;">Item</th>
-                <th style="padding:10px; border:1px solid #ddd; text-align:left;">SKU</th>
-                <th style="padding:10px; border:1px solid #ddd; text-align:center;">Qty</th>
-                <th style="padding:10px; border:1px solid #ddd; text-align:right;">Price</th>
-                <th style="padding:10px; border:1px solid #ddd; text-align:right;">Tax</th>
-                <th style="padding:10px; border:1px solid #ddd; text-align:right;">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
-          </table>
+        /* Outlook-specific fix: keep desktop rows for Outlook desktop (which ignores media queries)
+           and ensure mobile-row remains hidden there due to inline style and mso-hide */
+        @media only screen and (min-width: 601px) {
+          .mobile-row { display: none !important; }
+          .desktop-row { display: table-row !important; }
+        }
 
-          <p style="margin-top:20px; text-align:right; font-size:16px; color:#2c3e50;">
-            <strong>Subtotal:</strong> $${Number(orderData.order_subtotal || 0).toFixed(2)}<br/>
-            <strong>Grand Total:</strong> $${Number(orderData.order_grandtotal || 0).toFixed(2)}
-          </p>
-        </div>
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding:8px; border:1px solid #ddd; font-size:13px; vertical-align:top; }
+        .header-row th { background:#FEEEDF; color:#2c3e50; }
+      </style>
 
-        <div style="background:#FEEEDF; padding:20px; text-align:center; color:#2c3e50;">
-          <p style="margin:0;">${companyConfig.footer}</p>
-          <small style="color:#555;">${companyConfig.footerText}</small>
-          <div style="margin-top:15px;">
-            <img src="cid:qr-code" alt="QR Code" style="width:100px; height:100px; display:block; margin:0 auto;" />
-            <p style="margin-top:8px; font-size:12px; color:#2c3e50;">
-              Scan the QR or click 
-              <a style="text-decoration: underline; color: #2c3e50;" href="${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${orderData?.order_key}&warehouse=${warehouseId}">
-                Here
-              </a> 
-              to give feedback
-            </p>
-          </div>
-        </div>
-      </div>
+      <center>
+        <table width="100%" style="max-width:600px; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+          <tr>
+            <td align="center" style="background:#FEEEDF; padding:15px;">
+              ${companyConfig.logo ? `<img src="cid:company-logo" alt="Logo" style="max-width:180px; height:auto; margin-bottom:10px;" />` : ""}
+              <h1 style="margin:0; font-size:20px; color:#2c3e50;">${companyConfig.title}</h1>
+              <p style="margin:5px 0; color:#555;">${companyConfig.subtitle}</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:15px;">
+              <h2 style="margin:0 0 10px; font-size:18px; color:#2c3e50;">Invoice #${orderId}</h2>
+              <p style="margin:3px 0;"><strong>Date:</strong> ${new Date(orderData.order_date).toLocaleDateString()}</p>
+              <p style="margin:3px 0;"><strong>Customer:</strong> ${orderData.customer_email || "-"}</p>
+
+              <h3 style="margin-top:15px; font-size:16px;">Items</h3>
+
+              <table role="presentation" style="width:100%; border-collapse:collapse;">
+                <thead>
+                  <tr class="header-row desktop-header" style="display:table-row;">
+                    <th style="padding:8px; border:1px solid #ddd;">Item</th>
+                    <th style="padding:8px; border:1px solid #ddd;">SKU</th>
+                    <th style="padding:8px; border:1px solid #ddd;">Qty</th>
+                    <th style="padding:8px; border:1px solid #ddd;">Price</th>
+                    <th style="padding:8px; border:1px solid #ddd;">Tax</th>
+                    <th style="padding:8px; border:1px solid #ddd;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsHtml}
+                </tbody>
+              </table>
+
+              <p style="margin-top:15px; text-align:right; font-size:15px;">
+                <strong>Subtotal:</strong> $${Number(orderData.order_subtotal || 0).toFixed(2)}<br/>
+                ${
+                  orderData.cart_discount
+                    ? `<strong>Cart Discount:</strong> -$${Number(orderData.cart_discount).toFixed(2)}<br/>`
+                    : ""
+                }
+                <strong>Grand Total:</strong> $${Number(orderData.order_grandtotal || 0).toFixed(2)}
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td align="center" style="background:#FEEEDF; padding:15px;">
+              <p style="margin:0;">${companyConfig.footer}</p>
+              <small>${companyConfig.footerText}</small>
+              <div style="margin-top:10px;">
+                <img src="cid:qr-code" alt="QR Code" style="width:80px; height:80px;" />
+                <p style="font-size:12px;">
+                  Scan the QR or click 
+                  <a href="${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${orderData?.order_key}&warehouse=${warehouseId}" style="color:#2c3e50; text-decoration:underline;">Here</a>
+                </p>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </center>
     </div>
   `;
 
+  // Attachments
   const attachments = [
     {
       filename: `receipt-${orderId}.pdf`,
       content: pdf,
       encoding: "base64",
     },
-    {
-      filename: "qrcode.png",
-      content: qrCodeBuffer,
-      cid: "qr-code",
-    },
+    { filename: "qrcode.png", content: qrCodeBuffer, cid: "qr-code" },
   ];
 
   if (logoBase64) {
@@ -151,7 +204,6 @@ export async function sendEmailLogic(emailData) {
     from: `"POS Receipt" <${smtp_config?.email_from}>`,
     to: email,
     subject: `Your Order Receipt - ${orderId}`,
-    text: `Hello, please find attached your receipt for order ${orderId}.`,
     html: htmlTemplate,
     attachments,
   });
@@ -159,10 +211,7 @@ export async function sendEmailLogic(emailData) {
   return result;
 }
 
-// Keep the POST handler for external calls
 export async function POST(req) {
-  console.log("=== EMAIL API POST CALLED ===");
-  
   try {
     const emailData = await req.json();
     const result = await sendEmailLogic(emailData);
