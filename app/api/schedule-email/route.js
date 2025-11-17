@@ -28,7 +28,7 @@ export async function POST(request) {
     console.log(`Starting delayed consent check for order: ${orderId}`);
     console.log(`Email: ${email}, Phone: ${phone}`);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 240000));
 
     console.log(`Re-checking consent for order: ${orderId}`);
     const updatedConsent = await recheckConsentFromAPI(email, phone);
