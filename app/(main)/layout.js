@@ -2,6 +2,8 @@ import { Inter, Wix_Madefor_Display } from "next/font/google";
 import "@/styles/global.scss";
 import { ContextProvider } from "@/context/SidebarContext";
 import SideBar from "@/components/blocks/SideBar";
+import "@/styles/theme.scss"
+
 
 const wixMadeForDisplay = Wix_Madefor_Display({
   weight: ['400', '500', '600', '700'],
@@ -18,11 +20,23 @@ export const metadata = {
   description: 'Streamline your sales with our advanced Point of Sale (POS) system. Track inventory, manage transactions, and enhance customer experience with seamless, secure, and efficient POS software.',
 }
 
+const setInitialTheme = `
+  (function() {
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    } catch (_) {}
+  })();
+`;
 export default async function RootLayout({ children }) {
-
   return (
     <html lang="en">
-      <body className={inter?.className}>
+      <head>
+      <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
+      </head>
+      <body className={`${inter?.className} body`}>
         <ContextProvider>
           <div className="main_container">
           <div className="page_content">

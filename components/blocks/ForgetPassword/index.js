@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
   const [email, setEmail] = useState("");
@@ -9,6 +9,7 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const [theme, setTheme] = useState("light")
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +32,12 @@ export default function ForgetPass({ handleSubmit, serverLanguage, style }) {
 
     setLoading(false);
   };
+
+      useEffect(() => {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        setTheme(savedTheme);
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }, []);
 
   return (
     <div className={style.form}>

@@ -21,26 +21,25 @@
   --pageDetailBackground: #F1F5F9;
 }
 
-/* 🌙 Dark Theme */
 [data-theme="dark"] {
   --PrimaryColor: #00BBA7;
-  --PrimaryHeading: #ffffff;
+  --PrimaryHeading: #F1F5F9;
   --TextColor: #cfcfcf;
   --LinkColor: #00d1b2;
   --LabelColor: #a0a0a0;
   --PlaceholderColor: #888;
   --backgroundColor: #1a1a1a;
-  --footerBgColor: #000000;
+  --footerBgColor: #020618;
   --FooterTextColor: #c2c2c2;
-  --pageTitle: #e5e5e5;
-  --borderColor: #333;
+  --pageTitle: #F1F5F9;
+  --borderColor: #314158;
   --SecondaryColor: #121212;
   --successColor: #47AF48;
   --errorColor: #EB3947;
   --blackColor: #000000;
-  --whiteColor: #ffffff;
+  --whiteColor: #1D293D;
   --TitleColor: #fafafa;
   --StatsAmount: #e0e0e0;
   --settingDes: #aaa;
-  --pageDetailBackground: #202020;
+  --pageDetailBackground: #0F172B;
 }

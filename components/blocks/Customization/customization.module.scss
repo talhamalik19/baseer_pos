@@ -1,7 +1,7 @@
 @use "../../../styles/variable.scss" as style;
 
 .form {
-  display: flex; flex-direction: column; gap: 24px; padding: 24px; background-color: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  display: flex; flex-direction: column; gap: 24px; padding: 24px; background-color: style.$whiteColor; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   .sectionHeading {
     font-size: 18px; font-weight: 600; color: style.$TextColor; margin-bottom: 16px; border-bottom: 1px solid #e9ecef; padding-bottom: 8px;
@@ -16,9 +16,17 @@
 
   .inputField {
     display: flex; flex-direction: column; gap: 8px; flex: 1;
+     [data-theme = "dark"] & {
+      input{
+background: #314158; border: 1px solid #45556c; color: style.$darkModeTitle; box-shadow: 0px 1px 2px -1px #0000001A;box-shadow: 0px 1px 3px 0px #0000001A;
 
+      }
+      }
     label {
       font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 4px;
+      [data-theme = "dark"] & {
+        color: style.$darkModeTitle;
+      }
     }
 
     .formControl {
@@ -45,7 +53,9 @@
   // Upload Area Styles
   .uploadArea {
     border: 2px solid #CAD5E2; border-radius: 8px; background-color: #FAFBFC; padding: 40px 20px; text-align: center; transition: all 0.3s ease; position: relative; min-height: 120px; display: flex; align-items: center; justify-content: center;
-
+     [data-theme = "dark"] & {
+background: #314158; border: 1px solid #45556c; color: style.$darkModeTitle; box-shadow: 0px 1px 2px -1px #0000001A;box-shadow: 0px 1px 3px 0px #0000001A;
+      }
     &.dragActive {
       border-color: #4FACB8; background-color: #F0F9FA;
     }
@@ -136,7 +146,7 @@
       transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: darken(style.$PrimaryColor, 10%);
+        background-color: style.$PrimaryColor;
       }
 
       &:focus {

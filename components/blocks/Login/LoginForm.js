@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import style from "../../../app/(main)/form.module.scss";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -11,6 +11,7 @@ export default function LoginForm({ handleSubmit, serverLanguage }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [theme, setTheme] = useState("light")
 
   const handleFormSubmit = async (event) => {
     event.preventDefault();
@@ -57,6 +58,12 @@ export default function LoginForm({ handleSubmit, serverLanguage }) {
       }
     }
   };
+
+    useEffect(() => {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }, []);
 
   return (
     <>

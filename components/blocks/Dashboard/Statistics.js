@@ -8,12 +8,13 @@ import { useMyContext } from "@/context/SidebarContext";
 export default async function Statistics({ serverLanguage }) {
   const cookieStore = await cookies();
   const jwt = cookieStore.get("jwt")?.value || null;
-
+  const currency = cookieStore.get("currency_symbol")?.value || "$";
   const res = await getSalesStats("YEARLY");
+
   const statistics = [
     {
       text: serverLanguage?.total_earnings ?? "Total Earnings",
-      price: `$${res?.data?.sales?.total_earnings}`,
+      price: `${currency}${res?.data?.sales?.total_earnings}`,
       state: `${res?.data?.sales?.status}`,
       statePrice: `${res?.data?.sales?.status == "up" ? "+" : "-"}${
         res?.data?.sales?.earning_percentage

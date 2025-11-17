@@ -24,6 +24,7 @@ export default function Cards({
   const pathname = usePathname();
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
   const [priceInput, setPriceInput] = useState("");
+  const [percentageInput, setPercentageInput] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isHighlighted, setIsHighlighted] = useState(false);
 
@@ -84,6 +85,38 @@ export default function Cards({
     const value = e.target.value;
     if (!/^\d*\.?\d*$/.test(value)) return;
     setPriceInput(value);
+    
+    // Calculate and update percentage when price changes
+    const basePrice = originalPriceRef.current || 0;
+    const taxOrDiscountedPrice = discountedPriceRef.current || 0;
+    const effectiveBase = basePrice + taxOrDiscountedPrice;
+    
+    if (effectiveBase > 0) {
+      const discountPercent = ((effectiveBase - parseFloat(value)) / effectiveBase) * 100;
+      setPercentageInput(discountPercent > 0 ? discountPercent.toFixed(2) : "");
+    }
+    
+    setErrorMessage("");
+  };
+
+  const handlePercentageChange = (e) => {
+    const value = e.target.value;
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setPercentageInput(value);
+    
+    // Calculate and update price when percentage changes
+    const basePrice = originalPriceRef.current || 0;
+    const taxOrDiscountedPrice = discountedPriceRef.current || 0;
+    const effectiveBase = basePrice + taxOrDiscountedPrice;
+    
+    if (value && effectiveBase > 0) {
+      const percentage = parseFloat(value);
+      const discountedPrice = effectiveBase * (1 - percentage / 100);
+      setPriceInput(discountedPrice.toFixed(2));
+    } else if (!value) {
+      setPriceInput(effectiveBase.toFixed(2));
+    }
+    
     setErrorMessage("");
   };
 
@@ -141,7 +174,6 @@ const validateDiscount = () => {
         })`
       );
 
-      // ❗ Automatically clear after 5 seconds
       setTimeout(() => setErrorMessage(""), 3000);
 
       return false;
@@ -171,6 +203,7 @@ const validateDiscount = () => {
     setIsHighlighted(true);
     setTimeout(() => setIsHighlighted(false), 1000);
   };
+  
   const isPriceDisabled = () => item?.is_pos_discount_allowed !== 1;
 
   const totalWeight = (quantity * weightPerUnit).toFixed(2);
@@ -313,20 +346,38 @@ const validateDiscount = () => {
 
       {record && (
         <div className={style.priceInputContainer}>
-          {/* <label className={style.priceLabel}>
-            {serverLanguage?.DiscountedPrice ?? "Discounted Price"}:
-          </label> */}
-          <p className={style.currency}>{currencySymbol}</p>
-          <input
-            type="text"
-            className={`${style.priceInput} ${
-              isPriceDisabled() ? style.disabled : ""
-            }`}
-            value={priceInput}
-            onChange={handlePriceChange}
-            onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
-            disabled={isPriceDisabled()}
-          />
+          {/* Price Input Field */}
+          <div className={style.inputRow}>
+            <p className={style.currency}>{currencySymbol}</p>
+            <input
+              type="text"
+              className={`${style.priceInput} ${
+                isPriceDisabled() ? style.disabled : ""
+              }`}
+              value={priceInput}
+              onChange={handlePriceChange}
+              onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
+              disabled={isPriceDisabled()}
+              placeholder="Price"
+            />
+          </div>
+
+          {/* Percentage Input Field */}
+          <div className={style.inputRow}>
+            <input
+              type="text"
+              className={`${style.priceInput} ${
+                isPriceDisabled() ? style.disabled : ""
+              }`}
+              value={percentageInput}
+              onChange={handlePercentageChange}
+              onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
+              disabled={isPriceDisabled()}
+              placeholder="Discount %"
+            />
+            <p className={style.currency}>%</p>
+          </div>
+
           <button
             className={style.updatePriceBtn}
             onClick={handleUpdatePrice}
@@ -336,29 +387,11 @@ const validateDiscount = () => {
 <path d="M2.59375 8.09375C2.59375 9.28044 2.94564 10.4405 3.60493 11.4272C4.26422 12.4139 5.20129 13.1829 6.29765 13.637C7.39401 14.0912 8.60041 14.21 9.76429 13.9785C10.9282 13.747 11.9973 13.1755 12.8364 12.3364C13.6755 11.4973 14.247 10.4282 14.4785 9.26429C14.71 8.10041 14.5912 6.89401 14.137 5.79765C13.6829 4.70129 12.9139 3.76422 11.9272 3.10493C10.9405 2.44564 9.78044 2.09375 8.59375 2.09375C6.91638 2.10006 5.3064 2.75457 4.10042 3.92042L2.59375 5.42708" stroke="#0A0A0A" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
 <path d="M2.59375 2.09375V5.42708H5.92708" stroke="#0A0A0A" strokeWidth="1.33333" strokeLinecap="round" strokeLinejoin="round"/>
 </svg>
-
           </button>
+          
           {errorMessage && (
             <div className={style.errorMessage}>{errorMessage}</div>
           )}
-
-          {/* ✅ Price Summary */}
-          {/* <div className={style.summary}>
-            <p>
-              <strong>Original Price:</strong> {currencySymbol}
-              {originalPriceRef?.current?.toFixed(2)}
-            </p>
-            {showDiscount && (
-              <p>
-                <strong>Discounted Price:</strong> {currencySymbol}
-                {effectivePrice.toFixed(2)}
-              </p>
-            )}
-            <p>
-              <strong>Total:</strong> {currencySymbol}
-              {(effectivePrice * quantity).toFixed(2)}
-            </p>
-          </div> */}
         </div>
       )}
 

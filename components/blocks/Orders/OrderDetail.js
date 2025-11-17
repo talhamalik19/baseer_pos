@@ -85,9 +85,7 @@ export default function OrderDetail({ jwt, orderResponse, onBack }) {
   };
 
   const handleActionSubmit = async (actionData, entity_id, pos_code) => {
-    console.log(actionData, entity_id, pos_code)
     const res = await submitRefundAction(actionData, entity_id, pos_code);
-    console.log(res)
     if (res && !res.message) {
       setResponseMessage("Order Refunded Successfully.");
     }

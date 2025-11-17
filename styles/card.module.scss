@@ -66,6 +66,43 @@
 
         }
     }
+    [data-theme="dark"] & {
+      background: #0A0A0A;
+      .product_info{
+        .name{
+          color: style.$darkModeTitle;
+        } 
+           }
+           .price_info{
+            .price{
+              .special_price{
+                color: style.$PrimaryColor;
+              } .final_price{
+                color: style.$darkModeDes;
+              }
+            }
+           }
+           .itemControls{
+            .quantityControls{ 
+              .NegQuantityButton{
+                border: 1px solid #fff; background: #2626264D; color: style.$darkModeDes;
+              }
+              input{
+                background-color: unset; color: #fff;
+              }
+            }
+           }
+      .priceInputContainer{
+        .updatePriceBtn{
+          border-color: white;
+          svg{
+            path{
+              stroke: white;
+            }
+          }
+        }
+      }
+    }
 }
 
 .modalOverlay {
@@ -83,14 +120,14 @@
   .modal {
     width: 100%;
     max-width: 600px;
-    background-color: white;
+    background-color: style.$whiteColor;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     border-radius: 5px;
     margin: 20px;
 
     .modalHeader {
-      background-color: #f8f9fa;
+      // background-color: #f8f9fa;
       color: #333;
       padding: 20px;
       padding-top: 30px;
@@ -98,10 +135,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #dee2e6;
+      // border-bottom: 1px solid #dee2e6;
       position: relative;
       border-radius: 8px;
-
+      [data-theme="dark"] & {
+        color: style.$darkModeTitle;
+      }
       h2 {
         margin: 0;
         font-size: 20px;
@@ -117,8 +156,8 @@
         line-height: 1;
         padding: 0;
         position: absolute;
-        top: -10px;
-        right: -10px;
+        top: 15px;
+        right: 15px;
         background-color: #4FACB8;
         height: 30px;
         width: 30px;
@@ -154,6 +193,15 @@
           font-size: 14px;
           font-weight: 500;
           color: #495057;
+          [data-theme="dark"] & {
+            color: #CAD5E2;
+          }
+        }
+        input{
+          [data-theme="dark"] & {
+            background: #314158;
+  border: 1px solid #45556C; color: style.$darkModeTitle;
+          }
         }
 
         .formControl {
@@ -197,10 +245,10 @@
       gap: 10px;
       margin-top: 20px;
       padding-top: 20px;
-      border-top: 1px solid #e9ecef;
+      // border-top: 1px solid #e9ecef;
       position: sticky;
       bottom: 0;
-      background: white;
+      background: style.$whiteColor;
       z-index: 10;
       padding-bottom: 20px;
 
@@ -275,6 +323,12 @@
   flex-wrap: wrap;
   padding-top: 10px;
     border-top: 1px solid rgba(0, 0, 0, 0.1019607843);
+    div{
+      @include style.flex(flex-start, center, 10px); width: 47%;
+      // .priceInput{
+      //   width: 70px;
+      // }
+    }
   .currency{
     color: #717182;
   }
@@ -286,13 +340,13 @@
   }
 
   .priceInput {
-    width: 100px;
+    width: 100%;
     padding: 5px 10px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 8px;
     transition: border-color 0.2s ease;
-    height: 20px; background-color: #EAF4EA; flex: 1;
+    height: 20px; background-color: #EAF4EA; 
 
     &:focus {
       outline: none;

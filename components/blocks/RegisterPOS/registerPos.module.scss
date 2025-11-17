@@ -49,6 +49,19 @@ font-size: 18px; line-height: 28px; color: style.$TextColor; text-align: center;
       outline: none;
     }
   }
+  [data-theme="dark"] & {
+    p{
+      color: style.$darkModeTitle;
+    }
+    input, select, .dropdownButton, .dropdownList{
+      background-color: #314158; border: 1px solid #45556C; color: style.$darkModeTitle;
+    }
+    .option{
+      &:hover, &.selected{
+        background-color: #0a0a0a;
+      }
+    }
+  }
 }
 
 .dropdownWrapper {

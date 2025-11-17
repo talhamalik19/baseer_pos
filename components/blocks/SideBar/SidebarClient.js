@@ -16,6 +16,12 @@ export default function SideBarClient({ nav, language, currency}) {
   const [isNavHovered, setIsNavHovered] = useState(false);
   const [permissions, setPermissions] = useState({});
   const [hasPosCode, setHasPosCode] = useState(false);
+  const [theme, setTheme] = useState("light")
+
+  useEffect(()=>{
+    const localTheme = localStorage.getItem("theme") || "light"
+    setTheme(localTheme)
+  }, [])
 
   useEffect(() => {
     const code = localStorage.getItem('pos_code');
@@ -142,7 +148,7 @@ export default function SideBarClient({ nav, language, currency}) {
         <div className={styles.logo}>
           {isOpen || isNavHovered ? (
             <Link href="/dashboard">
-              <Image src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`} alt="Logo" width={148} height={40} />
+              <Image src={theme == "light" ? `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png` : `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/baseer_logo_dark.png`} alt="Logo" width={148} height={40} />
             </Link>
           ) : (
             <Link href="/dashboard">

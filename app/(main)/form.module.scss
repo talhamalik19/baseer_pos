@@ -1,7 +1,15 @@
 @use "../../styles/variable.scss" as style;
 
+.page{
+    background-color: style.$backgroundColor;
+    [data-theme="dark"] & {
+        background: linear-gradient(135deg, #0F172B 0%, #0F172B 50%, #1D293D 100%);
+
+    }
+}
 .header{
-    padding: 45px 0px 0px 70px; background-color: style.$backgroundColor;
+    padding: 45px 0px 0px 70px; 
+
 }
 .footer{
     @include style.flex(space-between, center, 0); padding: 40px; background-color: style.$footerBgColor; color: style.$FooterTextColor; box-sizing: border-box;
@@ -23,7 +31,7 @@
 }
   
 .form{
-    height: calc(100vh - 207px); display: flex; align-items: center; justify-content: center; background-color: style.$backgroundColor; text-align: left;
+    height: calc(100vh - 207px); display: flex; align-items: center; justify-content: center;  text-align: left;
     .title {
       font-size: 26px; font-weight: 600; font-weight: 600; line-height: 36px; margin-bottom: 10px; color: style.$PrimaryHeading;
     }
@@ -39,6 +47,17 @@
             color: style.$LinkColor; font-size: 14px; line-height: 24px; font-weight: 400;
         }
     }
+        [data-theme="dark"] & {
+            .subtitle{
+                color: #90A1B9;
+            }
+            label{
+                color: style.$darkModeTitle;
+            }
+            input{
+                color: style.$darkModeTitle;
+            }
+        }
 }
   
   
@@ -104,3 +123,4 @@
         flex-direction: row; padding-inline: 20px;
     }
 }
+

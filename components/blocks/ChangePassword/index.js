@@ -16,7 +16,7 @@ export default function ChangePassword({
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState({});
   const router = useRouter();
-
+  const [theme, setTheme] = useState("light")
   useEffect(() => {
     const storedEmail = localStorage.getItem("email");
     if (storedEmail) {
@@ -82,6 +82,12 @@ export default function ChangePassword({
       setLoading(false);
     }
   };
+
+      useEffect(() => {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        setTheme(savedTheme);
+        document.documentElement.setAttribute("data-theme", savedTheme);
+      }, []);
 
   return (
     <div className={style.form}>

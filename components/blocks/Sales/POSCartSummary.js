@@ -916,7 +916,6 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
                 min={0}
                 value={discountPercent}
                 onChange={(e) => {
-                  console.log(parseFloat(e.target.value) || 0);
                   setDiscountPercent(parseFloat(e.target.value) || 0);
                 }}
               />

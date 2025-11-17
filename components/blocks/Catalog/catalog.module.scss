@@ -10,12 +10,14 @@
 }
 
 .cat_block {
-  padding: 0 50px;
+  padding: 10px 50px;
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
   position: relative;
-  margin-block: 10px;
+    [data-theme="dark"] & {
+		background: #1D293D;
+	}
   .dropdown_container {
     position: relative;
     display: inline-block;
@@ -126,6 +128,9 @@
 }
 
 .orders_tab_block {
+  [data-theme="dark"] & {
+		background: #1D293D;
+	}
   .orders_tab_list {
     @include style.flex(flex-start, center, 12px);
     padding: 0px 50px;

@@ -1,6 +1,8 @@
 import { Wix_Madefor_Display } from "next/font/google";
 import "@/styles/global.scss"
 import LanguageProvider from "@/components/global/LanguageProvider";
+import "@/styles/theme.scss"
+
 
 const wixMadeForDisplay = Wix_Madefor_Display({
   weight: ["400", "500", "600", "700"],

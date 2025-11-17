@@ -75,7 +75,7 @@ export default function Suspend({ serverLanguage }) {
       </h2>
 
       {suspendedOrders.length === 0 ? (
-        <p>
+        <p className="suspend_order">
           {serverLanguage?.no_suspended_orders_found ??
             "No suspended orders found."}
         </p>

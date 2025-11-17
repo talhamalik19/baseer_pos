@@ -59,6 +59,47 @@
           padding: 10px; border-radius: 14px; background: #FFFFFF33; padding: 4px 12px;
         }
     }
+
+    [data-theme="dark"] & {
+    .stat_card_text{
+      .amount{
+        color: style.$darkModeTitle;
+      }
+    }
+    &:nth-child(1){
+    background: linear-gradient(135deg, rgba(11, 79, 74, 0.4) 0%, rgba(0, 79, 59, 0.4) 100%); box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #00786F80;
+    .stat_card_text{
+      .text{
+        color: #46ECD5;
+      }
+      span{
+        background: #009689;
+      }
+    }
+    }
+     &:nth-child(2){
+  background: linear-gradient(135deg, rgba(28, 57, 142, 0.4) 0%, rgba(49, 44, 133, 0.4) 100%); border: 1px solid #1447E680; box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A;
+   .stat_card_text{
+      .text{
+        color: #8EC5FF;
+      }
+       span{
+        background: #155DFC;
+      }
+    }
+    }
+     &:nth-child(3){
+    background: linear-gradient(135deg, rgba(89, 22, 139, 0.4) 0%, rgba(77, 23, 154, 0.4) 100%); box-shadow: 0px 1px 2px -1px #0000001A; box-shadow: 0px 1px 3px 0px #0000001A; border: 1px solid #8200DB80;
+     .stat_card_text{
+      .text{
+        color: #DAB2FF;
+      }
+       span{
+        background: #9810FA;
+      }
+    }
+    }
+    }
 }
 
 .chart{
@@ -137,6 +178,24 @@
           }
         }
       } 
+
+      [data-theme="dark"] & {
+        .chartContainer{
+          .chart_head{
+            .chartTitle{
+              color: style.$darkModeTitle;
+            }
+            p{
+              color: style.$darkModeDes;
+            }
+            .legend{
+              p, li{
+                color: #CAD5E2;
+              }
+            }
+          }
+        }
+      }
 }
 
 .orders { 
@@ -200,6 +259,7 @@
       border-bottom: 1px solid #E2E8F0;
       tr th {
      font-size: 14px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; padding: 16px;
+   
       }
     }
 
@@ -208,7 +268,7 @@
         background: #fff; border-radius: 12px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05); border-bottom: 1px solid #E2E8F0;
 
         td {
-          padding: 16px; font-size: 15px; color: #374151; vertical-align: middle; white-space: normal; max-width: 15rem; min-width: 8rem;
+          padding: 16px; font-size: 15px; color: #374151; vertical-align: middle; white-space: normal; max-width: 15rem; min-width: 8rem; 
           &.id{
             font-size: 14px; color: style.$TextColor; background-color: unset;
             &.complete{
@@ -269,6 +329,39 @@
         }
       }
     }
+    [data-theme="dark"] &{
+    thead{
+      border-bottom: transparent;
+      tr th{
+        background: #314158; color: #CAD5E2;
+      }
+    }
+    tbody, tfoot{
+      tr{
+           background: #1D293D; border-color: #314158;
+           td{
+            background: #1D293D; color: #CAD5E2;
+              &.id{
+                background: #1D293D;
+
+              }
+              &.prod_name{
+                color: #CAD5E2;
+              }
+              &.cat_name{
+                span{
+                border: 1px solid #45556C; color: #CAD5E2; background: unset;
+                }
+              }
+              &.status_td{
+                .status{
+                color: #fff;
+                }
+              }
+           }
+        }
+    }
+     }
   }
 }
 
@@ -307,7 +400,7 @@
 }
 
 .salesMap {
-    width: 30%; background: white; border-radius: 10px; padding: 20px; box-sizing: border-box; box-shadow: 0px 4px 6px -4px #0000001A; box-shadow: 0px 10px 15px -3px #0000001A;
+    width: 30%; background: style.$whiteColor; border-radius: 10px; padding: 20px; box-sizing: border-box; box-shadow: 0px 4px 6px -4px #0000001A; box-shadow: 0px 10px 15px -3px #0000001A;
     .sales_head{
       @include style.flex(flex-start, center, 15px); padding-bottom: 48px;
       svg{
@@ -436,6 +529,19 @@
   transition: fill 0.3s ease, stroke 0.3s ease;
   filter: drop-shadow(0 0 4px rgba(43, 127, 255, 0.25));
 }
+
+  [data-theme="dark"] & {
+    .mapContainer{
+      .vectorMap{
+        background: unset;
+      }
+    }
+    .countryStats{
+      .countryStat{
+        background: unset;
+      }
+    }
+  }
   }
   
   // Responsive adjustments
@@ -450,7 +556,7 @@
       width: 100%;
       
       .mapContainer {
-        height: unset;
+        height: 320px;
         &:nth-child(1){
           height: 170px;
         }
@@ -475,7 +581,7 @@
       }
       
       .mapContainer {
-        height: 250px;
+        height: 320px;
         & > div{
           height: 140px;
         }

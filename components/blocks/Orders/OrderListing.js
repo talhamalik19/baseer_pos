@@ -15,7 +15,6 @@ export default function OrderListing({
   serverLanguage,
   params,
 }) {
-  console.log(params);
   const [isOnline, setIsOnline] = useState(false);
   const [combinedOrders, setCombinedOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
