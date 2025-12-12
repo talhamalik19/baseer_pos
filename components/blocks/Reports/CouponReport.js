@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -31,7 +31,7 @@ export default function CouponReport({
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentDataPeriod, setCurrentDataPeriod] = useState(""); // ✅ NEW
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -111,87 +111,75 @@ export default function CouponReport({
 
   const totalPages = Math.ceil(data.total_count / pageSize);
 
-  const downloadPdf = async () => {
-    const params = new URLSearchParams({
-      period: formData.period,
-      from: formData.fromDate,
-      to: formData.toDate,
-      pageSize: "9999",
-      currentPage: "1",
-      storeIds: storeIds ?? "1",
-      showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
-      orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
-      dateUsed: formData.dateUsed,
-    });
+       useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchCouponReport(1);
+      }
+    }, [pageSize]);
 
-    const url = `${storeCode}/V1/pos/sales-coupon-report?${params.toString()}`;
-    const response = await submitCouponReport(url);
-    const result = response?.body?.[0];
+const downloadPdf = async () => {
+  const params = new URLSearchParams({
+    period: formData.period,
+    from: formData.fromDate,
+    to: formData.toDate,
+    pageSize: "9999",
+    currentPage: "1",
+    storeIds: storeIds ?? "1",
+    showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
+    orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
+    dateUsed: formData.dateUsed,
+  });
 
-    const items = result?.items || [];
-    const overall = result?.overall_totals || null;
+  const url = `${storeCode}/V1/pos/sales-coupon-report?${params.toString()}`;
+  const response = await submitCouponReport(url);
+  const result = response?.body?.[0];
 
-    if (items.length === 0) {
-      alert("No data to export.");
-      return;
-    }
+  const items = result?.items || [];
+  const overall = result?.overall_totals || null;
 
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Coupon Report", 14, 15);
+  if (items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
 
-    const importantKeys = [
-      "period",
-      "coupon_code",
-      "rule_name",
-      "coupon_uses",
-      "subtotal_amount",
-      "discount_amount",
-      "total_amount",
-    ];
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(14);
+  doc.text("Coupon Report", 14, 15);
 
-    const headers = importantKeys.map((col) =>
-      col
-        .split("_")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ")
-    );
+  // Use all columns dynamically
+  const dynamicColumns = Object.keys(items[0]);
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-    const body = items.map((row) =>
-      importantKeys.map((col) => row[col] ?? "-")
-    );
+  const body = items.map((row) =>
+    dynamicColumns.map((col) => row[col] ?? "-")
+  );
 
-    const overallRow = overall
-      ? [
-          {
-            content: "Overall Totals",
-            colSpan: 1,
-            styles: { fontStyle: "bold" },
-          },
-          ...importantKeys.slice(1).map((key) => overall[key] ?? "-"),
-        ]
-      : [];
+  const overallRow = overall
+    ? [
+        { content: "Overall Totals", colSpan: 1, styles: { fontStyle: "bold" } },
+        ...dynamicColumns.slice(1).map((key) => overall[key] ?? "-"),
+      ]
+    : [];
 
-    autoTable(doc, {
-      startY: 20,
-      head: [headers],
-      body,
-      ...(overallRow.length ? { foot: [overallRow] } : {}),
-      styles: { fontSize: 9 },
-      headStyles: {
-        fillColor: [35, 35, 35],
-        textColor: [255, 255, 255],
-      },
-      footStyles: {
-        fontStyle: "bold",
-        fillColor: [35, 35, 35],
-        textColor: [255, 255, 255],
-      },
-      theme: "grid",
-    });
+  autoTable(doc, {
+    startY: 20,
+    head: [headers],
+    body,
+    ...(overallRow.length ? { foot: [overallRow] } : {}),
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    footStyles: { fontStyle: "bold", fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    theme: "grid",
+  });
 
-    doc.save("coupon-report.pdf");
-  };
+  doc.save("coupon-report.pdf");
+};
+
 
   return (
     <div className={styles.page_detail}>
@@ -352,15 +340,18 @@ export default function CouponReport({
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+                 totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

@@ -95,9 +95,15 @@ $media-query-mediumDesktop:"only screen and (min-width:#{$breakpoints-base}) and
 		.currency { position: relative; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: #242424; transition: all 0.2s ease; user-select: none;
 			.server_currency{
 				@include flex(flex-start,center ,10px ); border: 1px solid $borderColor; border-radius: 8px; padding: 7px;
-				   &::after {
+							   &::after {
     content: ""; display: inline-block; width: 18px; height: 18px; background-image: url("../public/images/Icon.svg"); background-repeat: no-repeat; background-position: center; background-size: contain; transition: transform 0.2s ease;
   }
+				&.single_currency{
+					&::after{
+						content: ''; display: none;
+					}
+				}
+	
 			}
   svg { flex-shrink: 0; }
 
@@ -527,45 +533,88 @@ $media-query-mediumDesktop:"only screen and (min-width:#{$breakpoints-base}) and
 }
 
 .pagination {
-	padding-block: 40px; display: flex; justify-content: center; border-top: 1px solid #d6d6d6;
-	
-	.pagination__nav { display: flex; justify-content: center;
-	  .pagination__list { display: flex; gap: 15px; list-style: none; padding: 0; margin: 0;
-		.pagination__item { display: flex; align-items: center;
-		  .pagination__button { 
-			min-width: 50px; height: 50px; border-radius: 25px; border: none; background-color: #ffffff; border: 1px solid #ADADAD;
-			box-shadow: 0px 0px 4px 0px rgba(0, 0, 0, 0.1); font-size: 18px; line-height: 26px; 
-			color: #000; font-weight: 500; cursor: pointer; display: flex; align-items: center; transition: all 0.3s ease-in-out;
-			justify-content: center; transition: all 0.3s ease;
-			
-			&:hover { background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%); color: #ffffff; border: 1px solid $PrimaryColor; color: $whiteColor; border: 1px solid $PrimaryColor;}
-			
-			&.pagination__button--active { background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%); color: #ffffff !important; border: unset; }
-			
-			&.pagination__button--nav { min-width: 7em; color: #6D6D75; background-color: #fff;
-			  &:hover { color: $whiteColor; }
-			}
-			
-			&:disabled { opacity: 0.5; cursor: not-allowed;
-			  &:hover { background-color: #fff; color: $PrimaryColor; }
-			}
-		  }
-		  
-		  &.pagination__item--ellipsis {
-			.pagination__button { background-color: transparent; box-shadow: none; cursor: default;     border: 1px solid #ADADAD;
-			  &:hover { background-color: transparent; color: #000; color: #fff;}
-			}
-		  }
-		  
-		  &.pagination__item--prev, &.pagination__item--next {
-			.pagination__button { min-width: 7em; color: #6D6D75; background-color: #fff; border: 1px solid #ADADAD;
-			  &:hover { color: $whiteColor; border: 1px solid $PrimaryColor;}
-			}
-		  }
-		}
-	  }
-	}
+ padding-block: 20px; display: block; justify-content: space-between; gap: 20px; align-items: center; 
+
+  @media screen and (max-width: 1024px) {
+  flex-direction: column; gap: 20px;
   }
+
+  // Select dropdown area
+  > div {
+    display: flex; align-items: center; gap: 10px; 
+	[data-theme="dark"] & {
+		color: #CAD5E2;
+	}
+	@media screen and (max-width: 767px) {
+		margin-bottom: 20px;
+	}
+
+    select {
+   padding: 8px 14px; border-radius: 6px; border: 1px solid #adadad; cursor: pointer; font-size: 15px; font-weight: 500; color: #333;
+    }
+  }
+
+  // PAGE NUMBERS
+  .pagination__nav {
+ display: flex; justify-content: center;
+
+    .pagination__list {
+  display: flex; gap: 15px; list-style: none; padding: 0; margin: 0; flex-wrap: wrap;
+
+      .pagination__item {
+      display: flex; align-items: center;
+
+        .pagination__button {
+      min-width: 50px; height: 50px; border-radius: 25px; border: 1px solid #adadad; background-color: #ffffff; box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.1); font-size: 18px; font-weight: 500; color: #000; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: all 0.3s ease;
+
+          &:hover {
+       background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%); color: #ffffff; border-color: #00B8DB;
+          }
+
+          &.pagination__button--active {
+          background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%); color: #ffffff !important; border: none;
+          }
+
+          &.pagination__button--nav {
+           min-width: 7em; color: #6D6D75;
+          }
+
+          &:disabled {
+          opacity: 0.5; cursor: not-allowed;
+
+            &:hover {
+            background-color: #fff; color: #6D6D75; border: 1px solid #adadad;
+            }
+          }
+        }
+
+        // ELLIPSIS (...)
+        &.pagination__item--ellipsis {
+          .pagination__button {
+            background-color: transparent; box-shadow: none; cursor: default; border: 1px solid #adadad;
+
+            &:hover {
+           background-color: transparent; color: #000;
+            }
+          }
+        }
+
+        // Prev/Next nav buttons
+        &.pagination__item--prev,
+        &.pagination__item--next {
+          .pagination__button {
+          min-width: 7em; color: #6D6D75;
+
+            &:hover {
+              color: #ffffff;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
   .sync_products{
 	display: flex; gap: 20px; padding-bottom: 30px;
@@ -573,6 +622,9 @@ $media-query-mediumDesktop:"only screen and (min-width:#{$breakpoints-base}) and
 
   .css-13cymwt-control{
 	height: 55px !important; background-color: #f6f6f6 !important; border-radius: 8px !important;
+	[data-theme = "dark"] & {
+		background-color: #314158 !important;
+	}
   }
 
   .success{
@@ -597,3 +649,159 @@ $media-query-mediumDesktop:"only screen and (min-width:#{$breakpoints-base}) and
 		color: $darkModeTitle;
 	}
 }
+
+.swiper-pagination-bullet {
+  background: #fff !important;     // inactive dot color
+  opacity: 1 !important;
+}
+
+.swiper-pagination-bullet-active {
+  background: #FFFFFF99 !important;  // active dot color
+}
+
+// React Select styles
+.basic-multi-select {
+	z-index: 50;
+  
+	.select__control {
+	  min-height: 55px;
+	  border-color: #ced4da;
+	  background-color: #F6F6F6;
+  
+	  &:hover {
+		border-color: #ced4da;
+	  }
+  
+	  &--is-focused {
+		border-color: #4FACB8;
+		box-shadow: 0 0 0 0.2rem rgba(79, 172, 184, 0.25);
+	  }
+	}
+  
+	.select__multi-value {
+	  background-color: #e9ecef;
+	  border-radius: 2px;
+	}
+  
+	.select__multi-value__label {
+	  font-size: 13px;
+	}
+  
+	.select__multi-value__remove {
+	  &:hover {
+		background-color: #dc3545;
+		color: white;
+	  }
+	}
+  
+	// Dark mode styles
+	[data-theme="dark"] & {
+	  .select__control {
+		background-color: #314158 !important;
+		border-color: #4a5f7e !important;
+		color: #e0e0e0;
+  
+		&:hover {
+		  border-color: #5a7093 !important;
+		  background-color: #314158 !important;
+		}
+  
+		&--is-focused {
+		  border-color: #4FACB8 !important;
+		  box-shadow: 0 0 0 0.2rem rgba(79, 172, 184, 0.25) !important;
+		  background-color: #314158 !important;
+		}
+  
+		&--menu-is-open {
+		  background-color: #314158 !important;
+		  border-color: #4FACB8 !important;
+		}
+	  }
+  
+	  .select__value-container {
+		color: #e0e0e0;
+	  }
+  
+	  .select__input-container {
+		color: #e0e0e0;
+	  }
+  
+	  .select__input {
+		color: #e0e0e0 !important;
+	  }
+  
+	  .select__placeholder {
+		color: #8a9aae;
+	  }
+  
+	  .select__single-value {
+		color: #e0e0e0;
+	  }
+  
+	  .select__multi-value {
+		background-color: #3d5266;
+		border: 1px solid #4a5f7e;
+	  }
+  
+	  .select__multi-value__label {
+		color: #e0e0e0;
+	  }
+  
+	  .select__multi-value__remove {
+		color: #b0bac5;
+		
+		&:hover {
+		  background-color: #dc3545;
+		  color: white;
+		}
+	  }
+  
+	  .select__indicator {
+		color: #8a9aae;
+  
+		&:hover {
+		  color: #b0bac5;
+		}
+	  }
+  
+	  .select__indicator-separator {
+		background-color: #4a5f7e;
+	  }
+  
+	  .select__menu {
+		background-color: #2a3f56 !important;
+		border: 1px solid #4a5f7e !important;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+	  }
+  
+	  .select__menu-list {
+		background-color: #2a3f56 !important;
+	  }
+  
+	  .select__option {
+		color: #e0e0e0 !important;
+		background-color: #2a3f56 !important;
+  
+		&--is-focused {
+		  background-color: #3d5266 !important;
+		}
+  
+		&--is-selected {
+		  background-color: #4FACB8 !important;
+		  color: white !important;
+		}
+  
+		&:active {
+		  background-color: #4FACB8 !important;
+		}
+	  }
+  
+	  .select__menu-notice {
+		color: #8a9aae;
+	  }
+  
+	  .select__loading-indicator {
+		color: #4FACB8;
+	  }
+	}
+  }

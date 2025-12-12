@@ -357,3 +357,10 @@ background: linear-gradient(90deg, #00B8DB 0%, #00BBA7 100%);
   }
   }
 }
+
+.disabled_report:disabled{
+  cursor: not-allowed;
+  background-color: #f0f0f0;
+  opacity: 1; /* keeps the color exactly as defined, not faded */
+  color: #555; /* optional: adjust text color */
+}

@@ -17,6 +17,8 @@ export default function ProductTable({
   payment,
   fbrDetails,
 }) {
+  const loginDetail = JSON.parse(localStorage.getItem("loginDetail"));
+  const adminAcl = loginDetail?.admin_acl;
   const [inputs, setInputs] = useState([]);
   const [highlightedIndex, setHighlightedIndex] = useState(null);
   const [errorMessages, setErrorMessages] = useState([]);
@@ -31,59 +33,57 @@ export default function ProductTable({
     );
   };
 
-  useEffect(() => {
-    if (cartItems?.length) {
-      const initialInputs = cartItems.map((item, index) => {
-        const qtyStepAttr = getAttribute(item, "qty_increment_step");
-        const initialQty = qtyStepAttr ? parseFloat(qtyStepAttr) : 1;
+useEffect(() => {
+  if (cartItems?.length) {
+    const initialInputs = cartItems.map((item, index) => {
+      const qtyStepAttr = getAttribute(item, "qty_increment_step");
+      const initialQty = qtyStepAttr ? parseFloat(qtyStepAttr) : 1;
 
-        // ✅ Determine base price
-        const specialPrice = item?.product?.special_price || 0;
-        const regularPrice =
-          item?.product?.price?.regularPrice?.amount?.value ||
-          item?.product?.price_range?.minimum_price?.regular_price?.value ||
-          0;
+      // get unit attribute
+      const unit = getAttribute(item, "price_unit");
 
-        const basePrice = specialPrice > 0 ? specialPrice : regularPrice;
+      // Base price
+      const specialPrice = item?.product?.special_price || 0;
+      const regularPrice =
+        item?.product?.price?.regularPrice?.amount?.value ||
+        item?.product?.price_range?.minimum_price?.regular_price?.value ||
+        0;
 
-        // ✅ Initialize refs only once
-        if (!originalPricesRef.current[index]) {
-          originalPricesRef.current[index] = basePrice;
+      const basePrice = specialPrice > 0 ? specialPrice : regularPrice;
 
-          if (discountIncludingTax != null && discountIncludingTax != undefined) {
-            if (discountIncludingTax == 1) {
-              if (payment == "checkmo") {
-                discountedPricesRef.current[index] =
-                  (basePrice * fbrDetails?.fbr_offline_discount) / 100;
-              }
-              if (payment == "credit") {
-                discountedPricesRef.current[index] =
-                  (basePrice * fbrDetails?.fbr_online_discount) / 100;
-              }
-            } 
-            // else {
-            //   // ✅ If discountIncludingTax is explicitly 0, apply normal tax
-            //   discountedPricesRef.current[index] =
-            //     (basePrice * item?.product?.tax_percent) / 100;
-            // }
-          } else {
-            // ✅ Fallback if discountIncludingTax is null/undefined
-            discountedPricesRef.current[index] =
-              (basePrice * item?.product?.tax_percent) / 100;
+      if (!originalPricesRef.current[index]) {
+        originalPricesRef.current[index] = basePrice;
+
+        if (discountIncludingTax != null && discountIncludingTax != undefined) {
+          if (discountIncludingTax == 1) {
+            if (payment == "cashondelivery") {
+              discountedPricesRef.current[index] =
+                (basePrice * fbrDetails?.fbr_offline_tax) / 100;
+            }
+            if (payment == "credit") {
+              discountedPricesRef.current[index] =
+                (basePrice * fbrDetails?.fbr_online_tax) / 100;
+            }
           }
+        } else {
+          discountedPricesRef.current[index] =
+            (basePrice * item?.product?.tax_percent) / 100;
         }
+      }
 
-        return {
-          price: item?.product?.discounted_price || basePrice,
-          quantity: item.quantity || initialQty,
-          qtyIncrementStep: initialQty,
-        };
-      });
+      return {
+        price: item?.product?.discounted_price || basePrice,
+        quantity: item.quantity || initialQty,
+        qtyIncrementStep: initialQty,
+        unit: unit || "", // 👈 ADD UNIT HERE
+      };
+    });
 
-      setInputs(initialInputs);
-      setErrorMessages(Array(cartItems.length).fill(""));
-    }
-  }, [cartItems, discountIncludingTax, payment]);
+    setInputs(initialInputs);
+    setErrorMessages(Array(cartItems.length).fill(""));
+  }
+}, [cartItems, discountIncludingTax, payment]);
+
 
 
   const handleInputChange = (index, field, value) => {
@@ -181,37 +181,47 @@ const validateDiscount = (index) => {
 };
 
 
-  const triggerUpdate = async (index) => {
-    if (!validateDiscount(index)) {
-      return;
-    }
+const triggerUpdate = async (index) => {
+  if (!validateDiscount(index)) {
+    return;
+  }
 
-    const qtyStep = inputs[index].qtyIncrementStep || 1;
-    const roundedQuantity =
-      Math.round(inputs[index].quantity / qtyStep) * qtyStep;
-    const finalQuantity = Math.max(roundedQuantity, qtyStep);
+  const qtyStep = inputs[index].qtyIncrementStep || 1;
 
-    const updatedItem = {
-      ...cartItems[index],
-      quantity: finalQuantity,
-      product: {
-        ...cartItems[index].product,
-        discounted_price: parseFloat(inputs[index].price),
-      },
-    };
+  // 1️⃣ safe float
+  const rawQty = parseFloat(inputs[index].quantity) || 0;
 
-    await updateWholeProduct(
-      updatedItem?.product?.uid,
-      updatedItem?.addedAt,
-      updatedItem
-    );
+  // 2️⃣ round by step
+  const steps = Math.round(rawQty / qtyStep);
+  const rounded = steps * qtyStep;
 
-    const refreshedCart = await getCartItems();
-    onCartChange(refreshedCart);
+  // 3️⃣ always 2 decimals
+  const finalQuantity = Number(rounded.toFixed(2));
 
-    setHighlightedIndex(index);
-    setTimeout(() => setHighlightedIndex(null), 1000);
+  // 4️⃣ also fix price to 2 decimals
+  const fixedPrice = Number(parseFloat(inputs[index].price || 0).toFixed(2));
+
+  const updatedItem = {
+    ...cartItems[index],
+    quantity: finalQuantity,
+    product: {
+      ...cartItems[index].product,
+      discounted_price: fixedPrice,
+    },
   };
+
+  await updateWholeProduct(
+    updatedItem?.product?.uid,
+    updatedItem?.addedAt,
+    updatedItem
+  );
+
+  const refreshedCart = await getCartItems();
+  onCartChange(refreshedCart);
+
+  setHighlightedIndex(index);
+  setTimeout(() => setHighlightedIndex(null), 1000);
+};
 
   const isPriceDisabled = (item) => {
     return item?.product?.is_pos_discount_allowed !== 1;
@@ -231,7 +241,6 @@ const validateDiscount = (index) => {
       weightPerUnitDisplay: `About ${priceShortDetail} ${quantityUnit} per unit (est.)`,
     };
   };
-
   return (
     <div className={styles.productTable}>
       <table>
@@ -253,6 +262,7 @@ const validateDiscount = (index) => {
             const quantity = inputs[index]?.quantity ?? "";
             const isDisabled = isPriceDisabled(item);
             const displayValues = getDisplayValues(item);
+            const unit = inputs[index]?.unit ?? ""
 
             const originalPrice = originalPricesRef.current[index] || 0;
             const currentItemDiscountedPrice = item?.product?.discounted_price;
@@ -272,8 +282,8 @@ const validateDiscount = (index) => {
                 <td>{item?.product?.sku || "N/A"}</td>
                 <td>{item?.product?.name || "Unnamed"}</td>
                 <td>
-                  {currencySymbol}
-                  <input
+                  {currencySymbol} 
+                  {adminAcl?.sales_discount ? <input
                     type="text"
                     value={price}
                     className={`${styles.qtyInput} ${
@@ -284,7 +294,7 @@ const validateDiscount = (index) => {
                     }
                     onKeyDown={(e) => handleEnter(e, index)}
                     disabled={isDisabled}
-                  />
+                  /> : price}
                   {errorMessages[index] && (
                     <div className={styles.errorMessage}>
                       {errorMessages[index]}
@@ -295,7 +305,7 @@ const validateDiscount = (index) => {
                       {Math.round(100 - (effectivePrice / originalPrice) * 100)}
                       % OFF
                     </div>
-                  )}
+                  )} {unit != "" ? ` / ${unit}` : ''}
                 </td>
                 <td>
                   <input
@@ -331,12 +341,12 @@ const validateDiscount = (index) => {
                   )}
                 </td>
                 <td className={styles.flex_td}>
-                  <button
+               {adminAcl?.sales_discount && <button
                     className={styles.updateBtn}
                     onClick={() => triggerUpdate(index)}
                   >
                     <svg width="17" height="17" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.59375 8.09375C2.59375 9.28044 2.94564 10.4405 3.60493 11.4272C4.26422 12.4139 5.20129 13.1829 6.29765 13.637C7.39401 14.0912 8.60041 14.21 9.76429 13.9785C10.9282 13.747 11.9973 13.1755 12.8364 12.3364C13.6755 11.4973 14.247 10.4282 14.4785 9.26429C14.71 8.10041 14.5912 6.89401 14.137 5.79765C13.6829 4.70129 12.9139 3.76422 11.9272 3.10493C10.9405 2.44564 9.78044 2.09375 8.59375 2.09375C6.91638 2.10006 5.3064 2.75457 4.10042 3.92042L2.59375 5.42708" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2.59375 2.09375V5.42708H5.92708" stroke="#0A0A0A" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-                  </button>
+                  </button> }
                   <button
                     className={styles.deleteBtn}
                     onClick={async () => {

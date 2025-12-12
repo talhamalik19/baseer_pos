@@ -31,15 +31,16 @@ export default function OrderList({
   pagination,
   setPage,
   setPagination,
+  setPageSize,
   serverLanguage
 }) {
-
 const tableHead = {
   id: serverLanguage?.increment_id ?? "Increment ID",
   name: serverLanguage?.customer_name ?? "Customer Name",
   product: serverLanguage?.product_name ?? "Product",
   amount: serverLanguage?.amount ?? "Amount",
   medium: serverLanguage?.Medium ?? "Medium",
+  order_status: serverLanguage?.order_status ?? "Status",
   created: serverLanguage?.created_at ?? "Created At",
   contact: serverLanguage?.contact ?? "Contact",
   status: serverLanguage?.actions ?? "Action"
@@ -114,7 +115,7 @@ const tableHead = {
         : order?.order_status === "pending"
         ? styles.pending
         : styles.cancelled}`}>{order.increment_id}</td>
-                    <td className={styles.name}> <div><div><span>{order?.customer_firstname ? order?.customer_firstname?.charAt(0) : "P"}</span><span>{order?.customer_lastname ? order?.customer_lastname?.charAt(0) : "C"}</span></div></div>
+                    <td className={styles.name}> <div><span>{order?.customer_firstname ? order?.customer_firstname?.charAt(0) : "P"}</span><span>{order?.customer_lastname ? order?.customer_lastname?.charAt(0) : "C"}</span></div>
       {`${order?.customer_firstname ?? "POS"} ${
         order?.customer_lastname ?? "Customer"
       }`}
@@ -122,9 +123,15 @@ const tableHead = {
                 <td>
                   {order.items.map(item => item.product_name).join(", ")}
                 </td>
-                <td className={styles.amount}>${order.order_grandtotal}</td>
-                <td>
+<td className={styles.amount}>
+  {order?.invoice ? order?.invoice?.[0]?.order_currency_code === "PKR" ? "Rs " : "$ " : "$"}
+  {(Number(order?.order_grandtotal || 0)).toFixed(2)}
+</td>
+               <td>
                   {order.increment_id.startsWith("POS") || order.increment_id.startsWith("ORD") ? "POS" : "Web/Mobile"}
+                </td>
+                 <td>
+                  {order?.order_status ?? "Complete"}
                 </td>
                 <td>
                   {formatDate(order.created_at)}
@@ -145,13 +152,16 @@ const tableHead = {
           </tbody>
         </table>
 
-        {totalPages > 1 && (
+        {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={handlePageChange}
+            totalItems={totalItems}
+            setPageSize={setPageSize}
+            pageSize={pageSize}
           />
-        )}
+        }
       </div>
     </div>
   );

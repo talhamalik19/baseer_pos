@@ -1,7 +1,7 @@
 // components/blocks/Reports/SalesTransactionDetailReport.jsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -33,7 +33,7 @@ export default function SalesTransactionDetailReport({
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -123,6 +123,9 @@ export default function SalesTransactionDetailReport({
   return orders;
 };
 
+  useEffect(() => {
+        fetchData(1);
+    }, [pageSize]);
 
 const downloadPdf = async () => {
   const allOrders = await fetchAllOrders();
@@ -373,6 +376,10 @@ const downloadPdf = async () => {
             currentPage={currentPage}
             totalPages={Math.ceil(data.pagination.total_orders / pageSize)}
             onPageChange={handlePageChange}
+
+          totalItems={data?.pagination.total_orders}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
           />
         )}
       </div>

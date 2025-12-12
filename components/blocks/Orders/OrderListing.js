@@ -37,6 +37,14 @@ export default function OrderListing({
     dateFrom: "",
     dateTo: "",
   });
+  const [loginDetail, setLoginDetail] = useState({});
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const login = JSON.parse(localStorage.getItem("loginDetail"))
+    setLoginDetail(login);
+  }, [])
 
   // Load persisted state from localStorage
   useEffect(() => {
@@ -99,10 +107,17 @@ export default function OrderListing({
     });
   };
 
+  // Get paginated orders from local data
+  const getPaginatedOrders = (orders, currentPage, currentPageSize) => {
+    const startIndex = (currentPage - 1) * currentPageSize;
+    const endIndex = startIndex + currentPageSize;
+    return orders.slice(startIndex, endIndex);
+  };
+
   // Handle category selection
   const handleCategorySelect = (category) => {
-    if (filtersApplied) {
-      // Clear all filters when selecting category
+    if (filtersApplied || searchTerm) {
+      // Clear all filters and search when selecting category
       setFilters({
         email: "",
         phone: "",
@@ -117,15 +132,18 @@ export default function OrderListing({
         dateTo: "",
       });
       setFiltersApplied(false);
+      setSearchTerm("");
       setPagination(undefined);
       setPage(1);
-      // Apply category to base orders
-      setFilteredOrders(filterByCategory(combinedOrders, category));
-    } else {
-      // Just apply category filter
-      setFilteredOrders(filterByCategory(combinedOrders, category));
     }
+    
+    // Apply category filter and pagination
+    const categoryFilteredOrders = filterByCategory(combinedOrders, category);
+    const paginatedOrders = getPaginatedOrders(categoryFilteredOrders, 1, pageSize);
+    
     setSelectedCategory(category);
+    setFilteredOrders(paginatedOrders);
+    setPagination(categoryFilteredOrders.length);
   };
 
   useEffect(() => {
@@ -151,7 +169,14 @@ export default function OrderListing({
       if (customerOrders) {
         const orders = customerOrders?.data || [];
         setCombinedOrders(orders);
-        setFilteredOrders(filterByCategory(orders, selectedCategory));
+        // Apply pagination to initial orders
+        const paginatedOrders = getPaginatedOrders(
+          filterByCategory(orders, selectedCategory), 
+          1, 
+          pageSize
+        );
+        setFilteredOrders(paginatedOrders);
+        setPagination(orders.length);
       } else {
         let mergedOrders = [];
 
@@ -188,18 +213,74 @@ export default function OrderListing({
         }
 
         setCombinedOrders(mergedOrders);
-        setFilteredOrders(filterByCategory(mergedOrders, selectedCategory));
+        // Apply pagination to initial orders
+        const categoryFilteredOrders = filterByCategory(mergedOrders, selectedCategory);
+        const paginatedOrders = getPaginatedOrders(categoryFilteredOrders, 1, pageSize);
+        setFilteredOrders(paginatedOrders);
+        setPagination(categoryFilteredOrders.length);
       }
     };
 
     fetchOrders();
   }, [initialOrders, customerOrders, isOnline]);
 
-  // Handle search results
-  const handleSearchResults = (results) => {
-    setSelectedCategory("All Orders");
-    setFiltersApplied(false);
-    setFilteredOrders(results);
+  // Handle search results - FIXED VERSION
+  const handleSearchResults = async (searchTerm, currentPage = 1, currentPageSize = 10) => {
+    setIsSearching(true);
+    setSearchTerm(searchTerm);
+    
+    if (!searchTerm.trim()) {
+      // If search is empty, show initial orders with pagination
+      setSelectedCategory("All Orders");
+      setFiltersApplied(false);
+      
+      const allOrders = filterByCategory(combinedOrders, "All Orders");
+      const paginatedOrders = getPaginatedOrders(allOrders, currentPage, currentPageSize);
+      
+      setFilteredOrders(paginatedOrders);
+      setPagination(allOrders.length);
+      setPage(currentPage);
+      setPageSize(currentPageSize);
+      setIsSearching(false);
+      return;
+    }
+
+    try {
+      // Search via API with proper pagination
+      const searchFilters = {
+        email: "",
+        phone: "",
+        orderNumber: searchTerm,
+        billName: "",
+        status: "",
+        isPosOrder: null,
+        isWebOrder: null,
+        isMobOrder: null,
+        posCode: "",
+        dateFrom: "",
+        dateTo: "",
+      };
+
+      const response = await getOrderDetailsAction(searchFilters, currentPageSize, currentPage);
+      
+      if (response?.status === 200) {
+        setFilteredOrders(response?.data || []);
+        setPagination(response?.total_count || 0);
+        setSelectedCategory("All Orders");
+        setFiltersApplied(true);
+        setPage(currentPage);
+        setPageSize(currentPageSize);
+      } else {
+        setFilteredOrders([]);
+        setPagination(0);
+      }
+    } catch (error) {
+      console.error("Error searching orders:", error);
+      setFilteredOrders([]);
+      setPagination(0);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   // Apply advanced filters
@@ -207,6 +288,7 @@ export default function OrderListing({
     setSelectedCategory("All Orders");
     setFilters(appliedFilters);
     setFiltersApplied(true);
+    setSearchTerm("");
     try {
       const response = await getOrderDetailsAction(
         appliedFilters,
@@ -226,12 +308,42 @@ export default function OrderListing({
     }
   };
 
-  // Handle pagination with filters
+  // Handle pagination changes for local data
   useEffect(() => {
-    if (filtersApplied) {
+    if (!filtersApplied && !searchTerm) {
+      // Handle pagination for local data (when no filters or search applied)
+      const categoryFilteredOrders = filterByCategory(combinedOrders, selectedCategory);
+      const paginatedOrders = getPaginatedOrders(categoryFilteredOrders, page, pageSize);
+      setFilteredOrders(paginatedOrders);
+      setPagination(categoryFilteredOrders.length);
+    }
+  }, [page, pageSize, combinedOrders, selectedCategory, filtersApplied, searchTerm]);
+
+  // Handle pagination with filters (API calls)
+  useEffect(() => {
+    if ((filtersApplied || searchTerm) && !isSearching) {
       const fetchFilteredOrders = async () => {
         try {
-          const response = await getOrderDetailsAction(filters, pageSize, page);
+          let response;
+          if (searchTerm) {
+            const searchFilters = {
+              email: "",
+              phone: "",
+              orderNumber: searchTerm,
+              billName: "",
+              status: "",
+              isPosOrder: null,
+              isWebOrder: null,
+              isMobOrder: null,
+              posCode: "",
+              dateFrom: "",
+              dateTo: "",
+            };
+            response = await getOrderDetailsAction(searchFilters, pageSize, page);
+          } else {
+            response = await getOrderDetailsAction(filters, pageSize, page);
+          }
+          
           if (response?.status == 200) {
             setFilteredOrders(response?.data);
             setPagination(response?.total_count);
@@ -242,10 +354,39 @@ export default function OrderListing({
       };
       fetchFilteredOrders();
     }
-  }, [page, pageSize, filtersApplied]);
+  }, [page, pageSize, filtersApplied, searchTerm]);
 
   const handleCloseModal = () => {
     setShowFilterModal(false);
+  };
+
+  // Clear all filters and search
+  const clearAllFilters = () => {
+    const clearedFilters = {
+      email: "",
+      phone: "",
+      orderNumber: "",
+      billName: "",
+      status: "",
+      isPosOrder: null,
+      isWebOrder: null,
+      isMobOrder: null,
+      posCode: "",
+      dateFrom: "",
+      dateTo: "",
+    };
+    setFilters(clearedFilters);
+    setSelectedCategory("All Orders");
+    setSearchTerm("");
+    
+    // Reset to paginated local data
+    const allOrders = filterByCategory(combinedOrders, "All Orders");
+    const paginatedOrders = getPaginatedOrders(allOrders, 1, pageSize);
+    setFilteredOrders(paginatedOrders);
+    setPagination(allOrders.length);
+    setPage(1);
+    setFiltersApplied(false);
+    localStorage.removeItem("orderListingState");
   };
 
   useEffect(() => {
@@ -272,20 +413,24 @@ export default function OrderListing({
         <ul className={style.orders_tab_list}>
           {[
             serverLanguage?.pos ?? "POS",
-            serverLanguage?.web ?? "WEB",
-            serverLanguage?.mobile ?? "Mobile",
-            serverLanguage?.all_orders ?? "All Orders",
-          ].map((category) => (
-            <li
-              key={category}
-              className={`${style.orders_tab_item} ${
-                category === selectedCategory ? style.active : ""
-              }`}
-              onClick={() => handleCategorySelect(category)}
-            >
-              {category}
-            </li>
-          ))}
+            loginDetail?.allow_web_orders == 1 && (serverLanguage?.web ?? "WEB"),
+            loginDetail?.allow_mob_orders == 1 && (serverLanguage?.mobile ?? "Mobile"),
+            (loginDetail?.allow_web_orders == 1 || loginDetail?.allow_mob_orders == 1) &&
+              (serverLanguage?.all_orders ?? "All Orders"),
+          ]
+            // remove false values
+            .filter(Boolean)
+            .map((category) => (
+              <li
+                key={category}
+                className={`${style.orders_tab_item} ${
+                  category === selectedCategory ? style.active : ""
+                }`}
+                onClick={() => handleCategorySelect(category)}
+              >
+                {category}
+              </li>
+            ))}
         </ul>
       </div>
 
@@ -298,70 +443,68 @@ export default function OrderListing({
           setSearchResults={handleSearchResults}
           pagination={pagination}
           setPagination={setPagination}
+          page={page}
+          pageSize={pageSize}
+          setPage={setPage}
+          setPageSize={setPageSize}
+          isSearching={isSearching}
         />
-        <button
-          className="filter_cta"
-          onClick={() => {
-            if (filtersApplied) {
-              // Clear all filters
-              setFilters({
-                email: "",
-                phone: "",
-                orderNumber: "",
-                billName: "",
-                status: "",
-                isPosOrder: null,
-                isWebOrder: null,
-                isMobOrder: null,
-                posCode: "",
-                dateFrom: "",
-                dateTo: "",
-              });
-              setSelectedCategory("All Orders");
-              setFilteredOrders(combinedOrders);
-              setPagination(undefined);
-              setPage(1);
-              setFiltersApplied(false);
-            } else {
-              setShowFilterModal(true);
-            }
-          }}
-          style={{ cursor: "pointer" }}
-        >
-          {filtersApplied
-            ? serverLanguage?.remove_filter ?? "Remove Filter"
-            : serverLanguage?.apply_filter ?? "Apply Filter"}
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          {(filtersApplied || searchTerm) && (
+            <button
+              className="filter_cta"
+              onClick={() => setShowFilterModal(true)}
+              style={{ cursor: "pointer" }}
+            >
+              {serverLanguage?.edit_filter ?? "Edit Filter"}
+            </button>
+          )}
+          <button
+            className="filter_cta"
+            onClick={() => {
+              if (filtersApplied || searchTerm) {
+                clearAllFilters();
+              } else {
+                setShowFilterModal(true);
+              }
+            }}
+            style={{ cursor: "pointer" }}
+          >
+            {filtersApplied || searchTerm
+              ? serverLanguage?.remove_filter ?? "Remove Filter"
+              : serverLanguage?.apply_filter ?? "Apply Filter"}
+          </button>
+        </div>
       </div>
       <div className="page_detail section_padding">
         {params && (
           <Link href={'/customer'} className={style.back_main}>
-          <div className={style.back}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M7.99967 12.6667L3.33301 8L7.99967 3.33334"
-                stroke="#0A0A0A"
-                stroke-width="1.33333"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M12.6663 8H3.33301"
-                stroke="#0A0A0A"
-                stroke-width="1.33333"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-            <p>Back</p>
-          </div>
-          <p>Orders - POS Customer</p>
+            <div className={style.back}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M7.99967 12.6667L3.33301 8L7.99967 3.33334"
+                  stroke="#0A0A0A"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M12.6663 8H3.33301"
+                  stroke="#0A0A0A"
+                  stroke-width="1.33333"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <p>Back</p>
+            </div>
+            <p>Orders - POS Customer</p>
           </Link>
         )}
 
@@ -375,6 +518,7 @@ export default function OrderListing({
           setPageSize={setPageSize}
           setPage={setPage}
           serverLanguage={serverLanguage}
+          isSearching={isSearching}
         />
 
         <OrderFilterModal
@@ -382,6 +526,7 @@ export default function OrderListing({
           onClose={handleCloseModal}
           onApplyFilters={handleApplyFilters}
           initialFilters={filters}
+          loginDetail={loginDetail}
         />
       </div>
     </>

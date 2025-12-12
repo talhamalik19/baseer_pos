@@ -31,39 +31,42 @@ export default function SideBarList({ styles, nav, isSidebarExpanded, onLinkClic
               key={key}
               className={`${styles.nav_item} ${isOpen ? styles.dropdown_open : ""}`}
             >
-              <div className={styles.nav_wrapper}>
-                {item.field_redirect ? (
+              <div 
+                className={styles.nav_wrapper}
+                onClick={(e) => {
+                  if (hasChildren) {
+                    toggleDropdown(key, e);
+                  }
+                }}
+                style={hasChildren ? { cursor: 'pointer' } : {}}
+              >
+                {/* Parent content */}
+                {hasChildren ? (
+                  <div className={`${styles.nav_link} ${styles.has_children}`}>
+                    {item.svg && <span className={styles.nav_icon}>{item.svg}</span>}
+                    {isSidebarExpanded && <span className={styles.nav_text}>{item.field_text}</span>}
+                  </div>
+                ) : (
                   <Link
                     href={item.field_redirect}
-                    onClick={onLinkClick} // 👈 Call the handler to close sidebar in mobile
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onLinkClick();
+                    }}
                     className={`
                       ${styles.nav_link}
                       ${isActive ? styles.active : ""}
-                      ${hasChildren ? styles.has_children : ""}
                     `}
                   >
                     {item.svg && <span className={styles.nav_icon}>{item.svg}</span>}
-                    {isSidebarExpanded && (
-                      <span className={styles.nav_text}>{item.field_text}</span>
-                    )}
+                    {isSidebarExpanded && <span className={styles.nav_text}>{item.field_text}</span>}
                   </Link>
-                ) : (
-                  <div
-                    className={`${styles.nav_link} ${hasChildren ? styles.has_children : ""}`}
-                    onClick={(e) => toggleDropdown(key, e)}
-                  >
-                    {item.svg && <span className={styles.nav_icon}>{item.svg}</span>}
-                    {isSidebarExpanded && (
-                      <span className={styles.nav_text}>{item.field_text}</span>
-                    )}
-                  </div>
                 )}
 
-                {/* Real clickable arrow */}
+                {/* Arrow toggle */}
                 {hasChildren && isSidebarExpanded && (
                   <span
                     className={`${styles.dropdown_arrow} ${isOpen ? styles.arrow_open : ""}`}
-                    onClick={(e) => toggleDropdown(key, e)}
                   />
                 )}
               </div>
@@ -82,7 +85,7 @@ export default function SideBarList({ styles, nav, isSidebarExpanded, onLinkClic
                     <li key={`${key}-child-${childIndex}`} className={styles.nav_item}>
                       <Link
                         href={child.field_redirect}
-                        onClick={onLinkClick} // 👈 close sidebar when child clicked
+                        onClick={onLinkClick}
                         className={`
                           ${styles.nav_link}
                           ${pathname.startsWith(child?.field_redirect) ? styles.active : ""}

@@ -53,9 +53,16 @@ flex: 1;    overflow-x: auto;
           padding: 10px;
           svg{
             path{
+              stroke: #000;
+            }
+          }
+          [data-theme = "dark"] & {
+          svg{
+            path{
               stroke: #F9FAFB;
             }
           }
+        }
         }
       }
       th, td {

@@ -4,6 +4,8 @@ import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
 import Link from "next/link";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function BestsellerReport({
   submitBestSellerReport,
@@ -42,13 +44,8 @@ export default function BestsellerReport({
       currentPage: page.toString(),
     });
 
-    if (formData.productName.trim()) {
-      params.append("productName", formData.productName.trim());
-    }
-
-    if (formData.sku.trim()) {
-      params.append("sku", formData.sku.trim());
-    }
+    if (formData.productName.trim()) params.append("productName", formData.productName.trim());
+    if (formData.sku.trim()) params.append("sku", formData.sku.trim());
 
     return `${storeCode}/V1/pos/bestsellerreport?${params.toString()}`;
   };
@@ -66,13 +63,9 @@ export default function BestsellerReport({
 
       setData({ grouped_items, total_count, overall_total_count });
 
-      // Set columns from first product in first group
       const firstGroup = Object.values(grouped_items)?.[0]?.[0];
-      if (firstGroup) {
-        setColumns(["name", "price", "qty_sold"]);
-      } else {
-        setColumns([]);
-      }
+      if (firstGroup) setColumns(["name", "price", "qty_sold"]);
+      else setColumns([]);
 
       setCurrentPage(page);
     } catch (err) {
@@ -95,13 +88,48 @@ export default function BestsellerReport({
   const formatValue = (value) => {
     if (value === null || value === undefined) return "-";
     if (typeof value === "number") return value;
-    if (typeof value === "string" && value.endsWith(".0000")) {
-      return value.split(".")[0];
-    }
+    if (typeof value === "string" && value.endsWith(".0000")) return value.split(".")[0];
     return value;
   };
 
   const totalPages = Math.ceil(data.total_count / pageSize);
+
+  // -------------------- PDF Download Function --------------------
+  const downloadPdf = () => {
+    const groupedItems = data.grouped_items;
+    if (!groupedItems || Object.keys(groupedItems).length === 0) {
+      alert("No data to download");
+      return;
+    }
+
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(14);
+    doc.text("Bestseller Report", 14, 15);
+
+    const allRows = [];
+
+    Object.entries(groupedItems).forEach(([date, items]) => {
+      const parsedDate = new Date(date);
+      const label = `${parsedDate.getMonth() + 1}/${parsedDate.getFullYear()}`;
+      allRows.push([{ content: `Period: ${label}`, colSpan: 4, styles: { halign: "left", fontStyle: "bold" } }]);
+
+      items.forEach((item) => {
+        allRows.push([item.name, item.sku, item.price, item.qty_sold]);
+      });
+    });
+
+    autoTable(doc, {
+      startY: 22,
+      head: [["Product", "SKU", "Price", "Order Quantity"]],
+      body: allRows,
+      theme: "grid",
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+      footStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    });
+
+    doc.save("bestseller-report.pdf");
+  };
 
   return (
     <div className={styles.page_detail}>
@@ -114,58 +142,38 @@ export default function BestsellerReport({
       </Link>
 
       <form onSubmit={handleSubmit} className={styles.filter_section}>
-        <div className={styles.filter_header}>
-          <span>Filter</span>
-        </div>
-
+        <div className={styles.filter_header}><span>Filter</span></div>
         <div className={styles.filter_grid}>
           <div className={styles.filter_group}>
             <label>From *</label>
-            <input
-              type="date"
-              name="fromDate"
-              value={formData.fromDate}
-              onChange={handleChange}
-              required
-            />
+            <input type="date" name="fromDate" value={formData.fromDate} onChange={handleChange} required />
           </div>
-
           <div className={styles.filter_group}>
             <label>To *</label>
-            <input
-              type="date"
-              name="toDate"
-              value={formData.toDate}
-              onChange={handleChange}
-              required
-            />
+            <input type="date" name="toDate" value={formData.toDate} onChange={handleChange} required />
           </div>
-
           <div className={styles.filter_group}>
             <label>Store</label>
             <select name="storeIds" value={formData.storeIds} onChange={handleChange}>
               {stores?.map((store) => (
-                <option key={store.id} value={store.id}>
-                  {store.store_name}
-                </option>
+                <option key={store.id} value={store.id}>{store.store_name}</option>
               ))}
             </select>
           </div>
-
         </div>
 
         <div className={styles.filter_footer}>
-          <button type="submit" className={styles.export_button}>
-            Run Report
-          </button>
+          <button type="submit" className={styles.export_button}>Run Report</button>
         </div>
       </form>
-
       <div className={dashboardTable.orders}>
-        <div className={dashboardTable.order_head}>
-          <h2 className={dashboardTable.title}>Bestseller Report</h2>
-        </div>
+        <div className={dashboardTable.order_head}><h2 className={dashboardTable.title}>Bestseller Report</h2></div>
 
+           {Object.keys(data.grouped_items).length > 0 &&
+            <button type="button" className={styles.export_button} onClick={downloadPdf}>
+            Download Report
+          </button>
+        }
         <div className={dashboardTable.table_block}>
           <table>
             <thead>
@@ -178,25 +186,14 @@ export default function BestsellerReport({
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={columns.length} className={dashboardTable.loading}>
-                    Loading...
-                  </td>
-                </tr>
+                <tr><td colSpan={columns.length} className={dashboardTable.loading}>Loading...</td></tr>
               ) : Object.keys(data.grouped_items).length > 0 ? (
                 Object.entries(data.grouped_items).map(([date, items]) => {
                   const parsedDate = new Date(date);
-                  const label = `${
-                    parsedDate.getMonth() + 1
-                  }/${parsedDate.getFullYear()}`;
-
+                  const label = `${parsedDate.getMonth() + 1}/${parsedDate.getFullYear()}`;
                   return (
                     <React.Fragment key={date}>
-                      <tr>
-                        <td colSpan={3} className={dashboardTable.groupedRow}>
-                          <strong>{label}</strong>
-                        </td>
-                      </tr>
+                      <tr><td colSpan={3} className={dashboardTable.groupedRow}><strong>{label}</strong></td></tr>
                       {items.map((item, i) => (
                         <tr key={`${date}-${i}`}>
                           <td>{item.name}</td>
@@ -209,11 +206,7 @@ export default function BestsellerReport({
                   );
                 })
               ) : (
-                <tr>
-                  <td colSpan={columns.length} className={dashboardTable.no_records}>
-                    No records found.
-                  </td>
-                </tr>
+                <tr><td colSpan={columns.length} className={dashboardTable.no_records}>No records found.</td></tr>
               )}
             </tbody>
             <tfoot>
@@ -227,15 +220,9 @@ export default function BestsellerReport({
           </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
-        )}
+        <div className={styles.pagination}>
+          <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+        </div>
       </div>
     </div>
   );

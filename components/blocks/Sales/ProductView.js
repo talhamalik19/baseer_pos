@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Cards from "@/components/shared/Cards";
 import ProductTable from "./ProductTable";
 import CartSummary from "./POSCartSummary";
@@ -31,6 +31,15 @@ export default function ProductView({
   fbrDetails,
 }) {
   const [viewMode, setViewMode] = useState("cards"); // Default to cards view
+  const searchInputRef = useRef(null);
+
+  useEffect(()=>{
+    if(searchInputRef){
+       if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }
+  }, [])
 
   useEffect(() => {
     const fetchViewMode = async () => {
@@ -63,6 +72,7 @@ export default function ProductView({
           setViewMode={setViewMode}
           viewMode={viewMode}
           // payment={payment}
+          searchInputRef={searchInputRef}
         />
       </div>
       <div className="page_detail sale_page">

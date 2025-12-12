@@ -10,6 +10,7 @@ export default async function OrderReceipt({ params, searchParams }) {
     const jwt = cookieStore.get("jwt")?.value || null;
       const userResponse = await getAdminDetail();
       const user = userResponse;
+      const adminId = user?.data?.data?.id
       const { firstname, lastname } = user?.data?.data || {};
       const initials = `${firstname?.charAt(0) || ""}${
         lastname?.charAt(0) || ""
@@ -43,7 +44,7 @@ export default async function OrderReceipt({ params, searchParams }) {
            serverCurrency={serverCurrency}
            serverLanguage={serverLanguage}
          />
-      <OrderDetail orderResponse={order?.data?.[0]} jwt={jwt}/>
+      <OrderDetail orderResponse={order?.data?.[0]} jwt={jwt} adminId={adminId}/>
     </>
   );
 }

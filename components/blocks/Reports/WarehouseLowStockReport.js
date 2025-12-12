@@ -127,7 +127,7 @@ export default function WarehouseLowStockReport({ submitWarehouseReport, storeCo
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
@@ -135,7 +135,7 @@ export default function WarehouseLowStockReport({ submitWarehouseReport, storeCo
               onPageChange={(page) => fetchReport(page)}
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

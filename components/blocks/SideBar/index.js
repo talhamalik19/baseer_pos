@@ -100,6 +100,41 @@ export default async function SideBar() {
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          <g clip-path="url(#clip0_832_1847)">
+            <path
+              d="M8 4V8L10.6667 9.33333"
+              stroke="#CAD5E2"
+              stroke-width="1.33333"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z"
+              stroke="#CAD5E2"
+              stroke-width="1.33333"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </g>
+          <defs>
+            <clipPath id="clip0_832_1847">
+              <rect width="26" height="26" fill="white" />
+            </clipPath>
+          </defs>
+        </svg>
+      ),
+      field_text: serverLanguage?.on_hold ?? "Suspend",
+      field_redirect: "/suspend",
+    },
+    {
+      svg: (
+        <svg
+          width="26"
+          height="26"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
           <path
             d="M10.6668 6.66675C10.6668 7.37399 10.3859 8.05227 9.88578 8.55237C9.38568 9.05246 8.70741 9.33341 8.00016 9.33341C7.29292 9.33341 6.61464 9.05246 6.11454 8.55237C5.61445 8.05227 5.3335 7.37399 5.3335 6.66675"
             stroke="#CAD5E2"
@@ -251,41 +286,6 @@ export default async function SideBar() {
       ),
       field_text: serverLanguage?.report ?? "Report",
       field_redirect: "/report",
-    },
-    {
-      svg: (
-        <svg
-          width="26"
-          height="26"
-          viewBox="0 0 16 16"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <g clip-path="url(#clip0_832_1847)">
-            <path
-              d="M8 4V8L10.6667 9.33333"
-              stroke="#CAD5E2"
-              stroke-width="1.33333"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M8.00016 14.6666C11.6821 14.6666 14.6668 11.6818 14.6668 7.99992C14.6668 4.31802 11.6821 1.33325 8.00016 1.33325C4.31826 1.33325 1.3335 4.31802 1.3335 7.99992C1.3335 11.6818 4.31826 14.6666 8.00016 14.6666Z"
-              stroke="#CAD5E2"
-              stroke-width="1.33333"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </g>
-          <defs>
-            <clipPath id="clip0_832_1847">
-              <rect width="26" height="26" fill="white" />
-            </clipPath>
-          </defs>
-        </svg>
-      ),
-      field_text: serverLanguage?.suspend ?? "Suspend",
-      field_redirect: "/suspend",
     },
     {
       svg: (

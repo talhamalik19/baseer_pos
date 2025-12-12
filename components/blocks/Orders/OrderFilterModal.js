@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import styles from '../Employees/employeeModal.module.scss';
 
-const OrderFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters }) => {
+const OrderFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters, loginDetail }) => {
   const [filters, setFilters] = useState(initialFilters || {
     email: "",
     phone: "",
@@ -235,7 +235,7 @@ const OrderFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters }) =
                   />
                   POS Orders
                 </label>
-                <label>
+               {(loginDetail?.allow_web_orders == "1" || loginDetail?.allow_web_orders) && <label>
                   <input
                     type="radio"
                     name="orderType"
@@ -243,8 +243,8 @@ const OrderFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters }) =
                     onChange={() => handleOrderTypeChange('web')}
                   />
                   Web Orders
-                </label>
-                <label>
+                </label> }
+               {(loginDetail?.allow_mob_orders == "1" || loginDetail?.allow_mob_orders) && <label>
                   <input
                     type="radio"
                     name="orderType"
@@ -252,7 +252,7 @@ const OrderFilterModal = ({ isOpen, onClose, onApplyFilters, initialFilters }) =
                     onChange={() => handleOrderTypeChange('mob')}
                   />
                   Mobile Orders
-                </label>
+                </label> }
               </div>
             </div>
 

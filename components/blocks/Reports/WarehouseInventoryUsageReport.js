@@ -20,7 +20,7 @@ export default function WarehouseInventoryUsageReport({
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
 
   const [data, setData] = useState({
     items: [],
@@ -108,6 +108,12 @@ export default function WarehouseInventoryUsageReport({
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
+            useEffect(() => {
+        fetchReport(1);
+      
+    }, [pageSize]);
+
+
 const downloadPdf = async () => {
   // Fetch all records (set large pageSize)
   const params = new URLSearchParams({
@@ -126,30 +132,27 @@ const downloadPdf = async () => {
   const periodsData = body[2] || {};
   const allItems = Object.values(periodsData).flat();
 
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Warehouse Inventory Usage", 14, 15);
 
-  if (allItems.length === 0) {
+  if (!allItems.length) {
     doc.text("No records found.", 14, 25);
     doc.save("warehouse-inventory-usage.pdf");
     return;
   }
 
-  // Pick only important fields
-  const importantFields = [
-    "period",
-    "sku",
-    "name",
-    "current_stock",
-    "actual_consumption",
-    "expected_consumption",
-    "variance",
-  ];
+  // Dynamically get all keys from first item
+  const dynamicColumns = Object.keys(allItems[0]);
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-  const headers = importantFields.map(formatColumnLabel);
   const tableData = allItems.map((item) =>
-    importantFields.map((field) => item[field] ?? "")
+    dynamicColumns.map((col) => item[col] ?? "-")
   );
 
   autoTable(doc, {
@@ -158,11 +161,13 @@ const downloadPdf = async () => {
     body: tableData,
     styles: { fontSize: 9 },
     headStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    footStyles: { fontStyle: "bold", fillColor: [35, 35, 35], textColor: [255, 255, 255] },
     theme: "grid",
   });
 
   doc.save("warehouse-inventory-usage.pdf");
 };
+
 
 
 
@@ -277,15 +282,18 @@ const downloadPdf = async () => {
             </tbody>
           </table>
         </div>
-        {data.totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={data.totalPages}
               onPageChange={handlePageChange}
+                   totalItems={data?.totalRecords}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

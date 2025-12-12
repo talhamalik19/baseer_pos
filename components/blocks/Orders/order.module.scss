@@ -17,6 +17,9 @@
 
   &:hover {
     opacity: 0.7;
+    [data-theme="dark"] & {
+      opacity: 1;
+    }
   }
 }
 
@@ -179,7 +182,9 @@
   margin-top: 8px; 
 
   @media (max-width: 640px) {
-    flex-direction: column;
+    .actionButton{
+      width: fit-content; padding: 20px;
+    }
   }
 }
 
@@ -214,8 +219,9 @@
   color: #47af48;
   text-align: center;
   font-weight: 500;
-  margin: 16px 0 0;
+  margin-bottom:20px;
   font-size: 14px;
+  display: flex; align-items: center; gap: 10px;
 }
 
 // Modal Styles
@@ -370,4 +376,20 @@
   &:last-child{
     padding-bottom: 0px;
   }
+}
+
+.top_row{
+      display: flex;
+    align-items: center;
+    justify-content: space-between;
+    @media screen and (max-width: 1024px) {
+      flex-direction: column; align-items: flex-start; justify-content: flex-start;
+      button{
+        padding: 15px 20px;
+      }
+    }
+}
+
+.refundcard{
+  margin-top: 20px;
 }

@@ -14,31 +14,32 @@ export default function Products({
   currency,
   language,
   sort,
-  setSort
+  setSort,
+  displayedProducts,
+  setDisplayedProducts
 }) {
   // Store only simple products in originalProducts
   // const originalProducts = useMemo(() => 
   //   (products || []).filter((item) => item?.__typename === "SimpleProduct"), 
   //   [products]
   // );
-  const [displayedProducts, setDisplayedProducts] = useState(products);
 
   // Fetches products and filters to only keep simple products
-  const getProducts = async () => {
-    const res = await fetchProductsAction(id, sort, currency);
-    const fetchedProducts = res?.items || [];
-    // const simpleProducts = fetchedProducts.filter((item) => item?.__typename === "SimpleProduct");
-    setProducts(fetchedProducts);
-    setDisplayedProducts(fetchedProducts);
-  };
+  // const getProducts = async () => {
+  //   const res = await fetchProductsAction(id, sort, currency);
+  //   const fetchedProducts = res?.items || [];
+  //   // const simpleProducts = fetchedProducts.filter((item) => item?.__typename === "SimpleProduct");
+  //   setProducts(fetchedProducts);
+  //   setDisplayedProducts(fetchedProducts);
+  // };
 
   // Handles search while ensuring only simple products are shown
 
 
   // Fetch products when id or sort changes
-  useEffect(() => {
-    getProducts();
-  }, [id, sort]);
+  // useEffect(() => {
+  //   getProducts();
+  // }, [id, sort]);
 
   // Update displayed products when products prop changes
   // useEffect(() => {

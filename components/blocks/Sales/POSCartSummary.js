@@ -58,7 +58,8 @@ export default function POSCartSummary({
   });
   const [consentModal, setConsentModal] = useState(false);
   const [qrcode, setQrCode] = useState("");
-  const amountInputRef = useRef(null);
+  // const amountInputRef = useRef(null);
+  // const searchInputRef = useRef(null);
 
   const [thermalPrint, setThermalPrint] = useState(true);
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -85,63 +86,75 @@ export default function POSCartSummary({
   const twilioRec = twilio?.twilio;
 
   // ✅ Calculate tax per product globally
-  const cartItemsWithTax = useMemo(() => {
-    return (
-      cartItems?.map((item) => {
-        const discountedPrice = item?.product?.discounted_price;
-        const specialPrice = item?.product?.special_price || 0;
-        const regularPrice =
-          item?.product?.price?.regularPrice?.amount?.value ||
-          item?.product?.price_range?.minimum_price?.regular_price?.value ||
-          0;
+ const cartItemsWithTax = useMemo(() => {
+  return (
+    cartItems?.map((item) => {
+      const discountedPrice = item?.product?.discounted_price;
+      const specialPrice = item?.product?.special_price || 0;
+      const regularPrice =
+        item?.product?.price?.regularPrice?.amount?.value ||
+        item?.product?.price_range?.minimum_price?.regular_price?.value ||
+        0;
 
-        const basePrice = discountedPrice
-          ? parseFloat(discountedPrice)
-          : specialPrice > 0
-          ? specialPrice
-          : regularPrice;
+      const basePrice = discountedPrice
+        ? parseFloat(discountedPrice)
+        : specialPrice > 0
+        ? specialPrice
+        : regularPrice;
 
-        const qty = item?.quantity || 0;
-        const rowTotal = basePrice * qty;
+      const qty = item?.quantity || 0;
+      const rowTotal = basePrice * qty;
 
-        let taxRate = 0;
-        let taxAmount = 0;
+      let taxRate = 0;
+      let taxAmount = 0;
 
-        if (
-          item?.product?.fbr_tax_applied == null ||
-          item?.product?.fbr_tax_applied == undefined
-        ) {
-          taxRate = item?.product?.tax_percent || 0;
-          taxAmount = (rowTotal * taxRate) / 100;
+      // Normal tax
+      if (
+        item?.product?.fbr_tax_applied == null ||
+        item?.product?.fbr_tax_applied == undefined
+      ) {
+        taxRate = item?.product?.tax_percent || 0;
+        taxAmount = (rowTotal * taxRate) / 100;
+      }
+
+      // FBR applied tax (THIS WAS CAUSING NaN)
+if (item?.product?.fbr_tax_applied == 1 || item?.product?.fbr_tax_applied === true) {
+
+        // FIX: ensure numeric taxRate
+        taxRate =
+          payment == "cashondelivery"
+            ? parseFloat(fbrDetails?.fbr_offline_tax) || 0
+            : parseFloat(fbrDetails?.fbr_online_tax) || 0;
+
+        // FIX: ensure rowTotal and special/regular price never create NaN
+        if (applyTaxAfterDiscount == 0) {
+          const sp = parseFloat(item?.product?.special_price) || 0;
+          const rp = parseFloat(regularPrice) || 0;
+
+          taxAmount =
+            sp > 0
+              ? (sp * taxRate) / 100
+              : ((rp * taxRate) / 100) * qty;
         }
-        if (item?.product?.fbr_tax_applied == 1) {
-          if (payment == "checkmo") {
-            taxRate = fbrDetails?.fbr_offline_discount;
-          } else {
-            taxRate = fbrDetails?.fbr_online_discount;
-          }
-          if (applyTaxAfterDiscount == 0) {
-            taxAmount =
-              (item?.product?.special_price && item?.product?.special_price > 0
-                ? (item?.product?.special_price * taxRate) / 100
-                : (regularPrice * taxRate) / 100) * qty;
-          }
-          if (applyTaxAfterDiscount == 1) {
-            taxAmount = (rowTotal * taxRate) / 100;
-          }
-          // taxRate = payment == "checkmo" ? fbrDetails?.fbr_offline_discount : fbrDetails?.fbr_online_discount;
-        }
 
-        return {
-          ...item,
-          basePrice,
-          rowTotal,
-          taxRate,
-          taxAmount,
-        };
-      }) || []
-    );
-  }, [cartItems, payment]);
+        if (applyTaxAfterDiscount == 1) {
+          taxAmount =
+            ((rowTotal - (discountPercent / 100)) * taxRate) / 100;
+        }
+      }
+
+      return {
+        ...item,
+        basePrice,
+        rowTotal,
+        taxRate,
+        taxAmount,
+      };
+    }) || []
+  );
+}, [cartItems, payment, applyTaxAfterDiscount, discountPercent]);
+
+
 
   const {
     subtotal,
@@ -178,11 +191,11 @@ export default function POSCartSummary({
     };
   }, [cartItemsWithTax, discountPercent]);
 
-  useEffect(() => {
-    if (amountInputRef.current) {
-      amountInputRef.current.focus();
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (searchInputRef.current) {
+  //     searchInputRef.current.focus();
+  //   }
+  // }, []);
 
   useEffect(() => {
     if(amount > 0) {
@@ -327,7 +340,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       const itemDiscount = (actualPrice - discountedPrice) * item.quantity;
       return sum + itemDiscount;
     }, 0);
-
+    
     const items = cartItems.map((item, index) => {
       const itemWithTax = cartItemsWithTax[index];
       const quantity = item.quantity || 1;
@@ -352,6 +365,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         tax_amount: itemWithTax.taxAmount.toFixed(2),
         price_incl_tax: priceInclTax.toFixed(2),
         row_total_incl_tax: rowTotalInclTax.toFixed(2),
+        super_attributes: item?.selected_options || {}
       };
     });
 
@@ -373,9 +387,9 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       discount: discountPercent,
       order_date: new Date().toISOString(),
       fbr_tax_percent:
-        payment == "checkmo"
-          ? fbrDetails?.fbr_offline_discount
-          : fbrDetails?.fbr_online_discount,
+        payment == "cashondelivery"
+          ? fbrDetails?.fbr_offline_tax
+          : fbrDetails?.fbr_online_tax,
       order_tax_amount: taxAmount.toFixed(2),
     };
 
@@ -394,7 +408,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         TotalTaxCharged: orderData?.order_tax_amount,
         Discount: parseFloat(totalDiscount),
         FurtherTax: 0.0,
-        PaymentMode: payment === "checkmo" ? 1 : 2,
+        PaymentMode: payment === "cashondelivery" ? 1 : 2,
         InvoiceType: 1,
         Items: cartItems.map((item, index) => {
           const product = item?.product;
@@ -424,7 +438,6 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
           };
         }),
       };
-      console.log(fbrPayload);
       try {
         const res = await fetch("/api/fbr", {
           method: "POST",
@@ -437,7 +450,6 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         });
 
         const fbrResponse = await res.json();
-        console.log("fbr response", fbrResponse);
 
         if (res.ok && fbrResponse?.InvoiceNumber) {
           orderData.fbr_invoice_id = fbrResponse.InvoiceNumber;
@@ -461,6 +473,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       if (!email && !phone) {
         if (thermalPrint) {
           await printReceipt(
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -471,7 +484,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
             orderData?.order_key,
             warehouseId,
             orderData?.fbr_invoice_id,
-            discountPercent
+            discountPercent,
           );
         }
         await saveOrder(orderData);
@@ -495,6 +508,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         });
         if (thermalPrint) {
           await printReceipt(
+                currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -523,6 +537,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       if (finalConsent === "yes") {
         if (thermalPrint) {
           await printReceipt(
+                currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -550,6 +565,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       if (finalConsent === "not_set") {
         if (thermalPrint) {
           await printReceipt(
+                currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -593,6 +609,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       if (finalConsent == "no") {
         if (thermalPrint) {
           await printReceipt(
+                currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -622,6 +639,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       console.log("fallback")
       try {
         const delayedJobData = {
+          currencySymbol,
           email,
           phone,
           orderId,
@@ -630,7 +648,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
           warehouseId,
           smtp_config: decryptedSmtp,
           smsJob: phone
-            ? {
+            ? { currencySymbol,
                 phone,
                 order_key: orderData?.order_key,
                 orderId,
@@ -646,6 +664,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
 
         if (email) {
           delayedJobData.pdfBase64 = await generateReceiptPDF(
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -876,6 +895,18 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
                       )}
                     </div>
                   )}
+                    <div className={styles.paymentDetailBlock}>
+            <label className={styles.checkboxWrapper}>
+              <input
+                type="checkbox"
+                className={styles.checkbox}
+                checked={createCustomer}
+                onChange={(e) => setCreateCustomer(e.target.checked)}
+              />
+              <span className={styles.customCheck}></span>
+              Do you want to create customer?
+            </label>
+          </div>
               </div>
             )}
           </div>
@@ -893,7 +924,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
             </label>
           </div>
 
-          <div className={styles.paymentDetailBlock}>
+          {/* <div className={styles.paymentDetailBlock}>
             <label className={styles.checkboxWrapper}>
               <input
                 type="checkbox"
@@ -904,7 +935,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
               <span className={styles.customCheck}></span>
               Do you want to create customer?
             </label>
-          </div>
+          </div> */}
 
           {cartItems[0]?.product?.apply_discount_on != "product" && (
             <div className={styles.paymentDetailBlock}>
@@ -930,8 +961,8 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
               value={payment}
               onChange={(e) => setPayment(e.target.value)}
             >
-              <option value="checkmo">{serverLanguage?.cash ?? "Cash"}</option>
-              <option value="credit">
+              <option value="cashondelivery">{serverLanguage?.cash ?? "Cash"}</option>
+              <option value="banktransfer">
                 {serverLanguage?.credit ?? "Credit"}
               </option>
             </select>
@@ -942,7 +973,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
               {serverLanguage?.amount_received ?? "Amount Received"}:
             </p>
             <input
-              ref={amountInputRef}
+              // ref={amountInputRef}
               type="number"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}

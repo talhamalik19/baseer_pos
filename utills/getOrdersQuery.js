@@ -41,6 +41,7 @@ const getOrdersQuery = (searchKeyword, pageSize = 10, page = 1) =>
         }
         invoice {
           invoice_id
+          order_currency_code
         }
         payment {
           payment_id
@@ -55,6 +56,10 @@ const getOrdersQuery = (searchKeyword, pageSize = 10, page = 1) =>
           image_url
           item_price
           item_qty_ordered
+           qty_invoiced
+           qty_increment_step
+        qty_shipped
+        qty_refunded
           item_row_total
           item_price_incl_tax
             item_row_total_incl_tax

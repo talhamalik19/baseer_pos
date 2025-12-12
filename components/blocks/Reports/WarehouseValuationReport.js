@@ -22,7 +22,7 @@ export default function WarehouseValuationReport({ submitWarehouseValuationRepor
   });
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const stored = localStorage.getItem("loginDetail");
@@ -101,6 +101,12 @@ export default function WarehouseValuationReport({ submitWarehouseValuationRepor
   };
 
   const totalPages = Math.ceil(data.total_records / pageSize);
+
+     useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchReport(1);
+      }
+    }, [pageSize]);
 
   const downloadPdf = async () => {
     const params = new URLSearchParams({
@@ -231,11 +237,13 @@ export default function WarehouseValuationReport({ submitWarehouseValuationRepor
             )} */}
           </table>
         </div>
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange}    totalItems={data?.total_records}
+               pageSize={pageSize}
+  setPageSize={setPageSize}/>
           </div>
-        )}
+        }
       </div>
     </div>
   );

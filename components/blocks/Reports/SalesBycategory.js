@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -34,7 +34,7 @@ export default function SalesByCategory({
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -117,6 +117,12 @@ export default function SalesByCategory({
     return value;
   };
 
+      useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchData(1);
+      }
+    }, [pageSize]);
+
 const downloadPdf = async () => {
   const storeParam = formData.storeId
     ? formData.storeId
@@ -126,7 +132,7 @@ const downloadPdf = async () => {
     period: formData.period,
     from: formData.fromDate,
     to: formData.toDate,
-    pageSize: "9999", // Fetch all for export
+    pageSize: "9999", // fetch all
     currentPage: "1",
     storeIds: storeParam,
     showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
@@ -141,68 +147,63 @@ const downloadPdf = async () => {
   const items = json?.items || [];
   const overall = json?.overall || {};
 
-  const doc = new jsPDF();
+  if (items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
+
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Sales by Category Report", 14, 15);
 
-  const headers = [
-    "Period",
-    "Category",
-    "Orders",
-    "Qty",
-    "Gross",
-    "Net",
-    "Discount",
-  ];
+  // Dynamically get all columns from the first row
+  const dynamicColumns = Object.keys(items[0] || {});
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-  const tableData = items.map((item) => [
-    item.period,
-    item.category_name,
-    item.orders_count,
-    item.items_ordered?.replace(".0000", ""),
-    item.gross_sales,
-    item.net_sales,
-    item.discount_amount,
-  ]);
+  const tableData = items.map((item) =>
+    dynamicColumns.map((col) => item[col] ?? "-")
+  );
 
-const overallRow = [
-  { content: "Overall Totals", colSpan: 2, styles: { fontStyle: 'bold' } },
-  formatValue(overall.orders_count),
-  formatValue(
-    typeof overall.items_ordered === "string"
-      ? overall.items_ordered.replace(".0000", "")
-      : overall.items_ordered
-  ),
-  formatValue(overall.gross_sales),
-  formatValue(overall.net_sales),
-  formatValue(overall.discount_amount),
-];
+  const overallRow = overall
+    ? [
+        { content: "Overall Totals", colSpan: 1, styles: { fontStyle: "bold" } },
+        ...dynamicColumns.slice(1).map((key) => overall[key] ?? "-"),
+      ]
+    : [];
 
   autoTable(doc, {
     startY: 20,
     head: [headers],
-    body: [...tableData, overallRow],
+    body: tableData,
+    ...(overallRow.length ? { foot: [overallRow] } : {}),
     styles: { fontSize: 9 },
-      headStyles: {
-    fillColor: [35, 35, 35], // Header background color
-    textColor: [255, 255, 255], // Optional: white text for better contrast
-  },
-  footStyles: {
-    fontStyle: "bold",
-    fillColor: [35, 35, 35], // Footer background color
-    textColor: [255, 255, 255], // Optional: white text
-  },
+    headStyles: {
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
     theme: "grid",
     willDrawCell: function (data) {
-      // Add bold style for totals
-      if (data.row.index === tableData.length) {
-        data.cell.styles.fontStyle = 'bold';
+      // Bold the overall totals row
+      if (overallRow.length && data.row.index === items.length) {
+        data.cell.styles.fontStyle = "bold";
       }
-    }
+    },
   });
 
   doc.save("sales-by-category.pdf");
 };
+
+
 
 
   return (
@@ -405,15 +406,18 @@ const overallRow = [
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+                totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

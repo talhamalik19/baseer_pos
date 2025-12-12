@@ -82,54 +82,49 @@ export default function WorstSellerReport({
     key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   const formatValue = (val) => (val === null || val === undefined ? "-" : val);
 
-  const downloadPdf = () => {
-    if (!data.length) return;
+const downloadPdf = () => {
+  if (!data?.length) {
+    alert("No data to export");
+    return;
+  }
 
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Worst Seller Report", 14, 15);
+  const doc = new jsPDF({ orientation: "landscape" });
+  doc.setFontSize(14);
+  doc.text("Worst Seller Report", 14, 15);
 
-    const headers = [
-      "Date",
-      "Product",
-      "SKU",
-      "Qty Sold",
-      "Gross",
-      "Refunded",
-      "Cancelled",
-      "Net",
-    ];
+  // Get all keys dynamically from first item
+  const dynamicColumns = Object.keys(data[0]);
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-    const tableData = data.map((item) => [
-      item.date,
-      item.name,
-      item.sku,
-      item.qty_sold,
-      item.gross,
-      item.refunded,
-      item.cancelled,
-      item.net,
-    ]);
+  const tableData = data.map((item) =>
+    dynamicColumns.map((col) => item[col] ?? "-")
+  );
 
-    autoTable(doc, {
-      startY: 28,
-      head: [headers],
-      body: tableData,
-      styles: { fontSize: 9 },
-      headStyles: {
-        fillColor: [35, 35, 35], // Header background color
-        textColor: [255, 255, 255], // Optional: white text for better contrast
-      },
-      footStyles: {
-        fontStyle: "bold",
-        fillColor: [35, 35, 35], // Footer background color
-        textColor: [255, 255, 255], // Optional: white text
-      },
-      theme: "grid",
-    });
+  autoTable(doc, {
+    startY: 28,
+    head: [headers],
+    body: tableData,
+    styles: { fontSize: 9 },
+    headStyles: {
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    theme: "grid",
+  });
 
-    doc.save("worst-seller-report.pdf");
-  };
+  doc.save("worst-seller-report.pdf");
+};
+
 
   return (
     <div className={styles.page_detail}>

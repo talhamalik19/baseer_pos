@@ -17,6 +17,12 @@ export default function Invoice({
   warehouseDeatil,
   warehouse,
 }) {
+    const getCurrencySymbol = () => {
+    const code = order?.invoice?.[0]?.order_currency_code;
+    if (!code) return "$";
+    return code === "PKR" ? "Rs" : "$";
+  };
+
   const warehouseInitialDetails = warehouse?.[0];
   const [pdfResponse, setPdfResponse] = useState({});
   const [answers, setAnswers] = useState([]);
@@ -91,123 +97,291 @@ export default function Invoice({
 
   if (!order) return <p>No order found.</p>;
 
-  const handleDownload = async () => {
-    const doc = new jsPDF();
+const handleDownload = async () => {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
 
-    // 🔹 Company Config
-    const companyConfig = pdfResponse || {
-      title: "Receipt",
-      subtitle: "Thank You For Your Purchase",
-      logo: "/images/logo.png",
-      companyName: "My Store",
-      address: "123 Main Street",
-      city: "Islamabad",
-      state: "PK",
-      zipCode: "44000",
-      phone: "+92 300 0000000",
-      email: "support@mystore.com",
-      footer: "Thank you for shopping with us!",
-      footerText: "Please come again",
-    };
+  const w = warehouseInitialDetails || {};
+  let y = 10;
 
-    // 🔹 Logo
-    if (companyConfig.logo) {
-      try {
-        const img = new Image();
-        img.src = companyConfig.logo;
-        doc.addImage(img, "PNG", 80, 5, 50, 20);
-      } catch (err) {
-        console.warn("Logo not added:", err);
+  // -----------------------------------
+  // LOGO - Multiple fallback methods
+  // -----------------------------------
+  let logoAdded = false;
+
+  // Method 1: Try to get from DOM (most reliable)
+  try {
+    const logoImg = document.querySelector('img[alt="logo"]');
+    if (logoImg && logoImg.complete) {
+      const canvas = document.createElement("canvas");
+      canvas.width = logoImg.naturalWidth || logoImg.width;
+      canvas.height = logoImg.naturalHeight || logoImg.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(logoImg, 0, 0);
+      const base64 = canvas.toDataURL("image/png");
+
+      const maxW = 50;
+      const maxH = 20;
+      const aspectRatio = canvas.width / canvas.height;
+      
+      let finalW, finalH;
+      if (aspectRatio > maxW / maxH) {
+        finalW = maxW;
+        finalH = maxW / aspectRatio;
+      } else {
+        finalH = maxH;
+        finalW = maxH * aspectRatio;
       }
+
+      doc.addImage(base64, "PNG", 105 - finalW / 2, y, finalW, finalH);
+      y += finalH + 8;
+      logoAdded = true;
     }
+  } catch (e) {
+    console.warn("DOM logo extraction failed:", e);
+  }
 
-    // 🔹 Company Info
-    doc.setFontSize(14);
-    doc.text(companyConfig.companyName || "Store", 105, 30, {
-      align: "center",
-    });
-    doc.setFontSize(9);
-
-    const addressParts = [];
-    if (companyConfig.address) addressParts.push(companyConfig.address);
-    if (companyConfig.city) addressParts.push(companyConfig.city);
-    if (companyConfig.state) addressParts.push(companyConfig.state);
-    if (companyConfig.zipCode) addressParts.push(companyConfig.zipCode);
-    const fullAddress = addressParts.join(", ");
-
-    if (fullAddress) doc.text(fullAddress, 105, 36, { align: "center" });
-    if (companyConfig.phone)
-      doc.text(`Phone: ${companyConfig.phone}`, 105, 42, { align: "center" });
-    if (companyConfig.email)
-      doc.text(`Email: ${companyConfig.email}`, 105, 48, { align: "center" });
-
-    doc.text(companyConfig.subtitle, 105, 54, { align: "center" });
-
-    // 🔹 Order Info
-    let y = 65;
-    doc.setFontSize(10);
-    doc.text(`Order #: ${order.increment_id}`, 20, y);
-    y += 6;
-    doc.text(`Date: ${order.created_at}`, 20, y);
-    y += 6;
-    doc.text(
-      `Customer: ${order.customer_firstname} ${order.customer_lastname}`,
-      20,
-      y
-    );
-    y += 6;
-    doc.text(`Email: ${order.customer_email}`, 20, y);
-    y += 10;
-
-    // 🔹 Items Table with Tax
-    autoTable(doc, {
-      head: [["Product", "Qty", "Price", "Tax", "Total"]],
-      body: order.items.map((item) => [
-        item.product_name,
-        item.item_qty_ordered,
-        `Rs ${item.item_price}`,
-        `Rs ${calculateRowTax(item)}`,
-        `Rs ${item.item_row_total_incl_tax}`,
-      ]),
-      startY: y,
-      theme: "plain",
-      styles: { fontSize: 10, cellPadding: 2 },
-      headStyles: { fillColor: [240, 240, 240], textColor: 0 },
-      columnStyles: {
-        0: { cellWidth: 70 },
-        1: { cellWidth: 20, halign: "center" },
-        2: { cellWidth: 30, halign: "right" },
-        3: { cellWidth: 30, halign: "right" },
-        4: { cellWidth: 30, halign: "right" },
-      },
-    });
-
-    y = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(11);
-    doc.text(`Subtotal: Rs ${orderTotals.subtotal}`, 150, y);
-    y += 6;
-    doc.text(`Total Tax: Rs ${orderTotals.totalTax}`, 150, y);
-    y += 6;
-    doc.text(`Grand Total: Rs ${orderTotals.grandTotal}`, 150, y);
-
-    // 🔹 QR Code for Feedback
+  // Method 2: Try fetch with base64
+  if (!logoAdded) {
     try {
-      const feedbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${slug}`;
-      const qrCodeDataURL = await QRCode.toDataURL(feedbackUrl);
-      doc.addImage(qrCodeDataURL, "PNG", 90, y + 10, 30, 30);
-      doc.setFontSize(9);
-      doc.text("Scan to give feedback", 105, y + 45, { align: "center" });
-    } catch (err) {
-      console.error("QR Code error:", err);
+      const logoUrl = `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/responsive_logo.png`;
+      const response = await fetch(logoUrl);
+      const blob = await response.blob();
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+
+      const img = new Image();
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = base64;
+      });
+
+      const maxW = 50;
+      const maxH = 20;
+      const aspectRatio = img.width / img.height;
+      
+      let finalW, finalH;
+      if (aspectRatio > maxW / maxH) {
+        finalW = maxW;
+        finalH = maxW / aspectRatio;
+      } else {
+        finalH = maxH;
+        finalW = maxH * aspectRatio;
+      }
+
+      doc.addImage(base64, "PNG", 105 - finalW / 2, y, finalW, finalH);
+      y += finalH + 8;
+      logoAdded = true;
+    } catch (e) {
+      console.warn("Fetch logo failed:", e);
+    }
+  }
+
+  // Fallback: Show company name if logo failed
+  if (!logoAdded) {
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text(w.store_name || "Store", 105, y + 8, { align: "center" });
+    y += 18;
+  }
+
+  // ------------------------------
+  // HEADER
+  // ------------------------------
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text(w.store_name || "Store", 105, y, { align: "center" });
+  y += 6;
+
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+
+  if (w.store_address) { 
+    doc.text(w.store_address, 105, y, { align: "center" }); 
+    y += 5; 
+  }
+  if (w.phone) { 
+    doc.text(`Phone: ${w.phone}`, 105, y, { align: "center" }); 
+    y += 5; 
+  }
+  if (w.email) { 
+    doc.text(`Email: ${w.email}`, 105, y, { align: "center" }); 
+    y += 5; 
+  }
+  if (w.ntn) { 
+    doc.text(`NTN: ${w.ntn}`, 105, y, { align: "center" }); 
+    y += 5; 
+  }
+  if (w.stn) { 
+    doc.text(`STN: ${w.stn}`, 105, y, { align: "center" }); 
+    y += 5; 
+  }
+  if (w.opening_hrs || w.closing_hrs) {
+    doc.text(`Open: ${w.opening_hrs || ""} - ${w.closing_hrs || ""}`, 105, y, { align: "center" });
+    y += 6;
+  }
+
+  doc.setFontSize(10);
+  doc.text("Thank You For Your Purchase", 105, y, { align: "center" });
+  y += 12;
+
+  // ------------------------------
+  // ORDER INFO
+  // ------------------------------
+  doc.setFontSize(10);
+  doc.text(`Date: ${order.created_at?.split(" ")?.[0] || ""}`, 15, y); 
+  y += 6;
+  doc.text(`Time: ${order.created_at?.split(" ")?.[1] || ""}`, 15, y); 
+  y += 6;
+  doc.text(`Order ID: ${order.increment_id}`, 15, y); 
+  y += 6;
+  if (order?.admin_user) {
+    doc.text(`Cashier: ${order.admin_user.charAt(0).toUpperCase() + order.admin_user.slice(1)}`, 15, y); 
+    y += 6;
+  }
+  y += 4;
+
+  // ------------------------------
+  // TABLE
+  // ------------------------------
+  autoTable(doc, {
+    startY: y,
+    head: [["Product", "Qty", "Price", "Tax", "Total"]],
+    body: order.items.map((item) => [
+      item.product_name,
+      item.item_qty_ordered,
+      parseFloat(item.item_price).toFixed(2),
+      calculateRowTax(item),
+      parseFloat(item.item_row_total_incl_tax).toFixed(2),
+    ]),
+    theme: "plain",
+    styles: { fontSize: 10, cellPadding: 2 },
+    headStyles: { 
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: "bold"
+    },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      1: { cellWidth: 20, halign: "center" },
+      2: { cellWidth: 30, halign: "right" },
+      3: { cellWidth: 30, halign: "right" },
+      4: { cellWidth: 30, halign: "right" },
+    },
+  });
+
+  y = doc.lastAutoTable.finalY + 10;
+
+  // ------------------------------
+  // TOTALS
+  // ------------------------------
+  const rightMargin = 195;
+  const labelX = 130;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+
+  doc.text("Subtotal (Excl. Tax):", labelX, y);
+  doc.text(`${orderTotals.subtotal}`, rightMargin, y, { align: "right" }); 
+  y += 6;
+  
+  doc.text("Tax:", labelX, y);
+  doc.text(`${orderTotals.totalTax}`, rightMargin, y, { align: "right" }); 
+  y += 6;
+  
+  doc.text("Subtotal (Incl. Tax):", labelX, y);
+  doc.text(`${orderTotals.grandTotal}`, rightMargin, y, { align: "right" }); 
+  y += 8;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Total:", labelX, y);
+  doc.text(`${orderTotals.grandTotal}`, rightMargin, y, { align: "right" }); 
+  y += 15;
+
+  // ------------------------------
+  // CUSTOMER INFO
+  // ------------------------------
+  if (order.customer_email || order.customer_phone || order.customer_firstname) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Customer Information", 15, y); 
+    y += 6;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    
+    if (order.customer_firstname || order.customer_lastname) { 
+      doc.text(`Name: ${order.customer_firstname || ""} ${order.customer_lastname || ""}`.trim(), 15, y); 
+      y += 5; 
+    }
+    if (order.customer_phone) { 
+      doc.text(`Phone: ${order.customer_phone}`, 15, y); 
+      y += 5; 
+    }
+    if (order.customer_email) { 
+      doc.text(`Email: ${order.customer_email}`, 15, y); 
+      y += 5; 
     }
 
-    // 🔹 Footer
-    doc.setFontSize(10);
-    doc.text(companyConfig.footer, 105, 280, { align: "center" });
-    doc.text(companyConfig.footerText, 105, 286, { align: "center" });
+    y += 8;
+  }
 
-    doc.save(`order_${order.increment_id}.pdf`);
-  };
+  // ---------------------------------------------
+  // QR CODES — side-by-side
+  // ---------------------------------------------
+  const qrSize = 40;
+  const qrX1 = 50;
+  const qrX2 = 120;
+
+  try {
+    const feedbackUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/invoice?id=${slug}`;
+    const feedbackQR = await QRCode.toDataURL(feedbackUrl);
+
+    doc.addImage(feedbackQR, "PNG", qrX1, y, qrSize, qrSize);
+    doc.setFontSize(9);
+    doc.text("Scan for feedback", qrX1 + qrSize / 2, y + qrSize + 5, { align: "center" });
+  } catch (e) {
+    console.error("Feedback QR error:", e);
+  }
+
+  if (qrCodes?.fbr && order.fbr_invoice_id) {
+    try {
+      doc.addImage(qrCodes.fbr, "PNG", qrX2, y, qrSize, qrSize);
+      doc.setFontSize(9);
+      doc.text("Verify via FBR", qrX2 + qrSize / 2, y + qrSize + 5, { align: "center" });
+      
+      y += qrSize + 10;
+      doc.setFontSize(8);
+      doc.text(order.fbr_invoice_id, 105, y, { align: "center" });
+    } catch (e) {
+      console.error("FBR QR error:", e);
+    }
+  } else {
+    y += qrSize + 10;
+  }
+
+  // ------------------------------
+  // FOOTER
+  // ------------------------------
+  y += 10;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text("Thank you for shopping with us!", 105, y, { align: "center" });
+  y += 5;
+  doc.setFont("helvetica", "normal");
+  doc.text("Please come again", 105, y, { align: "center" });
+
+  doc.save(`order_${order.increment_id}.pdf`);
+};
+
 
   const handleChange = (questionId, value) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -267,12 +441,20 @@ export default function Invoice({
     }
   };
 
+    const currency = getCurrencySymbol();
+
   return (
     <>
       <div className={`${style.invoice_page}`}>
         <div className={`${style.invoice_container}`}>
           <div className={style.invoice_item_container}>
+
             <div className={style.invoice_item}>
+            <svg width="30" height="30" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" onClick={handleDownload} className={style.download}>
+  <path d="M10 3.33333V11.6667" stroke="#4A5565" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M6.66667 8.33333L10 11.6667L13.3333 8.33333" stroke="#4A5565" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.83333 15H14.1667C14.6269 15 15 14.6269 15 14.1667V13.3333C15 12.8731 14.6269 12.5 14.1667 12.5H5.83333C5.3731 12.5 5 12.8731 5 13.3333V14.1667C5 14.6269 5.3731 15 5.83333 15Z" stroke="#4A5565" stroke-width="1.66667" stroke-linecap="round" strok-linejoin="round" fill="none"/>
+</svg>
               <div className={style.company_detail}>
                 <Image
                   src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/responsive_logo.png`}
@@ -571,13 +753,13 @@ export default function Invoice({
                   <div className={style.meta}>
                     <span>Qty: {item.item_qty_ordered}</span>
                   {item?.discount && <span className={style.discount}>
-                      Discount: Rs. {item.discount || "0"}
+                      Discount: {currency} {item.discount || "0"}
                     </span> }
                     <span className={style.tax}>
-                      Tax: Rs. {calculateRowTax(item)}
+                      Tax: {currency} {calculateRowTax(item)}
                     </span>
                     <div className={style.price_box}>
-                      Rs. {item.item_row_total_incl_tax}
+                      {currency}  {item.item_row_total_incl_tax}
                     </div>
                   </div>
                 </div>
@@ -616,18 +798,18 @@ export default function Invoice({
                 </div>
                 <div className={style.summary_block}>
                   <p>Subtotal (excl. tax)</p>
-                  <p>Rs. {orderTotals.subtotal}</p>
+                  <p>{currency} {orderTotals.subtotal}</p>
                 </div>
                 <div className={style.summary_block}>
                   <p>Total Tax</p>
-                  <p>Rs. {orderTotals.totalTax}</p>
+                  <p>{currency} {orderTotals.totalTax}</p>
                 </div>
               </div>
 
               <div className={style.summary_total}>
                 <div className={style.summary_total_block}>
                   <p>Total Payable</p>
-                  <p>Rs. {orderTotals.grandTotal}</p>
+                  <p>{currency} {orderTotals.grandTotal}</p>
                 </div>
                 <div className={style.summary_total_block}>
                   <p>Payment Mode</p>
@@ -639,7 +821,7 @@ export default function Invoice({
 
           <div className={style.fbr_social}>
             <div className={style.fbr}>
-              <img src={"/images/fbr.png"} alt="fbr logo" />
+              <img src={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/fbr.png`} alt="fbr logo" />
               <p>Verify via FBR Tax Asaan App or SMS 9966</p>
               <div className={style.qr}>
                 {qrCodes?.fbr && <img src={qrCodes.fbr} alt="qr code" />}
@@ -780,7 +962,7 @@ export default function Invoice({
           </div>
           <div className={style.footer}>
   <p>
-    Powered by <Link className={style.baseer} href={'https://web.baseer.ca'} target="_blank">{copyrightLines?.[1] || "Baseer"}</Link>
+    Powered by <Link className={style.baseer} href={'https://baseer.ca/'} target="_blank">{copyrightLines?.[1] || "Baseer"}</Link>
   </p>
   <p>{copyrightLines?.[2]}</p>
   <p>

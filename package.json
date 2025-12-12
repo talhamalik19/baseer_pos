@@ -1,23 +1,23 @@
 {
-  "name": "grocery-pos",
+  "name": "jazz-pos",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3050",
+    "dev": "next dev -p 3070",
     "build": "next build",
-    "start": "next start -p 3050",
+    "start": "next start -p 3070",
     "lint": "next lint"
   },
   "dependencies": {
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
     "macaddress": "^0.5.3",
-    "next": "15.2.1",
+    "next": "^16.0.7",
     "nodemailer": "^7.0.6",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "react-select": "^5.10.1",
     "react-simple-maps": "^3.0.0",
     "react-tooltip": "^5.29.1",
@@ -30,6 +30,6 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "eslint": "^9",
-    "eslint-config-next": "15.2.1"
+    "eslint-config-next": "^16.0.7"
   }
 }

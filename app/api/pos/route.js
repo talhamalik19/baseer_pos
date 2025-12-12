@@ -27,8 +27,9 @@ export async function POST(req) {
 
     // First check if the response is OK (status 200-299)
     if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`API request failed with status ${response.status}: ${errorData}`);
+      // console.log(await response.json())
+      const errorData = await response.json();
+      throw new Error(errorData?.message);
     }
 
     // Then parse the JSON

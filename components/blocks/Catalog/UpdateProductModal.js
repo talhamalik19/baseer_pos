@@ -4,7 +4,7 @@ import styles from "../../../styles/card.module.scss";
 import { revalidateProducts, updateProductAction } from "@/lib/Magento/actions";
 import { updateProductInDB } from "@/lib/indexedDB";
 
-export default function UpdateProductModal({ item, onClose }) {
+export default function UpdateProductModal({ item, onClose, adminAcl }) {
   const [originalData, setOriginalData] = useState({
      uid: item?.uid || "", 
     name: item?.name || "",
@@ -12,7 +12,7 @@ export default function UpdateProductModal({ item, onClose }) {
     price: item?.price?.regularPrice?.amount?.value || "",
     special_price: item?.special_price || "",
     image: item?.image?.url || item?.image_url || "",
-    inventory: item?.quantity || 0
+    inventory: item?.pos_stock != null ? item?.pos_stock : 0
   });
 
   const [formData, setFormData] = useState(originalData);
@@ -33,19 +33,27 @@ export default function UpdateProductModal({ item, onClose }) {
       price: item?.price?.regularPrice?.amount?.value || "",
       special_price: item?.special_price || "",
       image: item?.image?.url || item?.image_url || "",
-      inventory: item?.quantity || 0
+      inventory: item?.pos_stock ?? 0
     };
     setOriginalData(newOriginalData);
     setFormData(newOriginalData);
   }, [item]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+const handleInputChange = (e) => {
+  const { name, value } = e.target;
+
+  const numericFields = ["price", "special_price", "inventory"];
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: numericFields.includes(name) 
+      ? value === "" 
+        ? null
+        : Number(value)
+      : value
+  }));
+};
+
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -92,14 +100,14 @@ const handleSubmit = async (e) => {
   
   const changedData = getChangedFields();
   const res = await updateProductAction(changedData);
-  // if (res && res.success) {
+  if (res && res.status == 200) {
     const dbUpdate = {
       name: formData.name,
       sku: formData.sku,
       price: parseFloat(formData.price),
       special_price: formData.special_price 
         ? parseFloat(formData.special_price) 
-        : null,
+        : parseInt(0.00),
       quantity: parseInt(formData.inventory, 10),
       image: formData.image
     };
@@ -107,7 +115,8 @@ const handleSubmit = async (e) => {
     await updateProductInDB(originalData.uid, dbUpdate);
     onClose();
     window.location.reload(true);
-  // } else {
+  } 
+  // else {
   //   // Handle API error
   //   console.error("Update failed:", res?.message);
   // }
@@ -133,7 +142,7 @@ const handleSubmit = async (e) => {
 
         <div className={styles.modalBody}>
           <form onSubmit={handleSubmit} className={styles.form}>
-            <div className={styles.formGroup}>
+          {adminAcl?.update_name && <div className={styles.formGroup}>
               <label className={styles.required} htmlFor="name">
                 Product Name
               </label>
@@ -145,10 +154,10 @@ const handleSubmit = async (e) => {
                 value={formData.name}
                 onChange={handleInputChange}
               />
-            </div>
+            </div>}
 
-            <div className={styles.formRow}>
-              <div className={styles.formGroup}>
+           {(adminAcl?.update_price || adminAcl?.update_special_price) && <div className={styles.formRow}>
+             {adminAcl?.update_price && <div className={styles.formGroup}>
                 <label className={styles.required} htmlFor="price">
                   Price
                 </label>
@@ -161,9 +170,9 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   step="0.01"
                 />
-              </div>
+              </div> }
 
-              <div className={styles.formGroup}>
+             {adminAcl?.update_special_price && <div className={styles.formGroup}>
                 <label htmlFor="special_price">Special Price</label>
                 <input
                   type="number"
@@ -174,10 +183,10 @@ const handleSubmit = async (e) => {
                   onChange={handleInputChange}
                   step="0.01"
                 />
-              </div>
-            </div>
+              </div> }
+            </div> }
 
-            <div className={styles.formRow}>
+           {adminAcl?.update_stock && <div className={styles.formRow}>
               <div className={styles.formGroup}>
                 <label htmlFor="inventory">Inventory Quantity</label>
                 <input
@@ -190,9 +199,9 @@ const handleSubmit = async (e) => {
                   min="0"
                 />
               </div>
-            </div>
+            </div> }
 
-            <div className={styles.formGroup}>
+          {adminAcl?.update_image &&  <div className={styles.formGroup}>
               <label htmlFor="image">Product Image</label>
               <input
                 type="file"
@@ -211,7 +220,7 @@ const handleSubmit = async (e) => {
                   />
                 </div>
               )}
-            </div>
+            </div> }
 
             <div className={styles.formFooter}>
               <button 

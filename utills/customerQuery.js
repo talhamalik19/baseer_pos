@@ -28,6 +28,9 @@ query {
            country_id
            telephone
        }
+              billing_address{
+        telephone
+       }
        invoice {
            invoice_id
        }

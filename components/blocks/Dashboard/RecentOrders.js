@@ -102,7 +102,7 @@ export default function RecentOrders({ showCta, items, serverLanguage }) {
       {order?.increment_id}
     </td>
 
-    <td className={styles.name}> <div><div><span>{order?.customer_firstname ? order?.customer_firstname?.charAt(0) : "P"}</span><span>{order?.customer_lastname ? order?.customer_lastname?.charAt(0) : "C"}</span></div></div>
+    <td className={styles.name}> <div><span>{order?.customer_firstname ? order?.customer_firstname?.charAt(0) : "P"}</span><span>{order?.customer_lastname ? order?.customer_lastname?.charAt(0) : "C"}</span></div>
       {`${order?.customer_firstname ?? "POS"} ${
         order?.customer_lastname ?? "Customer"
       }`}
@@ -128,7 +128,10 @@ export default function RecentOrders({ showCta, items, serverLanguage }) {
       </span>
     </td>
 
-    <td className={styles.amount}>${order?.order_grandtotal}</td>
+<td className={styles.amount}>
+  {order?.invoice ? order?.invoice?.[0]?.order_currency_code === "PKR" ? "Rs " : "$ " : "$"}
+  {order?.order_grandtotal}
+</td>
 
     <td className={styles.status_td}>
       <span

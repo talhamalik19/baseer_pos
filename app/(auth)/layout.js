@@ -25,8 +25,7 @@ export const metadata = {
     (function() {
       try {
         const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        const theme = savedTheme || 'light';
         document.documentElement.setAttribute('data-theme', theme);
       } catch (_) {}
     })();
@@ -56,7 +55,7 @@ export default async function RootLayout({ children }) {
             <p>
               {serverLanguage?.copyright ?? "© 2025"}
               {/* <span> {serverLanguage?.company_name ?? 'Baseer'}</span>.  */}
-              <span> {serverLanguage?.zaafoo ?? "Zaafoo"}</span>.
+              <span> {serverLanguage?.zaafoo1 ?? "Baseer"}</span>.
               {serverLanguage?.all_rights_reserved ?? "All rights reserved"}
             </p>
             <ul>

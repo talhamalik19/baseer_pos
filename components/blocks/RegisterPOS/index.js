@@ -26,12 +26,17 @@ export default function RegisterPOS({
   const [showForm, setShowForm] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  useEffect(()=>{
+    const loginDetail = JSON.parse(localStorage.getItem("loginDetail"));
+    setAssignedPOS(loginDetail?.assigned_pos || codes) 
+  },[])
+
   useEffect(() => {
     const initializeComponent = () => {
       const loginDetail = JSON.parse(localStorage.getItem("loginDetail"));
       setIpAddress(loginDetail?.client_ip);
       setWarehouseDetail(loginDetail?.warehouse);
-      setAssignedPOS(codes);
+      // setAssignedPOS(loginDetail?.assignedPOS || codes);
 
       // Check for existing POS data in localStorage
       const companyDetail = localStorage.getItem("company_detail");
@@ -59,7 +64,6 @@ export default function RegisterPOS({
 
     initializeComponent();
   }, [codes]);
-
   const filteredCodes = assignedPOS?.filter((code) =>
     code.toLowerCase().includes(search.toLowerCase())
   );
@@ -178,6 +182,15 @@ export default function RegisterPOS({
   if (existingPosData && !showForm) {
     return (
       <div className={`${style.block} page_detail`} style={containerStyle}>
+           <div className={style.buttonContainer}>
+          <div className={style.text}>
+            <p>Need to Make Changes?</p>
+            <p>Update POS settings, reassign location, or modify permissions</p>
+          </div>
+          <button onClick={handleReAssign} className={style.reassignButton}>
+            {serverLanguage?.re_assign_pos ?? "Re-Assign POS"}
+          </button>
+        </div>
         <div className={style.header}>
           <div className={style.secHead}>
             <h2 className={`${style.title} ${style.manage_title}`}>
@@ -590,7 +603,7 @@ export default function RegisterPOS({
                     />
                   </svg>
                   <span className={style.label}>
-                    {serverLanguage?.ip_address ?? "IP Address:"}
+                    {serverLanguage?.assigned_ip_address ?? "Assigned IP Address:"}
                   </span>
                 </div>
                 <span className={`${style.value} ${style.ipAddress}`}>
@@ -626,7 +639,7 @@ export default function RegisterPOS({
                 />
               </svg>
 
-              {serverLanguage?.settings_permissions ?? "Settings & Permissions"}
+              {serverLanguage?.warehouse_settings_permissions ?? "Warehouse Settings & Permissions"}
             </h3>
             <div className={style.cardContent}>
               <div className={style.infoRow}>
@@ -840,15 +853,6 @@ export default function RegisterPOS({
           </div>
         </div>
 
-        <div className={style.buttonContainer}>
-          <div className={style.text}>
-            <p>Need to Make Changes?</p>
-            <p>Update POS settings, reassign location, or modify permissions</p>
-          </div>
-          <button onClick={handleReAssign} className={style.reassignButton}>
-            {serverLanguage?.re_assign_pos ?? "Re-Assign POS"}
-          </button>
-        </div>
 
         {message.text && (
           <div
@@ -922,21 +926,29 @@ export default function RegisterPOS({
                       </div>
                     )}
 
-                    {filteredCodes.map((code, idx) => (
-                      <div
-                        key={idx}
-                        onClick={() => {
-                          setPosCode(code);
-                          setIsOpen(false);
-                          setSearch("");
-                        }}
-                        className={`${registerStyle.option} ${
-                          posCode === code ? registerStyle.selected : ""
-                        }`}
-                      >
-                        {code}
-                      </div>
-                    ))}
+               {filteredCodes.map((code, idx) => {
+  const pureCode = code?.split(" - ")?.[0];
+  const location = code?.split(" - ")?.[1];
+
+  const displayText = location ? `${pureCode} (${location})` : pureCode;
+
+  return (
+    <div
+      key={idx}
+      onClick={() => {
+        setPosCode(pureCode); // ✅ Save only the code
+        setIsOpen(false);
+        setSearch("");
+      }}
+      className={`${registerStyle.option} ${
+        posCode === pureCode ? registerStyle.selected : ""
+      }`}
+    >
+      {displayText}
+    </div>
+  );
+})}
+
                   </div>
                 )}
               </div>

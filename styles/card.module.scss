@@ -322,14 +322,14 @@
   gap: 10px;
   flex-wrap: wrap;
   padding-top: 10px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1019607843);
-    div{
-      @include style.flex(flex-start, center, 10px); width: 47%;
-      // .priceInput{
-      //   width: 70px;
-      // }
-    }
-  .currency{
+  border-top: 1px solid rgba(0, 0, 0, 0.1019607843);
+
+  div {
+    @include style.flex(flex-start, center, 10px);
+    width: 47%;
+  }
+
+  .currency {
     color: #717182;
   }
 
@@ -346,7 +346,8 @@
     border: 1px solid #ccc;
     border-radius: 8px;
     transition: border-color 0.2s ease;
-    height: 20px; background-color: #EAF4EA; 
+    height: 20px;
+    background-color: #EAF4EA;
 
     &:focus {
       outline: none;
@@ -361,7 +362,7 @@
   }
 
   .updatePriceBtn {
-    background-color: style.$PrimaryColor;
+    background-color: unset;
     color: white;
     border: none;
     border-radius: 8px;
@@ -388,5 +389,28 @@
     margin-top: 5px;
     color: red;
     font-size: 14px;
+  }
+
+  /* 🔴 NEW — Delete Button Styling */
+  .deleteBtn {
+    background-color: unset;
+    color: #FF4D4D; 
+    border: 1px solid #0000001A;
+    border-radius: 50% !important;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background-color: #fff2f2;
+    }
   }
 }

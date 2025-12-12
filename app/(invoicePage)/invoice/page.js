@@ -10,7 +10,6 @@ export default async function InvoicePage({ searchParams }) {
   const slug = id?.id;
   const warehouseID = id?.warehouse;
   const ordersResponse = await getOrdersByKey(slug);
-
   const createFeedbackPayload = (orderData) => {
     const order = orderData?.data;
 

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -28,7 +28,7 @@ export default function TaxReport({ submitTaxReport, storeCode, storeIds }) {
   const [loading, setLoading] = useState(false);
   // Add this new state to track the period used for current data
   const [currentDataPeriod, setCurrentDataPeriod] = useState("");
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -110,6 +110,12 @@ export default function TaxReport({ submitTaxReport, storeCode, storeIds }) {
 
     const totalPages = Math.ceil(data.total_count / pageSize);
 
+          useEffect(() => {
+          if (data.items.length > 0 || data.overall_totals) {
+            fetchTaxReport(1);
+          }
+        }, [pageSize]);
+
 const downloadPdf = async () => {
   const params = new URLSearchParams({
     period: formData.period,
@@ -135,10 +141,12 @@ const downloadPdf = async () => {
     return;
   }
 
-  const doc = new jsPDF();
+  // 🔹 Landscape mode
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Tax Report", 14, 15);
 
+  // Dynamic columns
   const dynamicColumns = Object.keys(items[0]);
   const headers = dynamicColumns.map((col) =>
     col
@@ -164,8 +172,12 @@ const downloadPdf = async () => {
     body,
     ...(overallRow.length ? { foot: [overallRow] } : {}),
     styles: { fontSize: 9 },
-    headStyles: { fillColor: [54, 162, 235] },
-    footStyles: { fontStyle: "bold" },
+    headStyles: { fillColor: [54, 162, 235], textColor: [255, 255, 255] },
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [54, 162, 235],
+      textColor: [255, 255, 255],
+    },
     theme: "grid",
   });
 
@@ -378,15 +390,18 @@ const downloadPdf = async () => {
           </table>
         </div>
 
-     {totalPages >1 &&(
+     {
             <div className={styles.pagination}>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
+                      totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
               />
             </div>
-          )}
+          }
       </div>
     </div>
   );

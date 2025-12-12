@@ -28,6 +28,7 @@ const getOrdersByKeyQuery = (key, pageSize = 10, page = 1) =>
         }
         invoice {
           invoice_id
+          order_currency_code
         }
         payment {
           payment_id

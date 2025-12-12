@@ -250,7 +250,7 @@ if (status === true) {
         </div>
 
         <div className={styles.inputField}>
-          <label htmlFor="posCode">{serverLanguage?.pos_code ?? 'POS Code'}</label>
+          <label htmlFor="posCode">{serverLanguage?.warehouse_code ?? 'Warehouse Code'}</label>
           <input
             id="posCode"
             name="posCode"

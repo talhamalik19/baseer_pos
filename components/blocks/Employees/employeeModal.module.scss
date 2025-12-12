@@ -118,6 +118,11 @@ border: 2px solid #00BBA7;            color: #000;
 
       .tabContent {
         display: none;
+        [data-theme="dark"] & {
+          div{
+          color: style.$darkModeTitle;
+          }
+        }
 
         &.active {
           display: block;
@@ -214,7 +219,7 @@ border: 2px solid #00BBA7;            color: #000;
         }
 
         .childPermissions {
-          padding: 15px;
+          padding: 10px 30px 0px 30px;
           background-color: #fff;
 
           .permissionItem {
@@ -393,4 +398,38 @@ border: 2px solid #00BBA7;            color: #000;
     max-height: 40vh;
     overflow-y: auto;
   }
+}
+
+.checkboxWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px; padding-bottom: 10px;
+}
+
+.checkbox {
+  display: none;
+}
+
+.customCheck {
+  width: 15px;
+  height: 15px;
+  border: 2px solid #4FACB8;
+  border-radius: 6px;
+  position: relative;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.checkbox:checked + .customCheck {
+  background-color: #4FACB8;
+  border-color: #4FACB8;
+}
+
+.checkbox:checked + .customCheck::after {
+  content: "✔";
+  color: #fff;
+  font-size: 14px;
+  position: absolute;
+  left: 3px;
 }

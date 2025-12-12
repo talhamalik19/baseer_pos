@@ -113,7 +113,7 @@ const PaymentOverlay = ({
 
   payment: {
     payment_id: 0,
-    payment_method: "checkmo",
+    payment_method: "cashondelivery",
     payment_method_title: "Check / Money order",
   },
 
@@ -129,7 +129,7 @@ const PaymentOverlay = ({
       pos_device_info: "1234-0000",
       store_id: 1,
       shipping_method: "flatrate_flatrate",
-      payment_method: "checkmo",
+      payment_method: "cashondelivery",
       items,
     };
     try {

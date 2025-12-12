@@ -1,8 +1,9 @@
 import React from "react";
-import styles from "./report.module.scss";
-import ReportCard from "./ReportCard";
+import ReportsClient from "./ReportClient";
+
 
 export default function Reports({ serverLanguage }) {
+
   const reportGroups = [
     {
       heading: serverLanguage?.sales_reports ?? "Sales Reports",
@@ -149,6 +150,56 @@ export default function Reports({ serverLanguage }) {
               />
               <path
                 d="M8.16634 23.3333C9.45501 23.3333 10.4997 22.2887 10.4997 21C10.4997 19.7113 9.45501 18.6667 8.16634 18.6667C6.87768 18.6667 5.83301 19.7113 5.83301 21C5.83301 22.2887 6.87768 23.3333 8.16634 23.3333Z"
+                stroke="#0092B8"
+                stroke-width="2.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          ),
+        },
+          {
+          id: "sales",
+          title: serverLanguage?.sales_by_admin ?? "Sales By Admin",
+          href: "/report/sales-by-admin",
+          svg: (
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 28 28"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M17.5003 2.33333H7.00033C6.38149 2.33333 5.78799 2.57916 5.35041 3.01675C4.91282 3.45433 4.66699 4.04782 4.66699 4.66666V23.3333C4.66699 23.9522 4.91282 24.5457 5.35041 24.9832C5.78799 25.4208 6.38149 25.6667 7.00033 25.6667H21.0003C21.6192 25.6667 22.2127 25.4208 22.6502 24.9832C23.0878 24.5457 23.3337 23.9522 23.3337 23.3333V8.16666L17.5003 2.33333Z"
+                stroke="#0092B8"
+                stroke-width="2.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M16.333 2.33333V6.99999C16.333 7.61883 16.5788 8.21233 17.0164 8.64991C17.454 9.0875 18.0475 9.33333 18.6663 9.33333H23.333"
+                stroke="#0092B8"
+                stroke-width="2.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M11.6663 10.5H9.33301"
+                stroke="#0092B8"
+                stroke-width="2.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M18.6663 15.1667H9.33301"
+                stroke="#0092B8"
+                stroke-width="2.33333"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M18.6663 19.8333H9.33301"
                 stroke="#0092B8"
                 stroke-width="2.33333"
                 stroke-linecap="round"
@@ -858,24 +909,6 @@ export default function Reports({ serverLanguage }) {
     },
   ];
 
-  return (
-    <div className={"page_detail"}>
-      {reportGroups.map((group) => (
-        <div key={group.heading} className={styles.report_group}>
-          <h2 className={styles.group_heading}>{group.heading}</h2>
-          <div className={styles.grid_3}>
-            {group.reports.map(({ id, title, href, svg }) => (
-              <ReportCard
-                key={id}
-                title={title}
-                href={href}
-                svg={svg}
-                serverLanguage={serverLanguage}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+  
+  return   <ReportsClient reportGroups={reportGroups} serverLanguage={serverLanguage} />
 }

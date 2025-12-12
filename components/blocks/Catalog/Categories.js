@@ -13,7 +13,7 @@ import {
   clearCategories,
 } from "@/lib/indexedDB";
 import PageHead from "@/components/global/PageHead";
-import { fetchProductsAction as fetchMagentoProducts, getCategoriesAction as fetchMagentoCategories } from "@/lib/Magento/actions";
+import { fetchProductsAction as fetchMagentoProducts, getCategoriesAction as fetchMagentoCategories, fetchProductsAction } from "@/lib/Magento/actions";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import Search from "@/components/shared/Search";
 
@@ -70,21 +70,16 @@ export default function Categories({
 }) {
   const language = serverLanguage?.csvTranslations;
   const isOnline = useNetworkStatus();
-  const [selectedItem, setSelectedItem] = useState({
-    name: "All Items",
-    id: "",
-    level: 0,
-  });
+  const [selectedItem, setSelectedItem] = useState(null);
   const [sort, setSort] = useState('')
   const [selectedParent, setSelectedParent] = useState(null);
   const [products, setProducts] = useState(productItems);
-  const [categories, setCategories] = useState([
-    { name: "All Items", id: "", level: 0, children: [] },
-  ]);
+  const [categories, setCategories] = useState([]);
   const [initialProducts, setInitialProducts] = useState([]);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(null);
+  const [displayedProducts, setDisplayedProducts] = useState(products);
 
   // Memoized function to group categories
   const groupCategories = useCallback((allCategories) => {
@@ -98,7 +93,6 @@ export default function Categories({
     }, {});
 
     return [
-      { name: "All Items", id: "", level: 0, children: [] },
       ...parentCategories.map((parent) => ({
         ...parent,
         children: childMap[parent.id] || [],
@@ -113,44 +107,17 @@ export default function Categories({
       let productsData = productItems;
       let shouldUpdateIDB = false;
        await saveProducts(productsData);
-      // Try to get fresh data if online
-      // if (isOnline) {
-      //   try {
-      //     const freshProducts = await fetchMagentoProducts({
-      //       id: "",
-      //       sort: "",
-      //       currency,
-      //     });
-          
-      //     if (freshProducts?.length > 0) {
-      //       productsData = freshProducts;
-      //       shouldUpdateIDB = true;
-      //     }
-      //   } catch (onlineError) {
-      //     console.warn("Failed to fetch fresh products, falling back to offline data:", onlineError);
-      //   }
-      // }
 
       // If no fresh data or offline, use IndexedDB
       if (productsData.length === 0) {
         const offlineProducts = await getIDBProducts();
-        // if (offlineProducts?.length > 0) {
-          productsData = offlineProducts;
-        // } 
-        // else if (productItems?.length > 0) {
-        //   // Fallback to server props if IndexedDB is empty
-        //   productsData = productItems;
-        //   shouldUpdateIDB = true;
-        // }
+        productsData = offlineProducts;
       }
 
       // Update state and IndexedDB if needed
       setProducts(productsData);
       setInitialProducts(productsData);
       
-      // if (shouldUpdateIDB) {
-      //   await saveProducts(productsData);
-      // }
     } catch (err) {
       console.error("Error loading products:", err);
     } finally {
@@ -164,20 +131,15 @@ export default function Categories({
       let allCategories = category;
       let shouldUpdateIDB = false;
 
-      // Try to get fresh data if online
-      // if (isOnline) {
-        try {
-          // const freshCategories = await fetchMagentoCategories();
-          if (allCategories?.data?.length > 0) {
-            const normalized = normalizeCategories(allCategories.data);
-            allCategories = normalized.allCategories;
-            await saveCategories(allCategories)
-            // shouldUpdateIDB = true;
-          }
-        } catch (onlineError) {
-          console.warn("Failed to fetch fresh categories, falling back to offline data:", onlineError);
+      try {
+        if (allCategories?.data?.length > 0) {
+          const normalized = normalizeCategories(allCategories.data);
+          allCategories = normalized.allCategories;
+          await saveCategories(allCategories)
         }
-      // }
+      } catch (onlineError) {
+        console.warn("Failed to fetch fresh categories, falling back to offline data:", onlineError);
+      }
 
       // If no fresh data or offline, use IndexedDB
       if (allCategories.length === 0) {
@@ -185,75 +147,23 @@ export default function Categories({
         if (offlineCategories?.length > 0) {
           allCategories = offlineCategories;
         } 
-        // else if (category?.data?.length > 0) {
-        //   // Fallback to server props if IndexedDB is empty
-        //   const normalized = normalizeCategories(category.data);
-        //   allCategories = normalized.allCategories;
-        //   shouldUpdateIDB = true;
-        // }
       }
 
       // Update state and IndexedDB if needed
       const groupedCategories = groupCategories(allCategories);
       setCategories(groupedCategories);
       
-      // if (shouldUpdateIDB) {
-      //   await saveCategories(allCategories);
-      // }
+      // Set the first category as selected initially
+      if (groupedCategories.length > 0 && !selectedItem) {
+        setSelectedItem(groupedCategories[0]);
+      }
+      
     } catch (err) {
       console.error("Error loading categories:", err);
     }
-  }, [category, groupCategories, isOnline]);
+  }, [category, groupCategories, isOnline, selectedItem]);
 
-  // Full sync function
-  // const performFullSync = useCallback(async () => {
-  //   if (!isOnline) return;
-    
-  //   try {
-  //     setIsLoading(true);
-  //     const [freshProducts, freshCategories] = await Promise.all([
-  //       fetchMagentoProducts({ id: "", sort: "", currency }),
-  //       fetchMagentoCategories(),
-  //     ]);
-
-  //     if (freshProducts?.length > 0) {
-  //       await clearAllProducts();
-  //       await saveProducts(freshProducts);
-  //       setProducts(freshProducts);
-  //       setInitialProducts(freshProducts);
-  //     }
-
-  //     if (freshCategories?.data?.length > 0) {
-  //       const normalized = normalizeCategories(freshCategories.data);
-  //       await clearCategories();
-  //       await saveCategories(normalized.allCategories);
-  //       setCategories(groupCategories(normalized.allCategories));
-  //     }
-
-  //     setLastSyncTime(new Date());
-  //   } catch (err) {
-  //     console.error("Full sync failed:", err);
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // }, [currency, groupCategories, isOnline]);
-
-  // // Initial load and periodic sync
-  // useEffect(() => {
-  //   loadProducts();
-  //   loadCategories();
-
-  //   // Set up periodic sync (every 30 minutes)
-  //   const syncInterval = setInterval(() => {
-  //     if (isOnline) {
-  //       performFullSync();
-  //     }
-  //   }, 30 * 60 * 1000);
-
-  //   return () => clearInterval(syncInterval);
-  // }, [loadProducts, loadCategories, performFullSync, isOnline]);
-
-    useEffect(() => {
+  useEffect(() => {
     loadProducts();
     loadCategories();
     
@@ -263,17 +173,11 @@ export default function Categories({
     setSelectedItem(category);
     setOpenDropdownId(null);
 
-    if (category.name === "All Items") {
-      setProducts(initialProducts);
-      setSelectedParent(null);
-      return;
-    }
-
     const filtered = initialProducts.filter((item) =>
-      item?.categories?.some((cat) => cat?.id === category.id)
+      item?.categories?.some((cat) => cat?.name === category.name)
     );
     setProducts(filtered);
-
+    setDisplayedProducts(filtered)
     if (category.level === 2) {
       setSelectedParent(category);
     } else {
@@ -298,21 +202,32 @@ export default function Categories({
     await addToCart(product, options, quantity);
   }, []);
 
-    const handleSearch = (results) => {
-      if (results.length > 0) {
-        // Filter search results to only show simple products
-        // const simpleResults = results.filter((item) => item?.__typename === "SimpleProduct");
-        setDisplayedProducts(results);
-      } else {
-        // When search is cleared, show all simple products
-        setDisplayedProducts(displayedProducts);
-      }
-    };
+  const handleSearch = (results) => {
+    if (results.length > 0) {
+      setDisplayedProducts(results);
+    } else {
+      setDisplayedProducts(displayedProducts);
+    }
+  };
 
-      const handleSelectChange = (event) => {
+  const handleSelectChange = (event) => {
     const selectedValue = event.target.value;
     setSort(selectedValue);
   };
+
+  const getProducts = async () => {
+    // Pass the selected category ID instead of empty string
+    const res = await fetchProductsAction(selectedItem?.id || '', sort, currency);
+    const fetchedProducts = res?.items || [];
+    setProducts(fetchedProducts);
+    setDisplayedProducts(fetchedProducts);
+  };
+
+  // Update useEffect to include selectedItem.id as dependency
+  useEffect(() => {
+    getProducts();
+  }, [sort, selectedItem?.id]);
+
   return (
     <>
       <PageHead
@@ -335,7 +250,7 @@ export default function Categories({
                 <div className={style.dropdown_container} key={item.id}>
                   <div
                     className={`${style.dropdown_button} ${
-                      item.id === selectedItem.id ||
+                      item.id === selectedItem?.id ||
                       item.id === selectedParent?.id
                         ? style.active
                         : ""
@@ -359,7 +274,7 @@ export default function Categories({
                         <li
                           key={child.id}
                           className={
-                            child.id === selectedItem.id ? style.active : ""
+                            child.id === selectedItem?.id ? style.active : ""
                           }
                           onClick={() => handleCategoryClick(child)}
                         >
@@ -397,17 +312,18 @@ export default function Categories({
 
           <Products
             products={products}
-            id={selectedItem.id}
+            id={selectedItem?.id}
             setProducts={setProducts}
             handleAddToCart={handleAddToCart}
             currencySymbol={currencySymbol}
             currency={currency}
             language={language}
             isLoading={isLoading}
-            // onRefresh={performFullSync}
             lastSyncTime={lastSyncTime}
             sort={sort}
             setSort={setSort}
+            displayedProducts={displayedProducts}
+            setDisplayedProducts={setDisplayedProducts}
           />
         </div>
       </div>

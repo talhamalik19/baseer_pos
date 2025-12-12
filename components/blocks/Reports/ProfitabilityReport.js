@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import styles from "./report.module.scss";
@@ -27,7 +27,7 @@ export default function ProfitabilityReport({
   });
 
   const [loading, setLoading] = useState(false);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const buildUrl = (page = 1, full = false) => {
     const params = new URLSearchParams({
@@ -81,6 +81,11 @@ export default function ProfitabilityReport({
     fetchProfitabilityReport(nextPage);
   };
 
+        useEffect(() => {
+        fetchProfitabilityReport(1);
+      
+    }, [pageSize]);
+
 const downloadPdf = async () => {
   const url = buildUrl(1, true); 
   try {
@@ -88,45 +93,52 @@ const downloadPdf = async () => {
     const result = response?.body?.[0] || {};
     const groupedItems = result.grouped_items || {};
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: "landscape" });
     doc.setFontSize(14);
     doc.text("Profitability Report", 14, 15);
 
     const allRows = [];
+    let dynamicColumns = ["name", "sku", "qty_sold", "unit_price", "total_profit"]; // Default columns
 
     Object.entries(groupedItems).forEach(([groupKey, items]) => {
+      if (items.length > 0) {
+        // Update dynamic columns based on first item of the group
+        dynamicColumns = Object.keys(items[0]);
+      }
+
       // Add a row to indicate the group
       allRows.push([
-        { content: `Period: ${groupKey}`, colSpan: 5, styles: { halign: "left", fontStyle: "bold" } },
+        { content: `Period: ${groupKey}`, colSpan: dynamicColumns.length, styles: { halign: "left", fontStyle: "bold" } },
       ]);
 
       // Add the data rows
       items.forEach((item) => {
-        allRows.push([
-          item.name,
-          item.sku,
-          item.qty_sold,
-          item.unit_price,
-          item.total_profit,
-        ]);
+        allRows.push(dynamicColumns.map((col) => item[col] ?? "-"));
       });
     });
 
+    const headers = dynamicColumns.map((col) =>
+      col
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    );
+
     autoTable(doc, {
       startY: 20,
-      head: [["Product", "SKU", "Qty Sold", "Unit Price", "Total Profit"]],
+      head: [headers],
       body: allRows,
       theme: "grid",
       styles: { fontSize: 10 },
-        headStyles: {
-    fillColor: [35, 35, 35], // Header background color
-    textColor: [255, 255, 255], // Optional: white text for better contrast
-  },
-  footStyles: {
-    fontStyle: "bold",
-    fillColor: [35, 35, 35], // Footer background color
-    textColor: [255, 255, 255], // Optional: white text
-  },
+      headStyles: {
+        fillColor: [35, 35, 35],
+        textColor: [255, 255, 255],
+      },
+      footStyles: {
+        fontStyle: "bold",
+        fillColor: [35, 35, 35],
+        textColor: [255, 255, 255],
+      },
     });
 
     doc.save("profitability-report.pdf");
@@ -134,6 +146,7 @@ const downloadPdf = async () => {
     console.error("Failed to generate PDF:", err);
   }
 };
+
 
 
   const totalPages = Math.ceil(data.total_count / pageSize);
@@ -296,15 +309,18 @@ const downloadPdf = async () => {
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
+               totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
               onPageChange={handlePageChange}
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

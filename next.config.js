@@ -29,12 +29,22 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'web.baseer.ca',
+        hostname: 'jazzweb.baseer.ca',
         pathname: '/**',
       },
         {
         protocol: 'https',
         hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+        {
+        protocol: 'https',
+        hostname: 'jazzweb.baseer.ca',
+        pathname: '/**',
+      },
+         {
+        protocol: 'https',
+        hostname: 'admin.juicestation.com.pk',
         pathname: '/**',
       },
     ],

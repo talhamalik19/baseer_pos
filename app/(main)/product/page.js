@@ -13,13 +13,13 @@ export default async function Home() {
   const jwt = cookieStore.get("jwt")?.value || null;
   const currencySymbol = cookieStore.get("currency_symbol")?.value;
   const currency = cookieStore.get("currency_code")?.value;
-  
+  const pos_code = cookieStore.get("pos_code").value || ''
   const category = await getCategories();
   let ordersResponse;
   
   const response = await getAdminDetail();
   const user = response;
-  const products = await getProducts({id:"", sort: '', currency: currency});
+  const products = await getProducts({id:"", sort: '', currency: currency, pos_code: pos_code});
   const productItems = products?.items?.filter((item) => 
     item?.stock_status === "IN_STOCK") || [];
   const { firstname, lastname } = user?.data?.data;

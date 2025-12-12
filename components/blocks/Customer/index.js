@@ -12,7 +12,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
   const [originalCustomers, setOriginalCustomers] = useState(customer?.data || []);
   const [displayedCustomers, setDisplayedCustomers] = useState(customer?.data || []);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [isLoading, setIsLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(total_count || 0);
   const responseMessage = "";
@@ -40,7 +40,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
     };
 
     fetchCustomers();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   // Handle customer search results
   const handleCustomerSearch = (results) => {
@@ -74,7 +74,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
         
         <div className={dashboardStyles.table_block}>
           {isLoading ? (
-            <div>{serverLanguage?.loading_customers ?? 'Loading customers...'}</div>
+            <div className={dashboardStyles.loading}>{serverLanguage?.loading_customers ?? 'Loading customers...'}</div>
           ) : (
             <>
               <table className={dashboardStyles.table}>
@@ -84,6 +84,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
                     <th>{serverLanguage?.first_name ?? 'First Name'}</th>
                     <th>{serverLanguage?.last_name ?? 'Last Name'}</th>
                     <th>{serverLanguage?.email ?? 'Email'}</th>
+                    <th>{serverLanguage?.phone_number ?? 'Phone Number'}</th>
                     <th>{serverLanguage?.actions ?? 'Actions'}</th>
                   </tr>
                 </thead>
@@ -95,6 +96,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
                         <td className={dashboardStyles.name}>{cust?.firstname}</td>
                         <td>{cust?.lastname}</td>
                         <td>{cust?.email}</td>
+                        <td>{cust?.orders?.[0]?.billing_address?.telephone || ""}</td>
                         <CustomerAction
                           customer={cust}
                           jwt={jwt}
@@ -113,14 +115,17 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
                   )}
                 </tbody>
               </table>
-              {totalCount > pageSize && (
+              {
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={setCurrentPage}
                   serverLanguage={serverLanguage}
+                  pageSize={pageSize}
+                  setPageSize={setPageSize}
+                  totalItems={total_count}
                 />
-              )}
+              }
             </>
           )}
         </div>

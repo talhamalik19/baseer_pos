@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   addToCart,
   getAllOrders,
@@ -13,7 +13,6 @@ import {
 import { getProducts } from "@/lib/Magento";
 import ProductView from "./ProductView";
 import styles from "./sales.module.scss";
-import { checkPOSCodeExists, getPOSData } from "@/lib/acl";
 
 export default function SalesDetail({
   jwt,
@@ -27,47 +26,55 @@ export default function SalesDetail({
   warehouseId,
 }) {
   const [products, setProducts] = useState([]);
-
-  const applyTaxAfterDiscount = parseInt(
-    JSON.parse(localStorage.getItem("loginDetail"))?.apply_tax_after_discount
-  );
-  const discountIncludingTax = parseInt(
-    JSON.parse(localStorage.getItem("loginDetail"))?.discount_including_tax
-  );
-  const [payment, setPayment] = useState("checkmo");
+  const [payment, setPayment] = useState("cashondelivery");
   const [cartItems, setCartItems] = useState([]);
   const [pdfResponse, setPdfResponse] = useState({});
   const [orders, setOrders] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("");
-  const [posDetail, setPosDetail] = useState({});
+  const [posDetail, setPosDetail] = useState("");
 
+  const loginDetails = typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem("loginDetail"))
+    : null;
+
+  const applyTaxAfterDiscount = parseInt(loginDetails?.apply_tax_after_discount);
+  const discountIncludingTax = parseInt(loginDetails?.discount_including_tax);
+
+  // ✅ FIX #1 — match full POS key in fbr_tax
   useEffect(() => {
     const fetchViewMode = async () => {
       const mode = await getViewMode();
-      const data = localStorage.getItem("pos_code");
-      if (data) {
-        setPosDetail(data);
+      const shortPosCode = localStorage.getItem("pos_code"); // e.g., SK-POS_3487
+
+      if (shortPosCode && loginDetails?.fbr_tax) {
+        // find full key like "SK-POS_3487 - Mississauga, Ontario, CA"
+        const fullKey = Object.keys(loginDetails.fbr_tax).find((k) =>
+          k.startsWith(shortPosCode)
+        );
+
+        if (fullKey) {
+          setPosDetail(fullKey);
+        } else {
+          setPosDetail(shortPosCode); // fallback
+        }
       }
+
       setViewMode(mode);
     };
-    fetchViewMode();
-  }, []);
 
+    fetchViewMode();
+  }, [loginDetails]);
+
+  // Load PDF settings
   useEffect(() => {
-    // async function getPdf() {
-    //   const result = ;
-    //   if(result) {
-    //     setPdfResponse(result);
-    //   }
-    // }
-    // getPdf();
-    if (typeof window != undefined) {
+    if (typeof window != "undefined") {
       const res = JSON.parse(localStorage.getItem("jsonData"));
       setPdfResponse(res);
     }
   }, []);
 
+  // Load products
   useEffect(() => {
     const fetchProducts = async () => {
       if (typeof window === "undefined") return;
@@ -89,7 +96,7 @@ export default function SalesDetail({
     fetchProducts();
   }, [productItems]);
 
-  // Load cart from IndexedDB on mount
+  // Load cart
   useEffect(() => {
     const fetchCart = async () => {
       const items = await getCartItems();
@@ -98,6 +105,7 @@ export default function SalesDetail({
     fetchCart();
   }, []);
 
+  // Load orders
   useEffect(() => {
     const fetchOrders = async () => {
       if (typeof window === "undefined") return;
@@ -118,39 +126,40 @@ export default function SalesDetail({
     fetchOrders();
   }, [ordersResponse]);
 
-  // Handle adding product to cart
   const handleAddToCart = async (product, options, quantity, taxAmount) => {
     await addToCart(product, options, quantity, taxAmount);
     const updatedCart = await getCartItems();
     setCartItems(updatedCart);
   };
 
-  const loginDetails = JSON.parse(localStorage.getItem("loginDetail"));
-  const fbrDetails = loginDetails?.fbr_tax?.[posDetail];
+  const fbrDetails = useMemo(() => {
+    if (!loginDetails?.fbr_tax || !posDetail) return null;
+    return loginDetails.fbr_tax[posDetail] || null;
+  }, [loginDetails, posDetail]);
 
   return (
-      <ProductView
-        products={products}
-        setIsOpen={setIsOpen}
-        handleAddToCart={handleAddToCart}
-        cartItems={cartItems}
-        setCartItems={setCartItems}
-        pdfResponse={pdfResponse}
-        styles={styles}
-        jwt={jwt}
-        orders={orders}
-        macAddress={macAddress}
-        posDetail={posDetail}
-        username={username}
-        currencySymbol={currencySymbol}
-        currency={currency}
-        serverLanguage={serverLanguage}
-        warehouseId={warehouseId}
-        payment={payment}
-        setPayment={setPayment}
-        applyTaxAfterDiscount={applyTaxAfterDiscount}
-        discountIncludingTax={discountIncludingTax}
-        fbrDetails={fbrDetails}
-      />
+    <ProductView
+      products={products}
+      setIsOpen={setIsOpen}
+      handleAddToCart={handleAddToCart}
+      cartItems={cartItems}
+      setCartItems={setCartItems}
+      pdfResponse={pdfResponse}
+      styles={styles}
+      jwt={jwt}
+      orders={orders}
+      macAddress={macAddress}
+      posDetail={posDetail}
+      username={username}
+      currencySymbol={currencySymbol}
+      currency={currency}
+      serverLanguage={serverLanguage}
+      warehouseId={warehouseId}
+      payment={payment}
+      setPayment={setPayment}
+      applyTaxAfterDiscount={applyTaxAfterDiscount}
+      discountIncludingTax={discountIncludingTax}
+      fbrDetails={fbrDetails}
+    />
   );
 }

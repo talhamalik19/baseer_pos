@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -32,7 +32,7 @@ export default function RefundReport({
   const [loading, setLoading] = useState(false);
   // Add this new state to track the period used for current data
   const [currentDataPeriod, setCurrentDataPeriod] = useState("");
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -113,79 +113,88 @@ export default function RefundReport({
   };
 
   const totalPages = Math.ceil(data.total_count / pageSize);
-  const downloadPdf = async () => {
-    const params = new URLSearchParams({
-      period: formData.period,
-      from: formData.fromDate,
-      to: formData.toDate,
-      pageSize: "9999", // Fetch all
-      currentPage: "1",
-      storeIds: storeIds ?? "1",
-      showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
-      orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
-      dateUsed: formData.dateUsed,
-    });
 
-    const url = `${storeCode}/V1/pos/sales-refund-report?${params.toString()}`;
-    const response = await submitRefundReport(url);
-    const result = response?.body?.[0];
+      useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchRefundReport(1);
+      }
+    }, [pageSize]);
+const downloadPdf = async () => {
+  const params = new URLSearchParams({
+    period: formData.period,
+    from: formData.fromDate,
+    to: formData.toDate,
+    pageSize: "9999", // Fetch all
+    currentPage: "1",
+    storeIds: storeIds ?? "1",
+    showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
+    orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
+    dateUsed: formData.dateUsed,
+  });
 
-    const items = result?.items || [];
-    const overall = result?.overall_totals || null;
+  const url = `${storeCode}/V1/pos/sales-refund-report?${params.toString()}`;
+  const response = await submitRefundReport(url);
+  const result = response?.body?.[0];
 
-    if (items.length === 0) {
-      alert("No data to export.");
-      return;
-    }
+  const items = result?.items || [];
+  const overall = result?.overall_totals || null;
 
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text("Refund Report", 14, 15);
+  if (items.length === 0) {
+    alert("No data to export.");
+    return;
+  }
 
-    // Use all columns dynamically
-    const dynamicColumns = Object.keys(items[0]);
-    const headers = dynamicColumns.map((col) =>
-      col
-        .split("_")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ")
-    );
+  // 🔥 Only this line is changed
+  const doc = new jsPDF({ orientation: "landscape" });
 
-    const body = items.map((row) =>
-      dynamicColumns.map((col) => row[col] ?? "-")
-    );
+  doc.setFontSize(14);
+  doc.text("Refund Report", 14, 15);
 
-    const overallRow = overall
-      ? [
-          {
-            content: "Overall Totals",
-            colSpan: 1,
-            styles: { fontStyle: "bold" },
-          },
-          ...dynamicColumns.slice(1).map((key) => overall[key] ?? "-"),
-        ]
-      : [];
+  // Use all columns dynamically
+  const dynamicColumns = Object.keys(items[0]);
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  );
 
-    autoTable(doc, {
-      startY: 20,
-      head: [headers],
-      body: body,
-      ...(overallRow.length ? { foot: [overallRow] } : {}),
-      styles: { fontSize: 9 },
-        headStyles: {
-    fillColor: [35, 35, 35], // Header background color
-    textColor: [255, 255, 255], // Optional: white text for better contrast
-  },
-  footStyles: {
-    fontStyle: "bold",
-    fillColor: [35, 35, 35], // Footer background color
-    textColor: [255, 255, 255], // Optional: white text
-  },
-      theme: "grid",
-    });
+  const body = items.map((row) =>
+    dynamicColumns.map((col) => row[col] ?? "-")
+  );
 
-    doc.save("refund-report.pdf");
-  };
+  const overallRow = overall
+    ? [
+        {
+          content: "Overall Totals",
+          colSpan: 1,
+          styles: { fontStyle: "bold" },
+        },
+        ...dynamicColumns.slice(1).map((key) => overall[key] ?? "-"),
+      ]
+    : [];
+
+  autoTable(doc, {
+    startY: 20,
+    head: [headers],
+    body: body,
+    ...(overallRow.length ? { foot: [overallRow] } : {}),
+    styles: { fontSize: 9 },
+    headStyles: {
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    theme: "grid",
+  });
+
+  doc.save("refund-report.pdf");
+};
+
 
   return (
     <div className={styles.page_detail}>
@@ -418,15 +427,18 @@ export default function RefundReport({
             )}
           </table>
         </div>
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+                 totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

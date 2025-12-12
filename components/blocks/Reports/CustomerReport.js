@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -25,7 +25,7 @@ const [formData, setFormData] = useState({
   });
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -105,6 +105,13 @@ const [formData, setFormData] = useState({
   };
 
         const totalPages = Math.ceil(data.total_count / pageSize);
+
+              useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchCustomerReport(1);
+      }
+    }, [pageSize]);
+    
 
   return (
     <div className={styles.page_detail}>
@@ -267,15 +274,18 @@ const [formData, setFormData] = useState({
             )}
           </table>
         </div>
-      {totalPages >1 &&(
+      {
             <div className={styles.pagination}>
               <Pagination
                 currentPage={currentPage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
+                  totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
               />
             </div>
-          )}
+          }
       </div>
     </div>
   );

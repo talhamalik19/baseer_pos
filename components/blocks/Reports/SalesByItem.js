@@ -88,10 +88,10 @@ export default function SalesByItem({
     return value;
   };
 
-  const downloadPdf = () => {
+const downloadPdf = () => {
   if (!data.items.length) return;
 
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Sales by Item Report", 14, 15);
 
@@ -100,51 +100,39 @@ export default function SalesByItem({
     doc.text(`Product: ${data.product.name} (SKU: ${data.product.sku})`, 14, 22);
   }
 
-  const headers = [
-    "Period",
-    "Orders",
-    "Qty Sold",
-    "Qty Shipped",
-    "Qty Invoiced",
-    "Qty Refunded",
-    "Gross",
-    "Refunded",
-    "Cancelled",
-    "Net"
-  ];
+  // Dynamically get all columns from first item
+  const dynamicColumns = Object.keys(data.items[0] || {});
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-  const tableData = data.items.map((item) => [
-    item.period,
-    item.orders_count,
-    item.qty_sold,
-    item.qty_shipped,
-    item.qty_invoiced,
-    item.qty_refunded,
-    item.gross_amount,
-    item.refunded_amount,
-    item.cancelled_amount,
-    item.net_amount,
-  ]);
+  const tableData = data.items.map((item) =>
+    dynamicColumns.map((col) => item[col] ?? "-")
+  );
 
   autoTable(doc, {
     startY: 28,
     head: [headers],
     body: tableData,
     styles: { fontSize: 9 },
-       headStyles: {
-    fillColor: [35, 35, 35], // Header background color
-    textColor: [255, 255, 255], // Optional: white text for better contrast
-  },
-  footStyles: {
-    fontStyle: "bold",
-    fillColor: [35, 35, 35], // Footer background color
-    textColor: [255, 255, 255], // Optional: white text
-  },
+    headStyles: {
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
+    footStyles: {
+      fontStyle: "bold",
+      fillColor: [35, 35, 35],
+      textColor: [255, 255, 255],
+    },
     theme: "grid",
   });
 
   doc.save("sales-by-item.pdf");
 };
+
 
   return (
     <div className={styles.page_detail}>

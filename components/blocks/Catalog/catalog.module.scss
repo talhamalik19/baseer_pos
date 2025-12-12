@@ -89,10 +89,10 @@
   }
 
   @media screen and (max-width: 768px) {
-    padding: 0 20px;
-    flex-direction: column;
+    padding: 10px;
     gap: 8px;
-
+flex-wrap: nowrap;
+        overflow-x: auto;
     .dropdown_button {
       font-size: 14px;
       padding: 8px 12px;
@@ -109,7 +109,6 @@
   }
 
   @media screen and (max-width: 480px) {
-    padding: 0 15px;
 
     .dropdown_button {
       font-size: 13px;
@@ -175,4 +174,13 @@
     font-size: 14px;
     line-height: 22px;
     font-weight: 500;
+    [data-theme="dark"] & {
+      color: style.$darkModeDes;
+      svg{
+        path{
+        fill: style.$darkModeDes;
+        stroke: style.$darkModeDes;
+        }
+      }
+    }
 }

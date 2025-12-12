@@ -6,31 +6,47 @@ import Pagination from "@/components/shared/Pagination";
 import Link from "next/link";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { getAllEmployees } from "@/lib/indexedDB";
 
-export default function SalesReport({
-  submitSalesReport,
+export default function SalesByAdminReport({
+  submitSalesAdminReport,
   storeCode,
   storeIds,
+  stores,
+  adminUser,
+  employeesResult,
+  username
 }) {
+  const storeOptions = storeIds
+    ? storeIds.split(",").map((id) => id.trim())
+    : [];
+  const [loginDetail, setLoginDetail] = useState()
+
+  useEffect(()=>{
+    const local = JSON.parse(localStorage.getItem("loginDetail"))
+    setLoginDetail(local)
+  }, [])
+
   const [formData, setFormData] = useState({
-    dateUsed: "created_at",
+    dateUsed: "order",
     period: "day",
     fromDate: "",
     toDate: "",
     orderStatus: "Any",
     emptyRows: "No",
+    storeId: storeOptions[0] || "",
+    adminUser: adminUser || "",
   });
 
   const [currentPage, setCurrentPage] = useState(1);
   const [data, setData] = useState({
     items: [],
-    totals: null,
     overall_totals: null,
     total_count: 0,
   });
+
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
-  // Add this new state to track the period used for current data
   const [currentDataPeriod, setCurrentDataPeriod] = useState("");
   const [pageSize, setPageSize] = useState(10);
 
@@ -46,41 +62,38 @@ export default function SalesReport({
       to: formData.toDate,
       pageSize: pageSize.toString(),
       currentPage: page.toString(),
-      storeIds: storeIds ?? "1",
+      storeIds: formData.storeId || "",
       showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
       orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
       dateUsed: formData.dateUsed,
+      adminUser: formData.adminUser || "",
     });
 
-    return `${storeCode}/V1/pos/sales-report?${params.toString()}`;
+    return `${storeCode}/V1/pos/sales-admin-report?${params.toString()}`;
   };
 
-  const fetchSalesReport = async (page = 1) => {
+  const fetchSalesAdminReport = async (page = 1) => {
     const url = buildUrl(page);
     setLoading(true);
+
     try {
-      const response = await submitSalesReport(url);
-      const result = response?.body?.[0];
+      const response = await submitSalesAdminReport(url);
+      const result = response?.body?.[0] || {};
+
       const items = result?.items || [];
-      const totals = result?.totals || null;
       const overall_totals = result?.overall_totals || null;
       const total_count = result?.total_count || 0;
-      setData({ items, totals, overall_totals, total_count });
-      
-      // Update the current data period when new data is fetched
+
+      setData({ items, overall_totals, total_count });
       setCurrentDataPeriod(formData.period);
 
-      if (items.length > 0) {
-        setColumns(Object.keys(items[0]));
-      } else if (totals) {
-        setColumns(Object.keys(totals).filter((key) => key !== "is_total"));
-      } else {
-        setColumns([]);
-      }
+      if (items.length > 0) setColumns(Object.keys(items[0]));
+      else if (overall_totals) setColumns(Object.keys(overall_totals));
+      else setColumns([]);
 
       setCurrentPage(page);
     } catch (err) {
-      console.error("Error loading sales report:", err);
+      console.error("Error loading sales Staff Report:", err);
     } finally {
       setLoading(false);
     }
@@ -88,39 +101,36 @@ export default function SalesReport({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetchSalesReport(1);
+    fetchSalesAdminReport(1);
   };
 
   const handlePageChange = (nextPage) => {
     if (nextPage < 1) return;
-    fetchSalesReport(nextPage);
+    fetchSalesAdminReport(nextPage);
   };
 
-  const formatColumnLabel = (key) => {
-    return key
+  const formatColumnLabel = (key) =>
+    key
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
-  };
 
   const formatValue = (value) => {
     if (value === null || value === undefined) return "-";
-    if (typeof value === "string" && value.endsWith(".0000")) {
+    if (typeof value === "string" && value.endsWith(".0000"))
       return value.split(".")[0];
-    }
     return value;
   };
 
   const totalPages = Math.ceil(data.total_count / pageSize);
 
   useEffect(() => {
-  if (data.items.length > 0 || data.overall_totals) {
-    fetchSalesReport(1);
-  }
-}, [pageSize]);
+    if (data.items.length > 0 || data.overall_totals) {
+      fetchSalesAdminReport(1);
+    }
+  }, [pageSize]);
 
-
-
+  /** ---------------- PDF DOWNLOAD ------------------- */
 const downloadPdf = async () => {
   const params = new URLSearchParams({
     period: formData.period,
@@ -128,36 +138,51 @@ const downloadPdf = async () => {
     to: formData.toDate,
     pageSize: "9999",
     currentPage: "1",
-    storeIds: storeIds ?? "1",
+    storeIds: formData.storeId ?? "",
     showEmptyRows: formData.emptyRows === "Yes" ? "1" : "0",
     orderStatuses: formData.orderStatus === "Any" ? "" : formData.orderStatus,
     dateUsed: formData.dateUsed,
+    adminUser: formData.adminUser || "",
   });
 
-  const url = `${storeCode}/V1/pos/sales-report?${params.toString()}`;
-  const response = await submitSalesReport(url);
+  const url = `${storeCode}/V1/pos/sales-admin-report?${params.toString()}`;
+  const response = await submitSalesAdminReport(url);
   const result = response?.body?.[0];
 
   const items = result?.items || [];
   const overall = result?.overall_totals || null;
 
+  // 🔥 Only this line is changed (landscape mode)
   const doc = new jsPDF({ orientation: "landscape" });
+
   doc.setFontSize(14);
-  doc.text("Sales Report", 14, 15);
+  doc.text("Sales By Staff Report", 14, 15);
 
   if (items.length === 0) {
     doc.text("No records found.", 14, 25);
-    doc.save("sales-report.pdf");
+    doc.save("sales-by-admin-report.pdf");
     return;
   }
 
-  // 🔥 SHOW ALL COLUMNS AUTOMATICALLY
-  const selectedColumns = Object.keys(items[0]);
+  const selectedColumns = [
+    "period",
+    "orders_count",
+    "total_qty_ordered",
+    "total_income_amount",
+    "total_invoiced_amount",
+    "total_tax_amount",
+    "total_shipping_amount",
+    "total_discount_amount",
+    "total_refunded_amount",
+    "total_canceled_amount",
+    "gross_sales",
+    "net_sales",
+  ];
 
   const headers = selectedColumns.map((col) =>
     col
       .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ")
   );
 
@@ -165,14 +190,9 @@ const downloadPdf = async () => {
     selectedColumns.map((col) => item[col] ?? "-")
   );
 
-  // 🔥 FOOTER: SHOW ALL OVERALL TOTALS COLUMNS
   const overallRow = overall
     ? [
-        {
-          content: "Overall Totals",
-          colSpan: 1,
-          styles: { fontStyle: "bold" },
-        },
+        { content: "Overall Totals", colSpan: 1, styles: { fontStyle: "bold" } },
         ...selectedColumns.slice(1).map((key) => overall[key] ?? "-"),
       ]
     : [];
@@ -183,81 +203,54 @@ const downloadPdf = async () => {
     body: tableData,
     ...(overallRow.length ? { foot: [overallRow] } : {}),
     styles: { fontSize: 9 },
-    headStyles: {
-      fillColor: [35, 35, 35],
-      textColor: [255, 255, 255],
-    },
-    footStyles: {
-      fontStyle: "bold",
-      fillColor: [35, 35, 35],
-      textColor: [255, 255, 255],
-    },
+    headStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    footStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
     theme: "grid",
   });
 
-  doc.save("sales-report.pdf");
+  doc.save("sales-by-admin-report.pdf");
 };
-
 
 
   return (
     <div className={styles.page_detail}>
       <Link href={"/report"} className={styles.backButton}>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 19l-7-7 7-7"
-          />
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
         </svg>
         Back to Reports
       </Link>
+
+      {/* FILTERS */}
       <form onSubmit={handleSubmit} className={styles.filter_section}>
         <div className={styles.filter_header}>
           <span>Filter</span>
         </div>
 
         <div className={styles.filter_grid}>
+
+          {/* Date Used */}
           <div className={styles.filter_group}>
             <label>Date Used</label>
-            <select
-              name="dateUsed"
-              value={formData.dateUsed}
-              onChange={handleChange}
-            >
-              <option value="created_at">Order Created</option>
-              <option value="updated_at">Order Updated</option>
+            <select name="dateUsed" value={formData.dateUsed} onChange={handleChange}>
+              <option value="order">Order Created</option>
             </select>
-            <p className={styles.info}>
-              The Order Updated report is created in real time and does not
-              require a refresh.
-            </p>
           </div>
 
+          {/* Period */}
           <div className={styles.filter_group}>
             <label>Period</label>
-            <select
-              name="period"
-              value={formData.period}
-              onChange={handleChange}
-            >
+            <select name="period" value={formData.period} onChange={handleChange}>
               <option value="day">Day</option>
               <option value="week">Week</option>
               <option value="month">Month</option>
-              <option value="quarter">Quarter</option>
               <option value="year">Year</option>
               <option value="overall">Overall</option>
             </select>
           </div>
 
+          {/* From Date */}
           <div className={styles.filter_group}>
             <label>From *</label>
             <input
@@ -269,6 +262,7 @@ const downloadPdf = async () => {
             />
           </div>
 
+          {/* To Date */}
           <div className={styles.filter_group}>
             <label>To *</label>
             <input
@@ -280,6 +274,7 @@ const downloadPdf = async () => {
             />
           </div>
 
+          {/* Order Status */}
           <div className={styles.filter_group}>
             <label>Order Status</label>
             <select
@@ -287,20 +282,16 @@ const downloadPdf = async () => {
               value={formData.orderStatus}
               onChange={handleChange}
             >
-            <option value="Any">Any</option>
+              <option value="Any">Any</option>
               <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
               <option value="complete">Completed</option>
-               <option value="processing">Processing</option>
-                <option value="canceled">Canceled</option>
+              <option value="canceled">Canceled</option>
               <option value="closed">Closed</option>
-               <option value="holded">On Hold</option>
             </select>
-            <p className={styles.info}>
-              Applies to Any of the Specified Order Statuses except cancelled
-              and pending orders
-            </p>
           </div>
 
+          {/* Empty Rows */}
           <div className={styles.filter_group}>
             <label>Empty Rows</label>
             <select
@@ -312,6 +303,31 @@ const downloadPdf = async () => {
               <option value="Yes">Yes</option>
             </select>
           </div>
+
+          {/* Store ID Dropdown */}
+          <div className={styles.filter_group}>
+            <label>Store</label>
+            <select
+              name="storeId"
+              value={formData.storeId}
+              onChange={handleChange}
+            >
+                {stores.map((store) => (
+                <option key={store.id} value={store.id}>{store.store_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Admin User Input */}
+          <div className={styles.filter_group}>
+            <label>Staff</label>
+           {loginDetail?.admin_acl?.reports_other_staff ? <select name="adminUser" value={formData.adminUser} onChange={handleChange} id="">
+              {employeesResult?.map((emp) => (
+                <option key={emp.id} value={emp.username}>{emp?.username}</option>
+              ))}
+            </select> : <input className={styles.disabled_report} type="text" value={username} disabled/>}
+            
+          </div>
         </div>
 
         <div className={styles.filter_footer}>
@@ -321,20 +337,19 @@ const downloadPdf = async () => {
         </div>
       </form>
 
+      {/* TABLE */}
       <div className={dashboardTable.orders}>
         <div className={dashboardTable.order_head}>
-          <h2 className={dashboardTable.title}>Sales Report</h2>
+          <h2 className={dashboardTable.title}>Sales By Staff Report</h2>
         </div>
+
         {data.items.length > 0 && (
-          <button
-            type="button"
-            onClick={downloadPdf}
-            className={styles.export_button}
-            style={{ margin: "10px 0" }}
-          >
+          <button type="button" onClick={downloadPdf}
+            className={styles.export_button} style={{ margin: "10px 0" }}>
             Download PDF
           </button>
         )}
+
         <div className={dashboardTable.table_block}>
           <table>
             <thead>
@@ -344,108 +359,73 @@ const downloadPdf = async () => {
                 ))}
               </tr>
             </thead>
+
             <tbody>
               {loading ? (
                 <tr>
-                  <td
-                    colSpan={columns.length}
-                    className={dashboardTable.loading}
-                  >
+                  <td colSpan={columns.length} className={dashboardTable.loading}>
                     Loading...
                   </td>
                 </tr>
               ) : currentDataPeriod === "overall" ? (
-                // Show only overall totals row when period is overall
                 data.overall_totals ? (
                   <tr className={dashboardTable.overallTotalsRow}>
-                    <td className={dashboardTable.totalLabel}>
-                      Overall Totals
-                    </td>
+                    <td className={dashboardTable.totalLabel}>Overall Totals</td>
                     {columns.slice(1).map((key) => (
-                      <td
-                        key={`overall-${key}`}
-                        className={dashboardTable.overallTotal}
-                      >
+                      <td key={`overall-${key}`}>
                         {formatValue(data.overall_totals[key])}
                       </td>
                     ))}
                   </tr>
                 ) : (
                   <tr>
-                    <td
-                      colSpan={columns.length}
-                      className={dashboardTable.no_records}
-                    >
+                    <td colSpan={columns.length} className={dashboardTable.no_records}>
                       No records found.
                     </td>
                   </tr>
                 )
+              ) : data.items?.length > 0 ? (
+                data.items.map((row, idx) => (
+                  <tr key={idx}>
+                    {columns.map((col) => (
+                      <td key={`${col}-${idx}`}>{formatValue(row[col])}</td>
+                    ))}
+                  </tr>
+                ))
               ) : (
-                // Show individual records for other periods
-                data.items?.length > 0 ? (
-                  data.items.map((row, rowIdx) => (
-                    <tr key={rowIdx}>
-                      {columns.map((col) => (
-                        <td key={`${col}-${rowIdx}`}>
-                          {formatValue(row[col])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={columns.length}
-                      className={dashboardTable.no_records}
-                    >
-                      No records found.
-                    </td>
-                  </tr>
-                )
+                <tr>
+                  <td colSpan={columns.length} className={dashboardTable.no_records}>
+                    No records found.
+                  </td>
+                </tr>
               )}
             </tbody>
 
-            {currentDataPeriod !== "overall" && data.totals && !loading && (
+            {currentDataPeriod !== "overall" && data.overall_totals && (
               <tfoot>
-                <tr className={dashboardTable.totalsRow}>
-                  <td className={dashboardTable.totalLabel}>Period Totals</td>
+                <tr className={dashboardTable.overallTotalsRow}>
+                  <td className={dashboardTable.totalLabel}>Overall Totals</td>
                   {columns.slice(1).map((key) => (
-                    <td key={`total-${key}`} className={dashboardTable.total}>
-                      {formatValue(data.totals[key])}
+                    <td key={`overall-${key}`}>
+                      {formatValue(data.overall_totals[key])}
                     </td>
                   ))}
                 </tr>
-                {data.overall_totals && (
-                  <tr className={dashboardTable.overallTotalsRow}>
-                    <td className={dashboardTable.totalLabel}>
-                      Overall Totals
-                    </td>
-                    {columns.slice(1).map((key) => (
-                      <td
-                        key={`overall-${key}`}
-                        className={dashboardTable.overallTotal}
-                      >
-                        {formatValue(data.overall_totals[key])}
-                      </td>
-                    ))}
-                  </tr>
-                )}
               </tfoot>
             )}
           </table>
         </div>
-        {
-          <div className={styles.pagination}>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-              totalItems={data?.total_count}
-               pageSize={pageSize}
-  setPageSize={setPageSize} 
-            />
-          </div>
-        }
+
+        <div className={styles.pagination}>
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            totalItems={data?.total_count}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+          />
+        </div>
       </div>
     </div>
   );

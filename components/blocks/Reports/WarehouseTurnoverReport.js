@@ -20,7 +20,7 @@ export default function WarehouseTurnoverReport({
   });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
 
   const [data, setData] = useState({
     products: [],
@@ -105,6 +105,11 @@ export default function WarehouseTurnoverReport({
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
+            useEffect(() => {
+      if (data.products.length > 0 || data.totalProducts) {
+        fetchReport(1);
+      }
+    }, [pageSize]);
 const downloadPdf = async () => {
   // Fetch all records — set large pageSize
   const params = new URLSearchParams({
@@ -125,7 +130,7 @@ const downloadPdf = async () => {
   const report = body[0];
   const products = report.products || [];
 
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Warehouse Turnover Report", 14, 15);
   doc.setFontSize(10);
@@ -139,20 +144,17 @@ const downloadPdf = async () => {
     return;
   }
 
-  // Only important fields
-  const importantFields = [
-    "sku",
-    "product_name",
-    "total_sold",
-    "current_stock",
-    "turnover_ratio",
-    "movement_speed",
-    "recommendation",
-  ];
+  // Use all columns dynamically
+  const dynamicColumns = Object.keys(products[0]);
+  const headers = dynamicColumns.map((col) =>
+    col
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(" ")
+  );
 
-  const headers = importantFields.map(formatColumnLabel);
   const tableData = products.map((item) =>
-    importantFields.map((field) => item[field] ?? "")
+    dynamicColumns.map((col) => item[col] ?? "-")
   );
 
   autoTable(doc, {
@@ -161,11 +163,13 @@ const downloadPdf = async () => {
     body: tableData,
     styles: { fontSize: 9 },
     headStyles: { fillColor: [35, 35, 35], textColor: [255, 255, 255] },
+    footStyles: { fontStyle: "bold", fillColor: [35, 35, 35], textColor: [255, 255, 255] },
     theme: "grid",
   });
 
   doc.save("warehouse-turnover-report.pdf");
 };
+
 
   return (
     <div className={styles.page_detail}>
@@ -286,15 +290,17 @@ const downloadPdf = async () => {
             </tbody>
           </table>
         </div>
-        {data.totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={data.totalPages}
-              onPageChange={handlePageChange}
+              onPageChange={handlePageChange}   totalItems={data?.totalProducts}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

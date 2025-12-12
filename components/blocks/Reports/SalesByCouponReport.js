@@ -305,7 +305,7 @@ const downloadPdf = async () => {
             )}
           </table>
         </div>
-           {totalPages >1 &&(
+           {
             <div className={styles.pagination}>
               <Pagination
                 currentPage={currentPage}
@@ -313,7 +313,7 @@ const downloadPdf = async () => {
                 onPageChange={handlePageChange}
               />
             </div>
-          )}
+          }
       </div>
     </div>
   );

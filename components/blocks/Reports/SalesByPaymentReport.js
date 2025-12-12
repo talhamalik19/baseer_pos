@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./report.module.scss";
 import dashboardTable from "../Dashboard/dashboard.module.scss";
 import Pagination from "@/components/shared/Pagination";
@@ -32,7 +32,7 @@ export default function SalesByPaymentReport({
   });
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const buildUrl = (page = 1) => {
     const storeParam = formData.storeId
@@ -116,6 +116,12 @@ export default function SalesByPaymentReport({
   };
 
   const totalPages = Math.ceil(data.total_count / pageSize);
+
+        useEffect(() => {
+      if (data.items.length > 0 || data.overall_totals) {
+        fetchSalesReport(1);
+      }
+    }, [pageSize]);
 const downloadPdf = async () => {
   const storeParam = formData.storeId ? formData.storeId : stores.map(s => s.id).join(",");
   const params = new URLSearchParams({
@@ -137,7 +143,7 @@ const downloadPdf = async () => {
   const paymentMethods = Object.values(json.payment_methods || {});
   const overall = json.overall_totals || {};
 
-  const doc = new jsPDF();
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text("Sales by Payment Method Report", 14, 15);
 
@@ -399,15 +405,19 @@ const downloadPdf = async () => {
           </table>
         </div>
 
-        {totalPages > 1 && (
+        {
           <div className={styles.pagination}>
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={handlePageChange}
+
+          totalItems={data?.total_count}
+               pageSize={pageSize}
+  setPageSize={setPageSize} 
             />
           </div>
-        )}
+        }
       </div>
     </div>
   );

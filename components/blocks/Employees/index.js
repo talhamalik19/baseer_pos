@@ -203,14 +203,14 @@ export default function EmployeeDetail({ jwt, employee, user, warehouseCodes, se
                   )}
                 </tbody>
               </table>
-              {totalPages > 1 && (
+              {
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
                   onPageChange={setPageChange}
                   disabled={isLoading}
                 />
-              )}
+              }
             </>
           )}
         </div>
