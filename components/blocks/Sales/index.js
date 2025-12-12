@@ -41,14 +41,12 @@ export default function SalesDetail({
   const applyTaxAfterDiscount = parseInt(loginDetails?.apply_tax_after_discount);
   const discountIncludingTax = parseInt(loginDetails?.discount_including_tax);
 
-  // ✅ FIX #1 — match full POS key in fbr_tax
   useEffect(() => {
     const fetchViewMode = async () => {
       const mode = await getViewMode();
-      const shortPosCode = localStorage.getItem("pos_code"); // e.g., SK-POS_3487
+      const shortPosCode = localStorage.getItem("pos_code");
 
       if (shortPosCode && loginDetails?.fbr_tax) {
-        // find full key like "SK-POS_3487 - Mississauga, Ontario, CA"
         const fullKey = Object.keys(loginDetails.fbr_tax).find((k) =>
           k.startsWith(shortPosCode)
         );
@@ -56,7 +54,7 @@ export default function SalesDetail({
         if (fullKey) {
           setPosDetail(fullKey);
         } else {
-          setPosDetail(shortPosCode); // fallback
+          setPosDetail(shortPosCode);
         }
       }
 
@@ -66,7 +64,6 @@ export default function SalesDetail({
     fetchViewMode();
   }, [loginDetails]);
 
-  // Load PDF settings
   useEffect(() => {
     if (typeof window != "undefined") {
       const res = JSON.parse(localStorage.getItem("jsonData"));
@@ -74,7 +71,6 @@ export default function SalesDetail({
     }
   }, []);
 
-  // Load products
   useEffect(() => {
     const fetchProducts = async () => {
       if (typeof window === "undefined") return;
@@ -96,7 +92,6 @@ export default function SalesDetail({
     fetchProducts();
   }, [productItems]);
 
-  // Load cart
   useEffect(() => {
     const fetchCart = async () => {
       const items = await getCartItems();
@@ -105,7 +100,6 @@ export default function SalesDetail({
     fetchCart();
   }, []);
 
-  // Load orders
   useEffect(() => {
     const fetchOrders = async () => {
       if (typeof window === "undefined") return;

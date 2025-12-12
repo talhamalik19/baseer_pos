@@ -33,12 +33,12 @@ export default function ProductView({
   const [viewMode, setViewMode] = useState("cards"); // Default to cards view
   const searchInputRef = useRef(null);
 
-  useEffect(()=>{
-    if(searchInputRef){
-       if (searchInputRef.current) {
-      searchInputRef.current.focus();
+  useEffect(() => {
+    if (searchInputRef) {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus();
+      }
     }
-  }
   }, [])
 
   useEffect(() => {
@@ -51,10 +51,10 @@ export default function ProductView({
     fetchViewMode();
   }, []);
 
-  // const handleViewChange = async (mode) => {
-  //   setViewMode(mode);
-  //   await saveViewMode(mode);
-  // };
+  const handleViewChange = async (mode) => {
+    setViewMode(mode);
+    await saveViewMode(mode);
+  };
 
   return (
     <>
@@ -73,12 +73,13 @@ export default function ProductView({
           viewMode={viewMode}
           // payment={payment}
           searchInputRef={searchInputRef}
+          handleViewChange={handleViewChange}
         />
       </div>
       <div className="page_detail sale_page">
-      <div className={styles.cart_summary}>
-        <div className={styles.table_block_cart}>
-          {/* <div className={styles.view_controls}>
+        <div className={styles.cart_summary}>
+          <div className={styles.table_block_cart}>
+            {/* <div className={styles.view_controls}>
             <div className={styles.view_selector}>
               <button
                 className={`${styles.view_btn} ${
@@ -150,72 +151,72 @@ export default function ProductView({
             </div>
           </div> */}
 
-          {cartItems?.length > 0 ? (
-            <>
-              {viewMode === "table" ? (
-                <ProductTable
-                  cartItems={cartItems}
-                  onCartChange={setCartItems}
-                  styles={styles}
-                  currencySymbol={currencySymbol}
-                  serverLanguage={serverLanguage}
-                  payment={payment}
-                  setPayment={setPayment}
-                  applyTaxAfterDiscount={applyTaxAfterDiscount}
-                  discountIncludingTax={discountIncludingTax}
-                  fbrDetails={fbrDetails}
-                />
-              ) : (
-                <div className={styles.grid_wrapper}>
-                  <div className={styles.grid_4}>
-                    {cartItems.map((item) => (
-                      <Cards
-    key={item?.addedAt || item?.product?.uid}
-                        item={item?.product}
-                        record={item}
-                        cards={true}
-                        setCartItems={setCartItems}
-                        currencySymbol={currencySymbol}
-                        serverLanguage={serverLanguage}
-                        payment={payment}
-                        setPayment={setPayment}
-                        applyTaxAfterDiscount={applyTaxAfterDiscount}
-                        discountIncludingTax={discountIncludingTax}
-                        fbrDetails={fbrDetails}
+            {cartItems?.length > 0 ? (
+              <>
+                {viewMode === "table" ? (
+                  <ProductTable
+                    cartItems={cartItems}
+                    onCartChange={setCartItems}
+                    styles={styles}
+                    currencySymbol={currencySymbol}
+                    serverLanguage={serverLanguage}
+                    payment={payment}
+                    setPayment={setPayment}
+                    applyTaxAfterDiscount={applyTaxAfterDiscount}
+                    discountIncludingTax={discountIncludingTax}
+                    fbrDetails={fbrDetails}
+                  />
+                ) : (
+                  <div className={styles.grid_wrapper}>
+                    <div className={styles.grid_4}>
+                      {cartItems.map((item) => (
+                        <Cards
+                          key={item?.addedAt || item?.product?.uid}
+                          item={item?.product}
+                          record={item}
+                          cards={true}
+                          setCartItems={setCartItems}
+                          currencySymbol={currencySymbol}
+                          serverLanguage={serverLanguage}
+                          payment={payment}
+                          setPayment={setPayment}
+                          applyTaxAfterDiscount={applyTaxAfterDiscount}
+                          discountIncludingTax={discountIncludingTax}
+                          fbrDetails={fbrDetails}
                         // taxPercent={taxPercent}
-                      />
-                    ))}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <p className={styles.no_prods}>
-              {serverLanguage?.no_products ?? "No products"}
-            </p>
-          )}
-        </div>
+                )}
+              </>
+            ) : (
+              <p className={styles.no_prods}>
+                {serverLanguage?.no_products ?? "No products"}
+              </p>
+            )}
+          </div>
 
-        <div className={styles.cart_container}>
-          <CartSummary
-            cartItems={cartItems}
-            styles={styles}
-            setCartItems={setCartItems}
-            pdfResponse={pdfResponse}
-            posDetail={posDetail}
-            username={username}
-            currencySymbol={currencySymbol}
-            currency={currency}
-            serverLanguage={serverLanguage}
-            warehouseId={warehouseId}
-            payment={payment}
-            setPayment={setPayment}
-            applyTaxAfterDiscount={applyTaxAfterDiscount}
-            discountIncludingTax={discountIncludingTax}
-            fbrDetails={fbrDetails}
-          />
+          <div className={styles.cart_container}>
+            <CartSummary
+              cartItems={cartItems}
+              styles={styles}
+              setCartItems={setCartItems}
+              pdfResponse={pdfResponse}
+              posDetail={posDetail}
+              username={username}
+              currencySymbol={currencySymbol}
+              currency={currency}
+              serverLanguage={serverLanguage}
+              warehouseId={warehouseId}
+              payment={payment}
+              setPayment={setPayment}
+              applyTaxAfterDiscount={applyTaxAfterDiscount}
+              discountIncludingTax={discountIncludingTax}
+              fbrDetails={fbrDetails}
+            />
+          </div>
         </div>
-      </div>
       </div>
     </>
   );

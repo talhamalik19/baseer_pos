@@ -48,7 +48,8 @@ export default function Search({
   pageSize = 10,
   setPage,
   setPageSize,
-  isSearching = false
+  isSearching = false,
+  handleViewChange
 }) {
   const code = posDetail;
   const router = useRouter();
@@ -168,7 +169,7 @@ export default function Search({
           }
         } else {
           // Client-side filtering for other cases
-          const filtered = orderItems.filter(item => 
+          const filtered = orderItems.filter(item =>
             item?.increment_id?.toLowerCase().includes(searchTerm) ||
             item?.customer_firstname?.toLowerCase().includes(searchTerm) ||
             item?.customer_lastname?.toLowerCase().includes(searchTerm) ||
@@ -192,7 +193,7 @@ export default function Search({
   const handleKeyDown = async (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      
+
       if (orders && setSearchResults) {
         // For orders, trigger search on Enter
         await setSearchResults(searchValue, page, pageSize);
@@ -240,7 +241,7 @@ export default function Search({
     } else {
       handleAddProduct(item);
     }
-    
+
     // Keep focus on input after selection
     if (searchInputRef?.current) {
       searchInputRef.current.focus();
@@ -258,7 +259,7 @@ export default function Search({
           (attr) => attr?.attribute_code === "qty_increment_step"
         )?.attribute_value
       ) || 1;
-    
+
     if (isSimple && !hasRequiredOptions) {
       handleAddToCart(item, [], quantityToAdd);
       resetSearch();
@@ -278,7 +279,7 @@ export default function Search({
       setShowPopup(false);
       return;
     }
-    
+
     // For POS, add order items to cart
     const buildProductData = (item) => ({
       sku: item.product_sku || item.sku,
@@ -354,9 +355,8 @@ export default function Search({
 
   return (
     <div
-      className={`search_field section_padding ${
-        styleSearch ? "sales_order" : ""
-      }`}
+      className={`search_field section_padding ${styleSearch ? "sales_order" : ""
+        }`}
       ref={searchRef}
     >
       <div style={{ position: 'relative', width: '100%' }}>
@@ -390,15 +390,14 @@ export default function Search({
           {serverLanguage?.add_new_employee ?? "Add New Employee"}
         </button>
       )}
-      
+
       {/* Only show view controls for POS */}
       {isPos && styles && (
         <div className={styles.view_controls}>
           <div className={styles.view_selector}>
             <button
-              className={`${styles.view_btn} ${
-                viewMode === "cards" ? styles.active : ""
-              }`}
+              className={`${styles.view_btn} ${viewMode === "cards" ? styles.active : ""
+                }`}
               onClick={() => handleViewChange("cards")}
               aria-label="Cards View"
             >
@@ -448,9 +447,8 @@ export default function Search({
             </button>
 
             <button
-              className={`${styles.view_btn} ${
-                viewMode === "table" ? styles.active : ""
-              }`}
+              className={`${styles.view_btn} ${viewMode === "table" ? styles.active : ""
+                }`}
               onClick={() => handleViewChange("table")}
               aria-label="Table View"
             >
@@ -525,9 +523,8 @@ export default function Search({
             return (
               <div
                 key={item.id || index}
-                className={`search_items ${
-                  isSelected ? "selected-item" : ""
-                }`}
+                className={`search_items ${isSelected ? "selected-item" : ""
+                  }`}
                 onClick={() => handleItemClick(item, index)}
                 onMouseEnter={() => handleItemMouseEnter(index)}
                 onMouseLeave={handleItemMouseLeave}
@@ -573,7 +570,7 @@ export default function Search({
                       e.stopPropagation();
                       handleAddProduct(item);
                     }}
-                
+
                   >
                     Add
                   </button>
