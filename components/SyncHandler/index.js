@@ -5,27 +5,25 @@ import { useEffect, useState } from "react";
 
 async function syncData() {
   try {
-      const response = await fetch("/api/sync", {
+    const response = await fetch("/api/sync", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order: await getOrders() }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Sync failed with status: ${response.status}`);
     }
-    
+
     const result = await response.json();
     const res = result?.res;
-    if(res?.length > 0){
+    if (res?.length > 0) {
       await clearOrders()
     }
     // Clear existing orders and save the newly fetched ones
     if (result.order && Array.isArray(result.order)) {
-      console.log(`✅ Synced ${result.order.length} orders successfully`);
       await saveMultipleOrders(result.order);
     } else {
-      console.log("✅ No new orders to sync");
     }
   } catch (error) {
     console.error("❌ Error syncing data:", error);
@@ -33,7 +31,7 @@ async function syncData() {
 }
 
 export default function SyncHandler() {
-  const [isOnline, setIsOnline] = useState(true); 
+  const [isOnline, setIsOnline] = useState(true);
 
 
   useEffect(() => {

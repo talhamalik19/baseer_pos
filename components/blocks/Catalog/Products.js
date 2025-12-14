@@ -53,7 +53,7 @@ export default function Products({
       <div className="grid_4">
         {displayedProducts?.length > 0 ? (
           displayedProducts.map((item, index) => (
-            <Cards key={index} item={item} cards={false} currencySymbol={currencySymbol}/>
+            <Cards key={index} item={item} cards={false} currencySymbol={currencySymbol} />
           ))
         ) : (
           <p className="no_prods">Loading</p>

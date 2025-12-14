@@ -16,36 +16,36 @@ export default async function Home() {
   const pos_code = cookieStore.get("pos_code").value || ''
   const category = await getCategories();
   let ordersResponse;
-  
+
   const response = await getAdminDetail();
   const user = response;
-  const products = await getProducts({id:"", sort: '', currency: currency, pos_code: pos_code});
-  const productItems = products?.items?.filter((item) => 
+  const products = await getProducts({ id: "", sort: '', currency: currency, pos_code: pos_code });
+  const productItems = products?.items?.filter((item) =>
     item?.stock_status === "IN_STOCK") || [];
   const { firstname, lastname } = user?.data?.data;
   const initials = `${firstname?.charAt(0) || ""}${lastname?.charAt(0) || ""}`.toUpperCase();
-    const serverCurrency = await CurrencyProvider();
-        const serverLanguage = await LanguageProvider()
-    
+  const serverCurrency = await CurrencyProvider();
+  const serverLanguage = await LanguageProvider()
+
   // ordersResponse = await getOsrders();
   return (
     <>
       <ProtectedRoute requiredPermission="catalog_manage" >
-      <Categories 
-        category={category} 
-        productItems={productItems} 
-        jwt={jwt} 
-        ordersResponse={[]} 
-        firstName={firstname} 
-        lastName={lastname} 
-        initials={initials}
-        currencySymbol = {currencySymbol}
-        currency={currency}
-        serverCurrency={serverCurrency}
-        serverLanguage={serverLanguage}
-      />
-      <SyncHandler />
-      <ServiceWorkerRegister />
+        <Categories
+          category={category}
+          productItems={productItems}
+          jwt={jwt}
+          ordersResponse={[]}
+          firstName={firstname}
+          lastName={lastname}
+          initials={initials}
+          currencySymbol={currencySymbol}
+          currency={currency}
+          serverCurrency={serverCurrency}
+          serverLanguage={serverLanguage}
+        />
+        <SyncHandler />
+        <ServiceWorkerRegister />
       </ProtectedRoute>
     </>
   );

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Cards from "@/components/shared/Cards";
 import ProductTable from "./ProductTable";
+import SalesCategoryView from "./SalesCategoryView";
 import CartSummary from "./POSCartSummary";
 import Search from "@/components/shared/Search";
 import { getViewMode, saveViewMode } from "@/lib/indexedDB";
@@ -29,6 +30,7 @@ export default function ProductView({
   applyTaxAfterDiscount,
   discountIncludingTax,
   fbrDetails,
+  categories,
 }) {
   const [viewMode, setViewMode] = useState("cards"); // Default to cards view
   const searchInputRef = useRef(null);
@@ -151,7 +153,16 @@ export default function ProductView({
             </div>
           </div> */}
 
-            {cartItems?.length > 0 ? (
+            {viewMode === "category" ? (
+              <SalesCategoryView
+                categories={categories}
+                productItems={products}
+                handleAddToCart={handleAddToCart}
+                currencySymbol={currencySymbol}
+                currency={currency}
+                cartItems={cartItems}
+              />
+            ) : cartItems?.length > 0 ? (
               <>
                 {viewMode === "table" ? (
                   <ProductTable

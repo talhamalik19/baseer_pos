@@ -86,73 +86,73 @@ export default function POSCartSummary({
   const twilioRec = twilio?.twilio;
 
   // ✅ Calculate tax per product globally
- const cartItemsWithTax = useMemo(() => {
-  return (
-    cartItems?.map((item) => {
-      const discountedPrice = item?.product?.discounted_price;
-      const specialPrice = item?.product?.special_price || 0;
-      const regularPrice =
-        item?.product?.price?.regularPrice?.amount?.value ||
-        item?.product?.price_range?.minimum_price?.regular_price?.value ||
-        0;
+  const cartItemsWithTax = useMemo(() => {
+    return (
+      cartItems?.map((item) => {
+        const discountedPrice = item?.product?.discounted_price;
+        const specialPrice = item?.product?.special_price || 0;
+        const regularPrice =
+          item?.product?.price?.regularPrice?.amount?.value ||
+          item?.product?.price_range?.minimum_price?.regular_price?.value ||
+          0;
 
-      const basePrice = discountedPrice
-        ? parseFloat(discountedPrice)
-        : specialPrice > 0
-        ? specialPrice
-        : regularPrice;
+        const basePrice = discountedPrice
+          ? parseFloat(discountedPrice)
+          : specialPrice > 0
+            ? specialPrice
+            : regularPrice;
 
-      const qty = item?.quantity || 0;
-      const rowTotal = basePrice * qty;
+        const qty = item?.quantity || 0;
+        const rowTotal = basePrice * qty;
 
-      let taxRate = 0;
-      let taxAmount = 0;
+        let taxRate = 0;
+        let taxAmount = 0;
 
-      // Normal tax
-      if (
-        item?.product?.fbr_tax_applied == null ||
-        item?.product?.fbr_tax_applied == undefined
-      ) {
-        taxRate = item?.product?.tax_percent || 0;
-        taxAmount = (rowTotal * taxRate) / 100;
-      }
-
-      // FBR applied tax (THIS WAS CAUSING NaN)
-if (item?.product?.fbr_tax_applied == 1 || item?.product?.fbr_tax_applied === true) {
-
-        // FIX: ensure numeric taxRate
-        taxRate =
-          payment == "cashondelivery"
-            ? parseFloat(fbrDetails?.fbr_offline_tax) || 0
-            : parseFloat(fbrDetails?.fbr_online_tax) || 0;
-
-        // FIX: ensure rowTotal and special/regular price never create NaN
-        if (applyTaxAfterDiscount == 0) {
-          const sp = parseFloat(item?.product?.special_price) || 0;
-          const rp = parseFloat(regularPrice) || 0;
-
-          taxAmount =
-            sp > 0
-              ? (sp * taxRate) / 100
-              : ((rp * taxRate) / 100) * qty;
+        // Normal tax
+        if (
+          item?.product?.fbr_tax_applied == null ||
+          item?.product?.fbr_tax_applied == undefined
+        ) {
+          taxRate = item?.product?.tax_percent || 0;
+          taxAmount = (rowTotal * taxRate) / 100;
         }
 
-        if (applyTaxAfterDiscount == 1) {
-          taxAmount =
-            ((rowTotal - (discountPercent / 100)) * taxRate) / 100;
-        }
-      }
+        // FBR applied tax (THIS WAS CAUSING NaN)
+        if (item?.product?.fbr_tax_applied == 1 || item?.product?.fbr_tax_applied === true) {
 
-      return {
-        ...item,
-        basePrice,
-        rowTotal,
-        taxRate,
-        taxAmount,
-      };
-    }) || []
-  );
-}, [cartItems, payment, applyTaxAfterDiscount, discountPercent]);
+          // FIX: ensure numeric taxRate
+          taxRate =
+            payment == "cashondelivery"
+              ? parseFloat(fbrDetails?.fbr_offline_tax) || 0
+              : parseFloat(fbrDetails?.fbr_online_tax) || 0;
+
+          // FIX: ensure rowTotal and special/regular price never create NaN
+          if (applyTaxAfterDiscount == 0) {
+            const sp = parseFloat(item?.product?.special_price) || 0;
+            const rp = parseFloat(regularPrice) || 0;
+
+            taxAmount =
+              sp > 0
+                ? (sp * taxRate) / 100
+                : ((rp * taxRate) / 100) * qty;
+          }
+
+          if (applyTaxAfterDiscount == 1) {
+            taxAmount =
+              ((rowTotal - (discountPercent / 100)) * taxRate) / 100;
+          }
+        }
+
+        return {
+          ...item,
+          basePrice,
+          rowTotal,
+          taxRate,
+          taxAmount,
+        };
+      }) || []
+    );
+  }, [cartItems, payment, applyTaxAfterDiscount, discountPercent]);
 
 
 
@@ -198,10 +198,10 @@ if (item?.product?.fbr_tax_applied == 1 || item?.product?.fbr_tax_applied === tr
   // }, []);
 
   useEffect(() => {
-    if(amount > 0) {
-    const numericAmount = parseFloat(amount) || 0;
-    const calculatedBalance = (numericAmount - total).toFixed(2);
-    setBalance(calculatedBalance);
+    if (amount > 0) {
+      const numericAmount = parseFloat(amount) || 0;
+      const calculatedBalance = (numericAmount - total).toFixed(2);
+      setBalance(calculatedBalance);
     } else {
       setBalance("")
     }
@@ -248,8 +248,8 @@ if (item?.product?.fbr_tax_applied == 1 || item?.product?.fbr_tax_applied === tr
     const promise = (async () => {
       setConsentLoading(true);
       try {
-          const formattedPhone = phone ? phone.replace(/\+/g, "%2B") : phone;
-const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
+        const formattedPhone = phone ? phone.replace(/\+/g, "%2B") : phone;
+        const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         const res = await getCustomerConsentAction(formattedEmail, formattedPhone);
 
         if (Array.isArray(res) && res.length > 0 && res[0]?.consent) {
@@ -340,7 +340,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       const itemDiscount = (actualPrice - discountedPrice) * item.quantity;
       return sum + itemDiscount;
     }, 0);
-    
+
     const items = cartItems.map((item, index) => {
       const itemWithTax = cartItemsWithTax[index];
       const quantity = item.quantity || 1;
@@ -359,6 +359,11 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
           item?.product?.price?.regularPrice?.amount?.value || 0
         ).toFixed(2),
         qty: quantity,
+        product_type:
+          item?.product?.product_type ??
+          (item?.product?.__typename === "SimpleProduct"
+            ? "simple"
+            : "configurable"),
         row_total: itemWithTax.rowTotal.toFixed(2),
         discount_percent: discountPercent,
         tax_percent: itemWithTax.taxRate,
@@ -494,7 +499,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         setAmount("");
         setPhone("");
         setEmail("");
-         setCustomerDropdown(false)
+        setCustomerDropdown(false)
         setDiscountPercent('')
         return;
       }
@@ -508,7 +513,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         });
         if (thermalPrint) {
           await printReceipt(
-                currencySymbol,
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -529,7 +534,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         setAmount("");
         setPhone("");
         setEmail("");
-         setCustomerDropdown(false)
+        setCustomerDropdown(false)
         setDiscountPercent('')
         return;
       }
@@ -537,7 +542,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
       if (finalConsent === "yes") {
         if (thermalPrint) {
           await printReceipt(
-                currencySymbol,
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -558,14 +563,14 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         setAmount("");
         setPhone("");
         setEmail("");
-         setCustomerDropdown(false)
+        setCustomerDropdown(false)
         setDiscountPercent('')
       }
 
       if (finalConsent === "not_set") {
         if (thermalPrint) {
           await printReceipt(
-                currencySymbol,
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -590,8 +595,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
           expiresAt,
         });
         const code = await QRCode.toDataURL(
-          `${
-            process.env.NEXT_PUBLIC_BASE_URL
+          `${process.env.NEXT_PUBLIC_BASE_URL
           }/consent?data=${encodeURIComponent(encrypted)}`
         );
         setQrCode(code);
@@ -602,14 +606,14 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         setAmount("");
         setPhone("");
         setEmail("");
-         setCustomerDropdown(false)
+        setCustomerDropdown(false)
         setDiscountPercent('')
       }
 
       if (finalConsent == "no") {
         if (thermalPrint) {
           await printReceipt(
-                currencySymbol,
+            currencySymbol,
             cartItemsWithTax,
             total,
             amount,
@@ -648,17 +652,18 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
           warehouseId,
           smtp_config: decryptedSmtp,
           smsJob: phone
-            ? { currencySymbol,
-                phone,
-                order_key: orderData?.order_key,
-                orderId,
-                total: orderData?.order_grandtotal,
-                createdAt: Date.now(),
-                sid: twilioRec?.sid,
-                auth_token: twilioRec?.auth_token,
-                auth_phone: twilioRec?.phone,
-                warehouseId: warehouseId,
-              }
+            ? {
+              currencySymbol,
+              phone,
+              order_key: orderData?.order_key,
+              orderId,
+              total: orderData?.order_grandtotal,
+              createdAt: Date.now(),
+              sid: twilioRec?.sid,
+              auth_token: twilioRec?.auth_token,
+              auth_phone: twilioRec?.phone,
+              warehouseId: warehouseId,
+            }
             : null,
         };
 
@@ -686,10 +691,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
         });
 
         if (res.ok) {
-          console.log(
-            "Delayed consent check scheduled successfully for order:",
-            orderId
-          );
+
         } else {
           console.error("Failed to schedule delayed consent check");
         }
@@ -770,11 +772,10 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
                 <h3 className={styles.sectionTitle}>
                   {serverLanguage?.customer_details ?? "Customer Details"}
                 </h3>
-                <p>{`${
-                  customerDropdown
-                    ? "Click to add customer info"
-                    : "Click to hide details"
-                }`}</p>
+                <p>{`${customerDropdown
+                  ? "Click to add customer info"
+                  : "Click to hide details"
+                  }`}</p>
               </div>
               {!customerDropdown ? (
                 <svg
@@ -881,8 +882,7 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
                                 expiresAt,
                               });
                               const code = await QRCode.toDataURL(
-                                `${
-                                  process.env.NEXT_PUBLIC_BASE_URL
+                                `${process.env.NEXT_PUBLIC_BASE_URL
                                 }/consent?data=${encodeURIComponent(encrypted)}`
                               );
                               setQrCode(code);
@@ -895,18 +895,18 @@ const formattedEmail = email ? email.replace(/\+/g, "%2B") : email;
                       )}
                     </div>
                   )}
-                    <div className={styles.paymentDetailBlock}>
-            <label className={styles.checkboxWrapper}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={createCustomer}
-                onChange={(e) => setCreateCustomer(e.target.checked)}
-              />
-              <span className={styles.customCheck}></span>
-              Do you want to create customer?
-            </label>
-          </div>
+                <div className={styles.paymentDetailBlock}>
+                  <label className={styles.checkboxWrapper}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={createCustomer}
+                      onChange={(e) => setCreateCustomer(e.target.checked)}
+                    />
+                    <span className={styles.customCheck}></span>
+                    Do you want to create customer?
+                  </label>
+                </div>
               </div>
             )}
           </div>

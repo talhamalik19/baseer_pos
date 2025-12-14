@@ -24,6 +24,7 @@ export default function SalesDetail({
   currency,
   serverLanguage,
   warehouseId,
+  categories,
 }) {
   const [products, setProducts] = useState([]);
   const [payment, setPayment] = useState("cashondelivery");
@@ -154,6 +155,7 @@ export default function SalesDetail({
       applyTaxAfterDiscount={applyTaxAfterDiscount}
       discountIncludingTax={discountIncludingTax}
       fbrDetails={fbrDetails}
+      categories={categories}
     />
   );
 }

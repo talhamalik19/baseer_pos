@@ -22,7 +22,7 @@ export default function Cards({
   payment,
   fbrDetails
 }) {
-  const unit = item?.custom_attributes?.find(item=>item?.attribute_code == "price_unit")
+  const unit = item?.custom_attributes?.find(item => item?.attribute_code == "price_unit")
   const loginDetail = JSON.parse(localStorage.getItem("loginDetail"));
   const adminAcl = loginDetail?.admin_acl;
   const pathname = usePathname();
@@ -36,7 +36,7 @@ export default function Cards({
   const originalPriceRef = useRef(null);
   const discountedPriceRef = useRef(null);
   const [originalPrice, setOriginalPrice] = useState(null);
-  
+
   // Add a ref to track the current item ID
   const currentItemIdRef = useRef(null);
 
@@ -59,7 +59,7 @@ export default function Cards({
       // Check if this is a new/different product
       const itemId = item?.uid || item?.id || item?.sku;
       const isNewProduct = currentItemIdRef.current !== itemId;
-      
+
       if (isNewProduct) {
         // Reset refs for new product
         currentItemIdRef.current = itemId;
@@ -81,8 +81,8 @@ export default function Cards({
       if (originalPriceRef.current === null) {
         originalPriceRef.current = basePrice;
         setOriginalPrice(basePrice);
-        
-        if(discountIncludingTax != null && discountIncludingTax != undefined){
+
+        if (discountIncludingTax != null && discountIncludingTax != undefined) {
           if (discountIncludingTax == 1) {
             if (payment == "cashondelivery") {
               discountedPriceRef.current = (basePrice * fbrDetails?.fbr_offline_tax) / 100;
@@ -90,7 +90,7 @@ export default function Cards({
             if (payment == "credit") {
               discountedPriceRef.current = (basePrice * fbrDetails?.fbr_online_tax) / 100;
             }
-          } else if(discountIncludingTax == null || discountIncludingTax == undefined){
+          } else if (discountIncludingTax == null || discountIncludingTax == undefined) {
             discountedPriceRef.current = (basePrice * item?.tax_percent) / 100;
           }
         }
@@ -104,16 +104,16 @@ export default function Cards({
     const value = e.target.value;
     if (!/^\d*\.?\d*$/.test(value)) return;
     setPriceInput(value);
-    
+
     const basePrice = originalPriceRef.current || 0;
     const taxOrDiscountedPrice = discountedPriceRef.current || 0;
     const effectiveBase = basePrice + taxOrDiscountedPrice;
-    
+
     if (effectiveBase > 0) {
       const discountPercent = ((effectiveBase - parseFloat(value)) / effectiveBase) * 100;
       setPercentageInput(discountPercent > 0 ? discountPercent.toFixed(2) : "");
     }
-    
+
     setErrorMessage("");
   };
 
@@ -121,11 +121,11 @@ export default function Cards({
     const value = e.target.value;
     if (!/^\d*\.?\d*$/.test(value)) return;
     setPercentageInput(value);
-    
+
     const basePrice = originalPriceRef.current || 0;
     const taxOrDiscountedPrice = discountedPriceRef.current || 0;
     const effectiveBase = basePrice + taxOrDiscountedPrice;
-    
+
     if (value && effectiveBase > 0) {
       const percentage = parseFloat(value);
       const discountedPrice = effectiveBase * (1 - percentage / 100);
@@ -133,7 +133,7 @@ export default function Cards({
     } else if (!value) {
       setPriceInput(effectiveBase.toFixed(2));
     }
-    
+
     setErrorMessage("");
   };
 
@@ -222,10 +222,9 @@ export default function Cards({
         setErrorMessage(
           `Minimum allowed price is ${currencySymbol}${minAllowedPrice} (based on original ${currencySymbol}${basePrice.toFixed(
             2
-          )}${
-            taxOrDiscountedPrice
-              ? ` & Tax ${currencySymbol}${taxOrDiscountedPrice.toFixed(2)}`
-              : ""
+          )}${taxOrDiscountedPrice
+            ? ` & Tax ${currencySymbol}${taxOrDiscountedPrice.toFixed(2)}`
+            : ""
           })`
         );
 
@@ -263,7 +262,7 @@ export default function Cards({
     setIsHighlighted(true);
     setTimeout(() => setIsHighlighted(false), 1000);
   };
-  
+
   const isPriceDisabled = () => item?.is_pos_discount_allowed !== 1;
 
   const currentQuantity = parseFloat(quantityInput) || 0;
@@ -281,16 +280,16 @@ export default function Cards({
 
   return (
     <div className={`${style.card} ${isHighlighted ? style.highlight : ""}`}>
-      
-        {showDiscount && (
-          <div className={style.discount_sec}>
+
+      {showDiscount && (
+        <div className={style.discount_sec}>
           <span className={style.discount}>
             {(Number(100 - (effectivePrice / originalPrice) * 100)).toFixed(1)}%
           </span>
-          </div>
-        )}
-        {(pathname !== "/sale" && adminAcl?.update_product == true) && (
-          <div className={style.top_row}>
+        </div>
+      )}
+      {(pathname !== "/sale" && adminAcl?.update_product == true) && (
+        <div className={style.top_row}>
           <span
             className={style.svg}
             onClick={() => setIsUpdateModalOpen(true)}
@@ -312,9 +311,9 @@ export default function Cards({
               />
             </svg>
           </span>
-            </div>
-        )}
-    
+        </div>
+      )}
+
 
       <div className={style.image_container}>
         <Image
@@ -337,160 +336,158 @@ export default function Cards({
         )}
       </div>
 
-     <div className={style.price_info}>
-  <div className={style.price}>
-    {showDiscount ? (
-      <>
-        <del className={style.final_price}>
-          {currencySymbol}
-          {originalPrice.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
-        </del>
-        <span className={style.special_price}>
-          {currencySymbol}
-          {effectivePrice.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
-        </span>
-      </>
-    ) : (
-      <span className={style.special_price}>
-        {currencySymbol}
-        {originalPrice?.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
-      </span>
-    )}
-  </div>
-
-  {cards && (
-    <div className={style.link}>
-      <div className={style.itemControls}>
-        <div className={style.quantityControls}>
-          <button
-            className={style.NegQuantityButton}
-            onClick={() => handleQuantityButtonChange(-qtyIncrementStep)}
-          >
-            -
-          </button>
-          <input
-            type="text"
-            className={style.quantityInput}
-            value={quantityInput}
-            onChange={handleQuantityInputChange}
-            onBlur={handleQuantityBlur}
-            onKeyDown={handleQuantityKeyDown}
-          />
-          <button
-            className={style.quantityButton}
-            onClick={() => handleQuantityButtonChange(qtyIncrementStep)}
-          >
-            +
-          </button>
+      <div className={style.price_info}>
+        <div className={style.price}>
+          {showDiscount ? (
+            <>
+              <del className={style.final_price}>
+                {currencySymbol}
+                {originalPrice.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
+              </del>
+              <span className={style.special_price}>
+                {currencySymbol}
+                {effectivePrice.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
+              </span>
+            </>
+          ) : (
+            <span className={style.special_price}>
+              {currencySymbol}
+              {originalPrice?.toFixed(2)} {`${unit?.attribute_value != "" ? `/ ${unit?.attribute_value}` : ''}`}
+            </span>
+          )}
         </div>
+
+        {cards && (
+          <div className={style.link}>
+            <div className={style.itemControls}>
+              <div className={style.quantityControls}>
+                <button
+                  className={style.NegQuantityButton}
+                  onClick={() => handleQuantityButtonChange(-qtyIncrementStep)}
+                >
+                  -
+                </button>
+                <input
+                  type="text"
+                  className={style.quantityInput}
+                  value={quantityInput}
+                  onChange={handleQuantityInputChange}
+                  onBlur={handleQuantityBlur}
+                  onKeyDown={handleQuantityKeyDown}
+                />
+                <button
+                  className={style.quantityButton}
+                  onClick={() => handleQuantityButtonChange(qtyIncrementStep)}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  )}
-</div>
 
 
-{record && (
-  <div className={style.btns}>
+      {record && (
+        <div className={style.btns}>
 
-    <div className={style.priceInputContainer}>
+          <div className={style.priceInputContainer}>
 
-      {adminAcl?.sales_discount && (
-        <>
-          <div className={style.inputRow}>
-            <p className={style.currency}>{currencySymbol}</p>
-            <input
-              type="text"
-              className={`${style.priceInput} ${
-                isPriceDisabled() ? style.disabled : ""
-              }`}
-              value={priceInput}
-              onChange={handlePriceChange}
-              onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
-              disabled={isPriceDisabled()}
-              placeholder="Price"
-            />
-          </div>
+            {adminAcl?.sales_discount && (
+              <>
+                <div className={style.inputRow}>
+                  <p className={style.currency}>{currencySymbol}</p>
+                  <input
+                    type="text"
+                    className={`${style.priceInput} ${isPriceDisabled() ? style.disabled : ""
+                      }`}
+                    value={priceInput}
+                    onChange={handlePriceChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
+                    disabled={isPriceDisabled()}
+                    placeholder="Price"
+                  />
+                </div>
 
-          <div className={style.inputRow}>
-            <input
-              type="text"
-              className={`${style.priceInput} ${
-                isPriceDisabled() ? style.disabled : ""
-              }`}
-              value={percentageInput}
-              onChange={handlePercentageChange}
-              onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
-              disabled={isPriceDisabled()}
-              placeholder="Discount %"
-            />
-            <p className={style.currency}>%</p>
-          </div>
+                <div className={style.inputRow}>
+                  <input
+                    type="text"
+                    className={`${style.priceInput} ${isPriceDisabled() ? style.disabled : ""
+                      }`}
+                    value={percentageInput}
+                    onChange={handlePercentageChange}
+                    onKeyDown={(e) => e.key === "Enter" && handleUpdatePrice()}
+                    disabled={isPriceDisabled()}
+                    placeholder="Discount %"
+                  />
+                  <p className={style.currency}>%</p>
+                </div>
 
-          <button
-            className={style.updatePriceBtn}
-            onClick={handleUpdatePrice}
-            disabled={isPriceDisabled()}
-          >
-            <svg
-              width="17"
-              height="17"
-              viewBox="0 0 17 17"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+                <button
+                  className={style.updatePriceBtn}
+                  onClick={handleUpdatePrice}
+                  disabled={isPriceDisabled()}
+                >
+                  <svg
+                    width="17"
+                    height="17"
+                    viewBox="0 0 17 17"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M2.59375 8.09375C2.59375 9.28044 2.94564 10.4405 3.60493 11.4272C4.26422 12.4139 5.20129 13.1829 6.29765 13.637C7.39401 14.0912 8.60041 14.21 9.76429 13.9785C10.9282 13.747 11.9973 13.1755 12.8364 12.3364C13.6755 11.4973 14.247 10.4282 14.4785 9.26429C14.71 8.10041 14.5912 6.89401 14.137 5.79765C13.6829 4.70129 12.9139 3.76422 11.9272 3.10493C10.9405 2.44564 9.78044 2.09375 8.59375 2.09375C6.91638 2.10006 5.3064 2.75457 4.10042 3.92042L2.59375 5.42708"
+                      stroke="#0A0A0A"
+                      strokeWidth="1.33333"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M2.59375 2.09375V5.42708H5.92708"
+                      stroke="#0A0A0A"
+                      strokeWidth="1.33333"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {errorMessage && (
+              <div className={style.errorMessage}>{errorMessage}</div>
+            )}
+
+            <button
+              className={style.deleteBtn}
+              onClick={async () => {
+                await deleteFromCart(item?.uid);
+                const updated = await getCartItems();
+                setCartItems(updated);
+              }}
             >
-              <path
-                d="M2.59375 8.09375C2.59375 9.28044 2.94564 10.4405 3.60493 11.4272C4.26422 12.4139 5.20129 13.1829 6.29765 13.637C7.39401 14.0912 8.60041 14.21 9.76429 13.9785C10.9282 13.747 11.9973 13.1755 12.8364 12.3364C13.6755 11.4973 14.247 10.4282 14.4785 9.26429C14.71 8.10041 14.5912 6.89401 14.137 5.79765C13.6829 4.70129 12.9139 3.76422 11.9272 3.10493C10.9405 2.44564 9.78044 2.09375 8.59375 2.09375C6.91638 2.10006 5.3064 2.75457 4.10042 3.92042L2.59375 5.42708"
-                stroke="#0A0A0A"
-                strokeWidth="1.33333"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M2.59375 2.09375V5.42708H5.92708"
-                stroke="#0A0A0A"
-                strokeWidth="1.33333"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                className={style.deleteIcon}
+              >
+                <path
+                  d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M4 7H20M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+
+          </div>
+
+        </div>
       )}
-
-      {errorMessage && (
-        <div className={style.errorMessage}>{errorMessage}</div>
-      )}
-
-      <button
-        className={style.deleteBtn}
-        onClick={async () => {
-          await deleteFromCart(item?.uid);
-          const updated = await getCartItems();
-          setCartItems(updated);
-        }}
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className={style.deleteIcon}
-        >
-          <path
-            d="M6 7V18C6 19.1046 6.89543 20 8 20H16C17.1046 20 18 19.1046 18 18V7M4 7H20M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-    </div>
-
-  </div>
-)}
 
       {isUpdateModalOpen && (
         <UpdateProductModal

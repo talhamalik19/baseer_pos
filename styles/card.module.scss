@@ -1,108 +1,195 @@
 @use "./variable.scss" as style;
 
-.card{
-    background-color: style.$whiteColor; border-radius: 8px; padding: 20px; position: relative;
-    .discount_sec{
-      //  @include style.flex(space-between, center, 0px); padding-bottom: 20px; position: relative; 
-         .discount{
-                background-color: #E9F0FF; border-radius: 5px; padding: 5px 10px; color: #102B6B; font-size: 14px; font-weight: 500; position: absolute; right: 20px;
-            }
-    }
-    .top_row{
-        @include style.flex(space-between, center, 0px); padding-bottom: 20px; position: relative; 
-        .id{
-            font-size: 14px; line-height: 24px; font-weight: 500; color: #81859C;
-        }
-        .svg{
-             padding: 5px; border-radius: 50%; border: 1px solid #657196; @include style.flex('center', center, 0px)
-        }
-    }
-    .image_container{
-        text-align: center; padding-bottom: 20px;
-        img{
-            max-width: 200px; height: 200px !important;
-        }
-    }
-    .product_info{
-        // padding-bottom: 40px;
-        .name{
-            color: #0A0A0A; font-size: 16px; line-height: 26px; font-weight: 500; min-height: 57px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer;
-        }
-    }
-    .price_info{
-        @include style.flex(space-between, center, 0px);
-        .price{
-            .original_price{
-                color: #81859C; font-size: 15px; line-height: 25px; font-weight: 500; margin-right: 10px;
-            }
-            
-            .final_price, .special_price{
-                line-height: 34px; font-weight: 500; color: #363842; padding-right: 8px; font-size: 16px;
-            }
-            .final_price{
-              font-size: 14px; line-height: 24px; color: #81859C;
-            }
-          }
-          .special_price{
-            font-weight: 600; color: #363842; padding-right: 0px; font-size: 22px;
-          }
-        .link{
-             border-radius: 10px; @include style.flex(center, center, 20px)
-        }
-    }
-    .itemControls{
-        position: relative;
-        .quantityControls{
-            display: flex; gap: 0px;
-            button{
-                border-radius: 50%; font-size: 16px; padding: 10px; width: 30px; height: 30px; border-radius: 50% !important;
-            }
-             .NegQuantityButton{
-                  background-color: unset; border: 1px solid #0000001A; color: #0A0A0A; font-size: 20px;
-                }
-            input{
-                max-width: 25px; outline: none; border: transparent; text-align: center;
-            }
+.card {
+  background-color: style.$whiteColor;
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
 
-        }
+  .discount_sec {
+
+    //  @include style.flex(space-between, center, 0px); padding-bottom: 20px; position: relative; 
+    .discount {
+      background-color: #E9F0FF;
+      border-radius: 5px;
+      padding: 5px 10px;
+      color: #102B6B;
+      font-size: 14px;
+      font-weight: 500;
+      position: absolute;
+      right: 20px;
     }
-    [data-theme="dark"] & {
-      background: #0A0A0A;
-      .product_info{
-        .name{
-          color: style.$darkModeTitle;
-        } 
-           }
-           .price_info{
-            .price{
-              .special_price{
-                color: style.$PrimaryColor;
-              } .final_price{
-                color: style.$darkModeDes;
-              }
-            }
-           }
-           .itemControls{
-            .quantityControls{ 
-              .NegQuantityButton{
-                border: 1px solid #fff; background: #2626264D; color: style.$darkModeDes;
-              }
-              input{
-                background-color: unset; color: #fff;
-              }
-            }
-           }
-      .priceInputContainer{
-        .updatePriceBtn{
-          border-color: white;
-          svg{
-            path{
-              stroke: white;
-            }
+  }
+
+  .top_row {
+    @include style.flex(space-between, center, 0px);
+    padding-bottom: 20px;
+    position: relative;
+
+    .id {
+      font-size: 14px;
+      line-height: 24px;
+      font-weight: 500;
+      color: #81859C;
+    }
+
+    .svg {
+      padding: 5px;
+      border-radius: 50%;
+      border: 1px solid #657196;
+      @include style.flex('center', center, 0px)
+    }
+  }
+
+  .image_container {
+    text-align: center;
+    padding-bottom: 20px;
+
+    img {
+      max-width: 200px;
+      height: 200px !important;
+    }
+  }
+
+  .product_info {
+
+    // padding-bottom: 40px;
+    .name {
+      color: #0A0A0A;
+      font-size: 16px;
+      line-height: 26px;
+      font-weight: 500;
+      min-height: 57px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      cursor: pointer;
+    }
+  }
+
+  .price_info {
+    @include style.flex(space-between, center, 0px);
+
+    .price {
+      .original_price {
+        color: #81859C;
+        font-size: 15px;
+        line-height: 25px;
+        font-weight: 500;
+        margin-right: 10px;
+      }
+
+      .final_price,
+      .special_price {
+        line-height: 34px;
+        font-weight: 500;
+        color: #363842;
+        padding-right: 8px;
+        font-size: 16px;
+      }
+
+      .final_price {
+        font-size: 14px;
+        line-height: 24px;
+        color: #81859C;
+      }
+    }
+
+    .special_price {
+      font-weight: 600;
+      color: #363842;
+      padding-right: 0px;
+      font-size: 22px;
+    }
+
+    .link {
+      border-radius: 10px;
+      @include style.flex(center, center, 20px)
+    }
+  }
+
+  .itemControls {
+    position: relative;
+
+    .quantityControls {
+      display: flex;
+      gap: 0px;
+
+      button {
+        border-radius: 50%;
+        font-size: 16px;
+        padding: 10px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50% !important;
+      }
+
+      .NegQuantityButton {
+        background-color: unset;
+        border: 1px solid #0000001A;
+        color: #0A0A0A;
+        font-size: 20px;
+      }
+
+      input {
+        max-width: 25px;
+        outline: none;
+        border: transparent;
+        text-align: center;
+      }
+
+    }
+  }
+
+  [data-theme="dark"] & {
+    background: #0A0A0A;
+
+    .product_info {
+      .name {
+        color: style.$darkModeTitle;
+      }
+    }
+
+    .price_info {
+      .price {
+        .special_price {
+          color: style.$PrimaryColor;
+        }
+
+        .final_price {
+          color: style.$darkModeDes;
+        }
+      }
+    }
+
+    .itemControls {
+      .quantityControls {
+        .NegQuantityButton {
+          border: 1px solid #fff;
+          background: #2626264D;
+          color: style.$darkModeDes;
+        }
+
+        input {
+          background-color: unset;
+          color: #fff;
+        }
+      }
+    }
+
+    .priceInputContainer {
+      .updatePriceBtn {
+        border-color: white;
+
+        svg {
+          path {
+            stroke: white;
           }
         }
       }
     }
+  }
 }
 
 .modalOverlay {
@@ -138,9 +225,11 @@
       // border-bottom: 1px solid #dee2e6;
       position: relative;
       border-radius: 8px;
+
       [data-theme="dark"] & {
         color: style.$darkModeTitle;
       }
+
       h2 {
         margin: 0;
         font-size: 20px;
@@ -193,14 +282,17 @@
           font-size: 14px;
           font-weight: 500;
           color: #495057;
+
           [data-theme="dark"] & {
             color: #CAD5E2;
           }
         }
-        input{
+
+        input {
           [data-theme="dark"] & {
             background: #314158;
-  border: 1px solid #45556C; color: style.$darkModeTitle;
+            border: 1px solid #45556C;
+            color: style.$darkModeTitle;
           }
         }
 
@@ -237,6 +329,7 @@
           }
         }
       }
+
     }
 
     .formFooter {
@@ -308,13 +401,14 @@
       .modalHeader {
         padding-inline: 20px;
       }
-      
+
       .modalBody {
         padding-inline: 20px;
       }
     }
   }
 }
+
 .priceInputContainer {
   margin-top: 15px;
   display: flex;
@@ -394,7 +488,7 @@
   /* 🔴 NEW — Delete Button Styling */
   .deleteBtn {
     background-color: unset;
-    color: #FF4D4D; 
+    color: #FF4D4D;
     border: 1px solid #0000001A;
     border-radius: 50% !important;
     padding: 6px;

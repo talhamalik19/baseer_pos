@@ -1,5 +1,5 @@
 import PageHead from "@/components/global/PageHead";
-import { getAdminDetail, getProducts } from "@/lib/Magento";
+import { getAdminDetail, getProducts, getCategories } from "@/lib/Magento";
 import { cookies } from "next/headers";
 import SalesDetail from "@/components/blocks/Sales";
 import SyncHandler from "@/components/SyncHandler";
@@ -26,19 +26,19 @@ export default async function Sales() {
   const response = await getAdminDetail();
   const user = response;
   const { firstname, lastname, username, email } = user?.data?.data;
-  const initials = `${firstname?.charAt(0) || ""}${
-    lastname?.charAt(0) || ""
-  }`.toUpperCase();
+  const initials = `${firstname?.charAt(0) || ""}${lastname?.charAt(0) || ""
+    }`.toUpperCase();
 
   const serverCurrency = await CurrencyProvider();
   const currencySymbol = cookieStore.get("currency_symbol")?.value;
   const currency = cookieStore.get("currency_code")?.value;
-    const serverLanguage = await LanguageProvider();
-  const warehouseId = cookieStore?.get("warehouse_id")?.value || "" 
+  const serverLanguage = await LanguageProvider();
+  const warehouseId = cookieStore?.get("warehouse_id")?.value || ""
   const products = await getProducts({ id: "", pos_code: pos_code, currency: currency });
+  const categories = await getCategories();
   // ordersResponse = await getOrders();
 
-    return (
+  return (
     <>
       <ProtectedRoute requiredPermission="sales_process">
         <PageHead
@@ -48,7 +48,7 @@ export default async function Sales() {
           initials={initials}
           serverCurrency={serverCurrency}
           serverLanguage={serverLanguage}
-          
+
         />
         <SalesDetail
           jwt={jwt}
@@ -60,6 +60,7 @@ export default async function Sales() {
           currency={currency}
           serverLanguage={serverLanguage?.csvTranslations}
           warehouseId={warehouseId}
+          categories={categories}
         />
         <SyncHandler />
         <ServiceWorkerRegister />
