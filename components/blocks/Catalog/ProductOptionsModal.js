@@ -6,18 +6,57 @@ export default function ProductOptionsModal({
   isOpen,
   onClose,
   onConfirm,
-  allProducts
+  allProducts,
+  existingCartItem = null,
+  existingCartItems = [],
+  onDeleteCartItem
 }) {
   const [selectedConfigurable, setSelectedConfigurable] = useState({});
   const [selectedCustomizable, setSelectedCustomizable] = useState({});
   const [childSku, setChildSku] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [quantityInput, setQuantityInput] = useState("1");
 
   useEffect(() => {
     if (item?.__typename === "ConfigurableProduct" && item?.variants) {
       findMatchingVariant();
     }
   }, [selectedConfigurable, item, allProducts]);
+
+  // Pre-populate modal from existing cart item
+  useEffect(() => {
+    if (existingCartItem && isOpen) {
+      // Set quantity
+      setQuantityInput(String(existingCartItem.quantity || 1));
+
+      // Pre-populate configurable options
+      if (existingCartItem.selected_options?.super_attributes) {
+        setSelectedConfigurable(existingCartItem.selected_options.super_attributes);
+      }
+
+      // Pre-populate custom options
+      if (existingCartItem.selected_options?.custom_attributes) {
+        const customAttrs = existingCartItem.selected_options.custom_attributes;
+        const customizable = {};
+
+        Object.entries(customAttrs).forEach(([optionId, value]) => {
+          // Check if value is comma-separated (checkbox options)
+          if (typeof value === 'string' && value.includes(',')) {
+            customizable[optionId] = value.split(',');
+          } else {
+            customizable[optionId] = value;
+          }
+        });
+
+        setSelectedCustomizable(customizable);
+      }
+    } else if (!existingCartItem && isOpen) {
+      // Reset to defaults when opening for new item
+      setQuantityInput("1");
+      setSelectedConfigurable({});
+      setSelectedCustomizable({});
+    }
+  }, [existingCartItem, isOpen]);
 
   const findMatchingVariant = () => {
     if (!item.variants || !item.configurable_options) return;
@@ -199,11 +238,24 @@ export default function ProductOptionsModal({
       return val !== undefined && val !== "" && val !== null;
     });
   };
+
+  const handleQuantityInputChange = (e) => {
+    const value = e.target.value;
+    if (!/^\d*\.?\d*$/.test(value)) return;
+    setQuantityInput(value);
+  };
+
+  const handleQuantityButtonChange = (delta) => {
+    const currentQty = parseFloat(quantityInput) || 1;
+    const newQty = Math.max(1, currentQty + delta);
+    setQuantityInput(String(newQty));
+  };
   const handleConfirm = () => {
     if (!isCustomizableComplete()) return;
     if (item.__typename === "ConfigurableProduct" && !isConfigurableComplete()) return;
 
     const finalPrice = getCurrentPrice();
+    const quantity = parseFloat(quantityInput) || 1;
 
     const productToAdd = selectedVariant || item;
     const product_id = item.id;
@@ -239,7 +291,7 @@ export default function ProductOptionsModal({
       sku: variantSku,
       product_type: item.__typename === "ConfigurableProduct" ? "configurable" : "simple",
       price: finalPrice,
-      qty: 1,
+      qty: quantity,
       ...(item.__typename === "ConfigurableProduct" && Object.keys(super_attribute).length > 0 && {
         super_attribute: super_attribute
       }),
@@ -264,7 +316,9 @@ export default function ProductOptionsModal({
       product: productWithCorrectPrice,
       childSku: variantSku,
       options,
-      price: finalPrice
+      price: finalPrice,
+      quantity,
+      existingCartItem // Pass back if updating
     });
 
     onClose();
@@ -272,6 +326,7 @@ export default function ProductOptionsModal({
     setSelectedCustomizable({});
     setChildSku(null);
     setSelectedVariant(null);
+    setQuantityInput("1");
   };
 
   const renderOptionLabelWithPrice = (option) => {
@@ -290,6 +345,7 @@ export default function ProductOptionsModal({
   const optionsPrice = getOptionsPrice();
   const totalPrice = getCurrentPrice();
   const productName = getProductName();
+  const isUpdateMode = !!existingCartItem;
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -323,9 +379,64 @@ export default function ProductOptionsModal({
             </div>
           </div>
 
+          {/* Show existing variants in cart */}
+          {existingCartItems && existingCartItems.length > 0 && (
+            <div className={styles.formGroup}>
+              <label>Already in Cart:</label>
+              <div className={styles.existingVariants}>
+                {existingCartItems.map((cartItem, index) => {
+                  const variantName = cartItem.product.name;
+                  const variantQty = cartItem.quantity;
+                  return (
+                    <div key={index} className={styles.variantItem}>
+                      <div className={styles.variantInfo}>
+                        <span className={styles.variantName}>{variantName}</span>
+                        <span className={styles.variantQty}>Qty: {variantQty}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.deleteVariantBtn}
+                        onClick={() => onDeleteCartItem && onDeleteCartItem(cartItem)}
+                        title="Remove from cart"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className={styles.formGroup}>
+            <label>Quantity</label>
+            <div className={styles.quantityControls}>
+              <button
+                type="button"
+                className={styles.quantityButton}
+                onClick={() => handleQuantityButtonChange(-1)}
+              >
+                -
+              </button>
+              <input
+                type="text"
+                className={styles.quantityInput}
+                value={quantityInput}
+                onChange={handleQuantityInputChange}
+              />
+              <button
+                type="button"
+                className={styles.quantityButton}
+                onClick={() => handleQuantityButtonChange(1)}
+              >
+                +
+              </button>
+            </div>
+          </div>
+
           {childSku && (
             <div className={styles.formGroup}>
-              <label>Selected Variant: {childSku}</label>
+              <label>Selected Variant: {childSku} (Qty: {quantityInput})</label>
             </div>
           )}
 
@@ -417,7 +528,7 @@ export default function ProductOptionsModal({
               className={styles.btnPrimary}
               disabled={isDisabled}
             >
-              Add to Cart - ${totalPrice}
+              {isUpdateMode ? `Update Cart - $${totalPrice}` : `Add to Cart - $${totalPrice}`}
             </button>
           </div>
         </div>

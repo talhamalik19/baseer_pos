@@ -73,9 +73,10 @@ export default function ProductView({
           styles={styles}
           setViewMode={setViewMode}
           viewMode={viewMode}
-          // payment={payment}
           searchInputRef={searchInputRef}
           handleViewChange={handleViewChange}
+          cartItems={cartItems}
+          setCartItems={setCartItems}
         />
       </div>
       <div className="page_detail sale_page">
@@ -161,6 +162,7 @@ export default function ProductView({
                 currencySymbol={currencySymbol}
                 currency={currency}
                 cartItems={cartItems}
+                setCartItems={setCartItems}
               />
             ) : cartItems?.length > 0 ? (
               <>

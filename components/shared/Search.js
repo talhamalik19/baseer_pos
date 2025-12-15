@@ -12,7 +12,7 @@ import {
   getOrdersAction,
   searchProductsAction,
 } from "@/lib/Magento/actions";
-import { getViewMode, saveViewMode } from "@/lib/indexedDB";
+import { getViewMode, saveViewMode, getCartItems, updateCartItemQuantity, updateWholeProduct, deleteFromCart } from "@/lib/indexedDB";
 
 export default function Search({
   isProduct,
@@ -64,6 +64,8 @@ export default function Search({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [searchTimeout, setSearchTimeout] = useState(null);
+  const [existingCartItem, setExistingCartItem] = useState(null);
+  const [existingCartItems, setExistingCartItems] = useState([]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -248,7 +250,7 @@ export default function Search({
     }
   };
 
-  const handleAddProduct = (item) => {
+  const handleAddProduct = async (item) => {
     const isSimple = item?.__typename === "SimpleProduct";
     const hasRequiredOptions = Array.isArray(item?.options)
       ? item.options.some((option) => option.required)
@@ -264,7 +266,21 @@ export default function Search({
       handleAddToCart(item, [], quantityToAdd);
       resetSearch();
     } else {
-      // Either it's not simple OR it has required options, show modal
+      // Find all variants of this product in cart
+      const cartItemsList = await getCartItems();
+      const variantsInCart = cartItemsList.filter(cartItem => {
+        // Match by parent product ID for configurable products
+        if (item.__typename === "ConfigurableProduct") {
+          // Check if cart item is a variant of this parent product
+          return item.variants?.some(variant =>
+            variant.product.sku === cartItem.product.sku
+          ) || cartItem.product.uid === item.uid;
+        }
+        return cartItem.product.uid === item.uid;
+      });
+
+      setExistingCartItems(variantsInCart);
+      setExistingCartItem(null);
       setSelectedProduct(item);
       setIsModalOpen(true);
     }
@@ -346,11 +362,57 @@ export default function Search({
     setShowPopup(false);
   };
 
-  const handleConfirm = ({ product, childSku, options }) => {
+  const handleConfirm = async ({ product, childSku, options, quantity, existingCartItem: existingItem }) => {
     const skuToUse = childSku || product.sku;
     const item = { ...product, sku: skuToUse };
-    handleAddToCart(item, options, 1);
+
+    // Check if this exact variant+options combination already exists
+    const cartItemsList = await getCartItems();
+    const exactMatch = cartItemsList.find(
+      cartItem => cartItem.product.uid === item.uid &&
+        JSON.stringify(cartItem.selected_options) === JSON.stringify(options)
+    );
+
+    if (exactMatch) {
+      // Replace quantity instead of incrementing
+      await updateCartItemQuantity(exactMatch.product.uid, exactMatch.addedAt, quantity);
+    } else {
+      // Add as new item
+      handleAddToCart(item, options, quantity);
+    }
+
+    const updatedCart = await getCartItems();
+    if (setCartItems) {
+      setCartItems(updatedCart);
+    }
     resetSearch();
+  };
+
+  const handleDeleteCartItem = async (cartItem) => {
+    await deleteFromCart(cartItem.product.uid);
+    const updatedCart = await getCartItems();
+
+    // Update the existing cart items list in modal
+    const variantsInCart = updatedCart.filter(item => {
+      if (selectedProduct.__typename === "ConfigurableProduct") {
+        return selectedProduct.variants?.some(variant =>
+          variant.product.sku === item.product.sku
+        ) || item.product.uid === selectedProduct.uid;
+      }
+      return item.product.uid === selectedProduct.uid;
+    });
+
+    setExistingCartItems(variantsInCart);
+
+    // CRITICAL: Update parent cart state
+    if (setCartItems) {
+      setCartItems(updatedCart);
+    }
+
+    // Also update cartItems prop if it exists
+    if (cartItems && setCartItems) {
+      setCartItems(updatedCart);
+    }
   };
 
   return (
@@ -601,6 +663,9 @@ export default function Search({
           onClose={resetSearch}
           onConfirm={handleConfirm}
           allProducts={products}
+          existingCartItem={existingCartItem}
+          existingCartItems={existingCartItems}
+          onDeleteCartItem={handleDeleteCartItem}
         />
       )}
     </div>

@@ -6,6 +6,10 @@ import Cards from "@/components/shared/Cards";
 import {
     getCategories as getIDBCategories,
     saveCategories,
+    getCartItems,
+    updateCartItemQuantity,
+    updateWholeProduct,
+    deleteFromCart,
 } from "@/lib/indexedDB";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import ProductOptionsModal from "../Catalog/ProductOptionsModal";
@@ -57,6 +61,7 @@ export default function SalesCategoryView({
     currencySymbol,
     currency,
     cartItems,
+    setCartItems,
 }) {
 
     const isOnline = useNetworkStatus();
@@ -70,6 +75,8 @@ export default function SalesCategoryView({
     // Modal state
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [existingCartItem, setExistingCartItem] = useState(null);
+    const [existingCartItems, setExistingCartItems] = useState([]);
 
     // Memoized function to group categories
     const groupCategories = useCallback((allCategories) => {
@@ -168,7 +175,7 @@ export default function SalesCategoryView({
         setOpenDropdownId((prev) => (prev === id ? null : id));
     }, []);
 
-    const handleProductClick = (item) => {
+    const handleProductClick = async (item) => {
         const isSimple = item?.__typename === "SimpleProduct";
         const hasRequiredOptions = Array.isArray(item?.options)
             ? item.options.some((option) => option.required)
@@ -183,18 +190,73 @@ export default function SalesCategoryView({
         if (isSimple && !hasRequiredOptions) {
             handleAddToCart(item, [], quantityToAdd);
         } else {
-            // Either it's not simple OR it has required options, show modal
+            // Find all variants of this product in cart
+            const cartItemsList = await getCartItems();
+            const variantsInCart = cartItemsList.filter(cartItem => {
+                if (item.__typename === "ConfigurableProduct") {
+                    return item.variants?.some(variant =>
+                        variant.product.sku === cartItem.product.sku
+                    ) || cartItem.product.uid === item.uid;
+                }
+                return cartItem.product.uid === item.uid;
+            });
+
+            setExistingCartItems(variantsInCart);
+            setExistingCartItem(null);
             setSelectedProduct(item);
             setIsModalOpen(true);
         }
     }
 
-    const handleConfirm = ({ product, childSku, options }) => {
+    const handleConfirm = async ({ product, childSku, options, quantity }) => {
         const skuToUse = childSku || product.sku;
         const item = { ...product, sku: skuToUse };
-        handleAddToCart(item, options, 1);
+
+        // Check if this exact variant+options combination already exists
+        const cartItemsList = await getCartItems();
+        const exactMatch = cartItemsList.find(
+            cartItem => cartItem.product.uid === item.uid &&
+                JSON.stringify(cartItem.selected_options) === JSON.stringify(options)
+        );
+
+        if (exactMatch) {
+            // Replace quantity instead of incrementing
+            await updateCartItemQuantity(exactMatch.product.uid, exactMatch.addedAt, quantity);
+        } else {
+            // Add as new item
+            handleAddToCart(item, options, quantity);
+        }
+
+        // Update cart state
+        const updatedCart = await getCartItems();
+        if (setCartItems) {
+            setCartItems(updatedCart);
+        }
+
         setIsModalOpen(false);
         setSelectedProduct(null);
+    };
+
+    const handleDeleteCartItem = async (cartItem) => {
+        await deleteFromCart(cartItem.product.uid);
+        const updatedCart = await getCartItems();
+
+        // Update the existing cart items list in modal
+        const variantsInCart = updatedCart.filter(item => {
+            if (selectedProduct.__typename === "ConfigurableProduct") {
+                return selectedProduct.variants?.some(variant =>
+                    variant.product.sku === item.product.sku
+                ) || item.product.uid === selectedProduct.uid;
+            }
+            return item.product.uid === selectedProduct.uid;
+        });
+
+        setExistingCartItems(variantsInCart);
+
+        // Update parent cart state
+        if (setCartItems) {
+            setCartItems(updatedCart);
+        }
     };
 
     return (
@@ -294,6 +356,9 @@ export default function SalesCategoryView({
                     }}
                     onConfirm={handleConfirm}
                     allProducts={allProducts}
+                    existingCartItem={existingCartItem}
+                    existingCartItems={existingCartItems}
+                    onDeleteCartItem={handleDeleteCartItem}
                 />
             )}
         </div>
