@@ -32,7 +32,7 @@ export default function ProductView({
   fbrDetails,
   categories,
 }) {
-  const [viewMode, setViewMode] = useState("cards"); // Default to cards view
+  const [viewMode, setViewMode] = useState("category"); // Default to cards view
   const searchInputRef = useRef(null);
 
   useEffect(() => {

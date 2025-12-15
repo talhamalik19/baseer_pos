@@ -55,6 +55,8 @@ export default function ProductOptionsModal({
       setQuantityInput("1");
       setSelectedConfigurable({});
       setSelectedCustomizable({});
+      setChildSku(null);
+      setSelectedVariant(null);
     }
   }, [existingCartItem, isOpen]);
 
@@ -309,7 +311,12 @@ export default function ProductOptionsModal({
             value: finalPrice
           }
         }
-      }
+      },
+      // Force use of parent image
+      image: item.image,
+      small_image: item.small_image,
+      thumbnail: item.thumbnail,
+      media_gallery: item.media_gallery
     };
 
     onConfirm({

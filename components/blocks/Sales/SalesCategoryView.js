@@ -128,12 +128,6 @@ export default function SalesCategoryView({
             if (groupedCategories.length > 0 && !selectedItem) {
                 const firstCategory = groupedCategories[0];
                 setSelectedItem(firstCategory);
-
-                // Filter products for the initial category
-                const filtered = productItems?.filter((item) =>
-                    item?.categories?.some((cat) => cat?.name === firstCategory.name)
-                ) || [];
-                setProducts(filtered);
             }
         } catch (err) {
             console.error("Error loading categories:", err);
@@ -144,16 +138,21 @@ export default function SalesCategoryView({
         loadCategories();
     }, [loadCategories]);
 
+    // Effect to filter products when category or productItems change
+    useEffect(() => {
+        if (selectedItem) {
+            const filtered = productItems?.filter((item) =>
+                item?.categories?.some((cat) => cat?.name === selectedItem.name)
+            ) || [];
+            setProducts(filtered);
+        } else {
+            setProducts([]);
+        }
+    }, [selectedItem, productItems]);
+
     const handleCategoryClick = useCallback(async (category) => {
         setSelectedItem(category);
         setOpenDropdownId(null);
-
-        // Filter products based on selected category
-        const filtered = productItems?.filter((item) =>
-            item?.categories?.some((cat) => cat?.name === category.name)
-        ) || [];
-
-        setProducts(filtered);
 
         if (category.level === 2) {
             setSelectedParent(category);
@@ -193,12 +192,33 @@ export default function SalesCategoryView({
             // Find all variants of this product in cart
             const cartItemsList = await getCartItems();
             const variantsInCart = cartItemsList.filter(cartItem => {
+                const cartProd = cartItem.product;
+
                 if (item.__typename === "ConfigurableProduct") {
-                    return item.variants?.some(variant =>
-                        variant.product.sku === cartItem.product.sku
-                    ) || cartItem.product.uid === item.uid;
+                    // Check if it's a variant of THIS product
+                    const isVariant = item.variants?.some(variant =>
+                        variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+                    );
+
+                    if (!isVariant) return false;
+
+                    // STRICT CHECK: Verify parent product ID matches
+                    if (cartProd.product_id && item.id && cartProd.product_id === item.id) {
+                        return true;
+                    }
+
+                    // Fallback for older items without product_id: check if options match
+                    if (!cartProd.product_id && cartItem.selected_options && item.configurable_options) {
+                        // If no product_id is stored, we have to rely on the variant check + options check
+                        // This is less safe but handles legacy cart items
+                        return true;
+                    }
+
+                    return false;
                 }
-                return cartItem.product.uid === item.uid;
+
+                // For simple products
+                return cartProd.uid === item.uid || cartProd.id === item.id;
             });
 
             setExistingCartItems(variantsInCart);
@@ -215,8 +235,24 @@ export default function SalesCategoryView({
         // Check if this exact variant+options combination already exists
         const cartItemsList = await getCartItems();
         const exactMatch = cartItemsList.find(
-            cartItem => cartItem.product.uid === item.uid &&
-                JSON.stringify(cartItem.selected_options) === JSON.stringify(options)
+            cartItem => {
+                // Basic check: UID matches and options match
+                const basicMatch = cartItem.product.uid === item.uid &&
+                    JSON.stringify(cartItem.selected_options) === JSON.stringify(options);
+
+                if (!basicMatch) return false;
+
+                // STRICT CHECK: Verify parent product ID matches if available
+                if (item.product_id) {
+                    if (cartItem.product.product_id) {
+                        return item.product_id === cartItem.product.product_id;
+                    }
+                    // If incoming has ID but existing doesn't, assume different to be safe
+                    return false;
+                }
+
+                return true;
+            }
         );
 
         if (exactMatch) {
@@ -316,19 +352,47 @@ export default function SalesCategoryView({
                                     const cartProd = cartItem?.product;
                                     if (!cartProd) return false;
 
-                                    // Check direct match (Simple Product or same Configurable)
+                                    // Check direct match (Simple Product or same Configurable parent added directly)
                                     if ((cartProd.uid && item.uid && cartProd.uid === item.uid) ||
                                         (cartProd.id && item.id && cartProd.id === item.id) ||
                                         cartProd.sku === item.sku) {
                                         return true;
                                     }
 
-                                    // Check if cart item is a variant of this parent product
+                                    // For configurable products, check if cart item is a variant of THIS specific parent
                                     if (item.__typename === "ConfigurableProduct" && item.variants) {
-                                        return item.variants.some(variant =>
-                                            variant.product.sku === cartProd.sku ||
-                                            variant.product.uid === cartProd.uid
+                                        // First, verify the cart item is a variant of the current product
+                                        const isVariant = item.variants.some(variant =>
+                                            variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
                                         );
+
+                                        if (!isVariant) return false;
+
+                                        // Now verify this variant belongs to THIS parent product by checking product_id
+                                        // The product_id field is set when adding a variant in ProductOptionsModal
+                                        if (cartProd.product_id && item.id && cartProd.product_id === item.id) {
+                                            return true;
+                                        }
+
+                                        // Also check uid-based matching for parent
+                                        if (cartProd.product_id && item.uid && cartProd.product_id === item.uid) {
+                                            return true;
+                                        }
+
+                                        // Fallback: check if selected_options reference this parent's configurable options
+                                        if (cartItem.selected_options?.super_attributes && item.configurable_options) {
+                                            const hasMatchingOptions = Object.keys(cartItem.selected_options.super_attributes).some(attrCode =>
+                                                item.configurable_options.some(configOpt =>
+                                                    configOpt.attribute_code === attrCode
+                                                )
+                                            );
+                                            // Only return true if both conditions match: is a variant AND has matching options
+                                            if (hasMatchingOptions && isVariant) {
+                                                return true;
+                                            }
+                                        }
+
+                                        return false;
                                     }
 
                                     return false;
@@ -340,7 +404,7 @@ export default function SalesCategoryView({
                                 )
                             })
                         ) : (
-                            <p className="no_prods">No products found in this category</p>
+                            <p className="no_prods">Loading...</p>
                         )}
                     </div>
                 </div>
@@ -348,6 +412,7 @@ export default function SalesCategoryView({
 
             {selectedProduct && isModalOpen && (
                 <ProductOptionsModal
+                    key={selectedProduct.uid || selectedProduct.id}
                     item={selectedProduct}
                     isOpen={isModalOpen}
                     onClose={() => {

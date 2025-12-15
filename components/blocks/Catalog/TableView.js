@@ -15,8 +15,23 @@ const TableView = ({ item, setIsOpen, handleAddToCart, allProducts }) => {
     // Check if this exact variant+options combination already exists
     const cartItemsList = await getCartItems();
     const exactMatch = cartItemsList.find(
-      cartItem => cartItem.product.uid === item.uid &&
-        JSON.stringify(cartItem.selected_options) === JSON.stringify(options)
+      cartItem => {
+        const basicMatch = cartItem.product.uid === item.uid &&
+          JSON.stringify(cartItem.selected_options) === JSON.stringify(options);
+
+        if (!basicMatch) return false;
+
+        // STRICT CHECK: Verify parent product ID matches if available
+        if (item.product_id) {
+          if (cartItem.product.product_id) {
+            return item.product_id === cartItem.product.product_id;
+          }
+          // If incoming has ID but existing doesn't, assume different to be safe
+          return false;
+        }
+
+        return true;
+      }
     );
 
     if (exactMatch) {
@@ -37,12 +52,30 @@ const TableView = ({ item, setIsOpen, handleAddToCart, allProducts }) => {
       // Find all variants of this product in cart
       const cartItemsList = await getCartItems();
       const variantsInCart = cartItemsList.filter(cartItem => {
+        const cartProd = cartItem.product;
+
         if (item.__typename === "ConfigurableProduct") {
-          return item.variants?.some(variant =>
-            variant.product.sku === cartItem.product.sku
-          ) || cartItem.product.uid === item.uid;
+          // Check if it's a variant of THIS product
+          const isVariant = item.variants?.some(variant =>
+            variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+          );
+
+          if (!isVariant) return false;
+
+          // STRICT CHECK: Verify parent product ID matches
+          if (cartProd.product_id && item.id && cartProd.product_id === item.id) {
+            return true;
+          }
+
+          // Fallback for older items without product_id
+          if (!cartProd.product_id) {
+            return true;
+          }
+
+          return false;
         }
-        return cartItem.product.uid === item.uid;
+
+        return cartProd.uid === item.uid || cartProd.id === item.id;
       });
 
       setExistingCartItems(variantsInCart);
@@ -56,13 +89,32 @@ const TableView = ({ item, setIsOpen, handleAddToCart, allProducts }) => {
     const updatedCart = await getCartItems();
 
     // Update the existing cart items list in modal
-    const variantsInCart = updatedCart.filter(i => {
+    // Update the existing cart items list in modal
+    const variantsInCart = updatedCart.filter(cartItem => {
+      const cartProd = cartItem.product;
+
       if (item.__typename === "ConfigurableProduct") {
-        return item.variants?.some(variant =>
-          variant.product.sku === i.product.sku
-        ) || i.product.uid === item.uid;
+        // Check if it's a variant of THIS product
+        const isVariant = item.variants?.some(variant =>
+          variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+        );
+
+        if (!isVariant) return false;
+
+        // STRICT CHECK: Verify parent product ID matches
+        if (cartProd.product_id && item.id && cartProd.product_id === item.id) {
+          return true;
+        }
+
+        // Fallback for older items without product_id
+        if (!cartProd.product_id) {
+          return true;
+        }
+
+        return false;
       }
-      return i.product.uid === item.uid;
+
+      return cartProd.uid === item.uid || cartProd.id === item.id;
     });
 
     setExistingCartItems(variantsInCart);
