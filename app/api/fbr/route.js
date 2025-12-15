@@ -1,4 +1,4 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 export async function POST(req) {
   try {
@@ -8,29 +8,28 @@ export async function POST(req) {
       "Content-Type": "application/json",
     };
 
-    // Extract token and mode correctly
     const { token: frontendToken, mode, ...payload } = body;
 
-    // Select token based on mode
     const token =
       mode === "development"
-        ? "1298b5eb-b252-3d97-8622-a4a69d5bf818" // dev token
-        : frontendToken || ""; // production/frontend token
+        ? "1298b5eb-b252-3d97-8622-a4a69d5bf818" 
+        : frontendToken || ""; 
 
-    // Add Authorization header if token exists
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // Send data to FBR
-    const res = await fetch(
-      "https://esp.fbr.gov.pk:8244/FBR/v1/api/Live/PostData",
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      }
-    );
+    // Select URL based on mode
+    const url =
+      mode === "development"
+        ? "https://esp.fbr.gov.pk:8244/FBR/v1/api/Live/PostData" // sandbox
+        : "https://gw.fbr.gov.pk/imsp/v1/api/Live/PostData"; // production
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
 
     const data = await res.json();
 

@@ -55,26 +55,26 @@ export default async function RootLayout({ children }) {
             <p>
               {serverLanguage?.copyright ?? "© 2025"}
               {/* <span> {serverLanguage?.company_name ?? 'Baseer'}</span>.  */}
-              <span> {serverLanguage?.zaafoo1 ?? "Baseer"}</span>.
+              <Link href={'https://juicestation.com.pk/'}> {serverLanguage?.juicestation ?? "JuiceStation"}</Link>.
               {serverLanguage?.all_rights_reserved ?? "All rights reserved"}
             </p>
             <ul>
               <li>
                 <Link
-                  href={"https://www.zaafoo.com/terms-and-condition"}
+                  href={"https://juicestation.com.pk/termscondition"}
                   target="_blank"
                 >
                   {serverLanguage?.terms ?? "Terms"}
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href={"https://www.zaafoo.com/privacy-policy"}
                   target="_blank"
                 >
                   {serverLanguage?.privacy ?? "Privacy"}
                 </Link>
-              </li>
+              </li> */}
             </ul>
           </div>
           <div className={style.get_help}>
@@ -82,7 +82,7 @@ export default async function RootLayout({ children }) {
               {serverLanguage?.trouble_signing_in ??
                 "Having trouble signing in?"}{" "}
               <Link
-                href={"https://www.zaafoo.com/contactus.html/"}
+                href={"https://juicestation.com.pk/contactus"}
                 target="_blank"
               >
                 {serverLanguage?.get_support ?? "Get Support"}

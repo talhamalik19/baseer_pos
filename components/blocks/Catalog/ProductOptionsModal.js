@@ -151,16 +151,20 @@ export default function ProductOptionsModal({
       const updated = { ...prev };
 
       if (type === "checkbox") {
-        updated[optionId] = updated[optionId] || [];
-        const valueIndex = updated[optionId].indexOf(value);
+        const currentArray = updated[optionId] || [];
+        const valueIndex = currentArray.indexOf(value);
 
         if (valueIndex > -1) {
-          updated[optionId].splice(valueIndex, 1);
-          if (updated[optionId].length === 0) {
+          // Remove the value by creating a new array
+          const newArray = currentArray.filter(v => v !== value);
+          if (newArray.length === 0) {
             delete updated[optionId];
+          } else {
+            updated[optionId] = newArray;
           }
         } else {
-          updated[optionId].push(value);
+          // Add the value by creating a new array
+          updated[optionId] = [...currentArray, value];
         }
       } else if (type === "radio") {
         if (updated[optionId] === value) {

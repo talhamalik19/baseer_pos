@@ -21,7 +21,7 @@ export default async function Dashboard({jwt, serverLanguage}) {
     <div className='page_detail'>
      <div className='top_row section_padding'>
       <div>
-      <h1 className="pos_title">{serverLanguage?.baseer_point_of_sale ?? 'Baseer Point of Sale'}</h1>
+      <h1 className="pos_title">{serverLanguage?.point_of_sale ?? 'Juice Station Point of Sale'}</h1>
       <p className='pos_description'>{`Welcome back! Here's what's happening with your store today.`}</p>
       </div>
       <div className='page_detail_stats'>

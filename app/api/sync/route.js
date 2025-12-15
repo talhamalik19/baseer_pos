@@ -33,18 +33,18 @@ export async function POST(req) {
       dateTo: now.toISOString(),
     });
 
-    if (latestOrders?.data) {
+    // if (latestOrders?.data) {
       return NextResponse.json({
         message: "Sync completed",
-        order: latestOrders.data,
+        order: latestOrders?.data,
         res: res,
       });
-    }
+    // }
 
-    return NextResponse.json({
-      message: "Sync completed, but failed to fetch latest orders",
-      error: latestOrders?.errors || "Unknown error",
-    }, { status: 500 });
+    // return NextResponse.json({
+    //   message: "Sync completed, but failed to fetch latest orders",
+    //   error: latestOrders?.errors || "Unknown error",
+    // }, { status: 500 });
 
   } catch (error) {
     console.error("Sync error:", error);

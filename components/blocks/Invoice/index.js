@@ -962,12 +962,12 @@ const handleDownload = async () => {
           </div>
           <div className={style.footer}>
   <p>
-    Powered by <Link className={style.baseer} href={'https://baseer.ca/'} target="_blank">{copyrightLines?.[1] || "Baseer"}</Link>
+    Powered by <Link className={style.baseer} href={'https://juicestation.com.pk/'} target="_blank">{copyrightLines?.[1] || "Juice Sttaion"}</Link>
   </p>
   <p>{copyrightLines?.[2]}</p>
   <p>
-    <Link target="_blank" href="https://baseer.ca/privacy-policy" className={style.privacyLink}>
-      {copyrightLines?.[3] || "Privacy Policy"}
+    <Link target="_blank" href="https://juicestation.com.pk/termscondition" className={style.privacyLink}>
+      {copyrightLines?.[3] || "Terms"}
     </Link>
   </p>
   <p>{copyrightLines?.[4]}</p>

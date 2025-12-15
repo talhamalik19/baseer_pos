@@ -13,8 +13,8 @@ export default function Logo({ lightSrc, darkSrc }) {
     <Image
       src={theme == "light" ? lightSrc : darkSrc}
       alt={"Baseer logo"}
-      width={200}
-      height={54}
+      width={220}
+      height={45}
       style={{ maxWidth: "auto", maxHeight: "auto" }}
     />
   );

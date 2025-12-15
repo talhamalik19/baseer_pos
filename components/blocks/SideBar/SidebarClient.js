@@ -148,7 +148,7 @@ export default function SideBarClient({ nav, language, currency}) {
         <div className={styles.logo}>
           {isOpen || isNavHovered ? (
             <Link href="/dashboard">
-              <Image src={theme == "light" ? `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png` : `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/baseer_logo_dark.png`} alt="Logo" width={148} height={40} />
+              <Image src={theme == "light" ? `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png` : `${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/baseer_logo_dark.png`} alt="Logo" width={150} height={50} />
             </Link>
           ) : (
             <Link href="/dashboard">
