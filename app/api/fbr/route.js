@@ -1,13 +1,12 @@
 export async function POST(req) {
   try {
     const body = await req.json();
-
+    console.log(body)
     const headers = {
       "Content-Type": "application/json",
     };
 
     const { token: frontendToken, mode, ...payload } = body;
-
     const token =
       mode === "development"
         ? "1298b5eb-b252-3d97-8622-a4a69d5bf818"
@@ -34,7 +33,7 @@ export async function POST(req) {
     });
 
     const data = await res.json();
-
+    console.log("data", data)
     return Response.json(data, { status: res.status });
   } catch (err) {
     console.error("FBR Proxy Error:", err);

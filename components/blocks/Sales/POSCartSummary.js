@@ -436,9 +436,9 @@ export default function POSCartSummary({
             Quantity: item.quantity,
             PCTCode: companyDetail?.fbr_access_code ?? "CA52C6FC",
             TaxRate: itemWithTax.taxRate,
-            SaleValue: actualPrice.toFixed(2),
-            TotalAmount: priceInclTax.toFixed(2),
-            TaxCharged: (itemWithTax.taxAmount / quantity).toFixed(2),
+            SaleValue: parseFloat(actualPrice).toFixed(2),
+            TotalAmount: parseFloat(priceInclTax).toFixed(2),
+            TaxCharged: parseFloat(itemWithTax.taxAmount / quantity).toFixed(2),
             Discount: actualPrice - product?.discounted_price || 0.0,
             FurtherTax: 0.0,
             InvoiceType: 1,
@@ -446,6 +446,7 @@ export default function POSCartSummary({
         }),
       };
       try {
+        console.log("============")
         const res = await fetch("/api/fbr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
