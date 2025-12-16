@@ -331,7 +331,7 @@ $media-query-mediumDesktop:"only screen and (min-width:#{$breakpoints-base}) and
 		background: #1D293D;
 	}
 	.add_employee_btn{
-		 background-color: $PrimaryColor; font-size: 15px; height: 44px; width: fit-content; border: unset; border-radius: 8px; color: $whiteColor; font-size: 14px; font-weight: 500; padding: 15px;
+		 background-color: $PrimaryColor; font-size: 15px; height: 55px; width: fit-content; border: unset; border-radius: 8px; color: $whiteColor; font-size: 14px; font-weight: 500; padding: 15px;
 		 [data-theme="dark"] & {
 				color: #fff;
 			} 

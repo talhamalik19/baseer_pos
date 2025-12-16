@@ -32,24 +32,19 @@ const nextConfig = {
         hostname: 'jazzweb.baseer.ca',
         pathname: '/**',
       },
-      {
+        {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
-      {
+         {
         protocol: 'https',
         hostname: 'admin.juicestation.com.pk',
         pathname: '/**',
       },
-      {
-        protocol: 'http',
-        hostname: 'coffee.local',
-        pathname: '/**',
-      },
     ],
   },
-  experimental: {
+    experimental: {
     serverActions: true,
   },
   outputFileTracing: true,

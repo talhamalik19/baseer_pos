@@ -49,7 +49,8 @@ export default function Search({
   setPage,
   setPageSize,
   isSearching = false,
-  handleViewChange
+  handleViewChange,
+  setCartItems
 }) {
   const code = posDetail;
   const router = useRouter();
@@ -467,6 +468,33 @@ export default function Search({
     }
   };
 
+  const handleUpdateCartItem = async () => {
+    const updatedCart = await getCartItems();
+    if (setCartItems) {
+      setCartItems(updatedCart);
+    }
+
+    // Also update existingCartItems for the modal
+    if (selectedProduct) {
+      const variantsInCart = updatedCart.filter(cartItem => {
+        const cartProd = cartItem.product;
+        if (selectedProduct.__typename === "ConfigurableProduct") {
+          const isVariant = selectedProduct.variants?.some(variant =>
+            variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+          );
+          if (!isVariant) return false;
+          if (cartProd.product_id && selectedProduct.id && cartProd.product_id === selectedProduct.id) {
+            return true;
+          }
+          if (!cartProd.product_id) return true;
+          return false;
+        }
+        return cartProd.uid === selectedProduct.uid || cartProd.id === selectedProduct.id;
+      });
+      setExistingCartItems(variantsInCart);
+    }
+  };
+
   return (
     <div
       className={`search_field section_padding ${styleSearch ? "sales_order" : ""
@@ -718,6 +746,7 @@ export default function Search({
           existingCartItem={existingCartItem}
           existingCartItems={existingCartItems}
           onDeleteCartItem={handleDeleteCartItem}
+          onUpdateCartItem={handleUpdateCartItem}
         />
       )}
     </div>

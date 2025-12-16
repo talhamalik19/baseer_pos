@@ -53,10 +53,11 @@ async function fetchCSVTranslations(storeId, jwtToken) {
 }
 
 // Main LanguageProvider function
-export default async function LanguageProvider() {
+export default async function LanguageProvider(adminStores = null) {
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get('jwt')?.value;
 
+  // ✅ Get store info from cookies (already set by page.js)
   const storeIdFromCookie = cookieStore.get('store_id')?.value;
   const storeCodeFromCookie = cookieStore.get('store_code')?.value;
   const storeNameFromCookie = cookieStore.get('store')?.value;
@@ -64,25 +65,53 @@ export default async function LanguageProvider() {
   const translationsDir = path.join(process.cwd(), 'translations');
   await fs.mkdir(translationsDir, { recursive: true });
 
-  // ✅ Always fetch fresh store list
+  // ✅ Fetch fresh store list
   let languageData = await fetchLanguageData();
   if (!Array.isArray(languageData)) {
     languageData = [];
   }
 
-  // ✅ Step 2: Resolve selected store
+  // ✅ Filter stores based on admin details
+  let allowedStores = languageData;
+
+  // If adminStores is passed explicitly, use it
+  let userStores = adminStores;
+
+  // If not passed and we have a token, fetch it
+  if (!userStores && jwtToken) {
+    try {
+      const { getAdminDetail } = await import('@/lib/Magento');
+      const adminDetail = await getAdminDetail();
+      if (adminDetail?.data?.data?.stores) {
+        userStores = adminDetail.data.data.stores;
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin details in LanguageProvider:", error);
+    }
+  }
+
+  // Filter if we have a list of allowed stores
+  if (userStores && Array.isArray(userStores) && userStores.length > 0) {
+    const allowedStoreIds = new Set(userStores.map(s => s.store_id?.toString()));
+    allowedStores = languageData.filter(store => allowedStoreIds.has(store.id?.toString()));
+  }
+
+  // ✅ Find the store that matches our cookies
   let selectedStore = null;
+
   if (storeIdFromCookie) {
-    selectedStore = languageData.find(store => store.id?.toString() === storeIdFromCookie);
+    selectedStore = allowedStores.find(store => store.id?.toString() === storeIdFromCookie);
   }
   if (!selectedStore && storeCodeFromCookie) {
-    selectedStore = languageData.find(store => store.store_code === storeCodeFromCookie);
+    selectedStore = allowedStores.find(store => store.store_code === storeCodeFromCookie);
   }
   if (!selectedStore && storeNameFromCookie) {
-    selectedStore = languageData.find(store => store.store_name === storeNameFromCookie);
+    selectedStore = allowedStores.find(store => store.store_name === storeNameFromCookie);
   }
+
+  // If still no store found, use first allowed store
   if (!selectedStore) {
-    selectedStore = languageData.find(store => store.is_default_store) || languageData[0];
+    selectedStore = allowedStores.find(store => store.is_default_store) || allowedStores[0];
   }
 
   const storeId = selectedStore?.id || null;
@@ -90,7 +119,7 @@ export default async function LanguageProvider() {
   const storeName = selectedStore?.store_name || 'English US';
   const storeLocale = selectedStore?.locale || 'en_US';
 
-  // ✅ Step 3: Load or fetch CSV translations
+  // ✅ Load or fetch CSV translations
   let csvTranslations = {};
   if (storeId && jwtToken) {
     const csvFilePath = path.join(translationsDir, `store_${storeId}_translations.json`);
@@ -123,7 +152,7 @@ export default async function LanguageProvider() {
     storeName,
     storeLocale,
     selectedStore,
-    allStores: languageData,
+    allStores: allowedStores,
     csvTranslations,
   };
 }

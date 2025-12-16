@@ -36,7 +36,6 @@ export default function SyncHandler() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log("⏳ Running background sync...");
       syncData();
     }, 60 * 1000);
 
@@ -49,13 +48,11 @@ export default function SyncHandler() {
     }
 
     function handleOnline() {
-      console.log("🌍 Online! Syncing data...");
       setIsOnline(true);
       syncData();
     }
 
     function handleOffline() {
-      console.log("⚠️ Offline mode activated");
       setIsOnline(false);
     }
 

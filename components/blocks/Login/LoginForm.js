@@ -59,11 +59,11 @@ export default function LoginForm({ handleSubmit, serverLanguage }) {
     }
   };
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.documentElement.setAttribute("data-theme", savedTheme);
-  }, []);
+    useEffect(() => {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    }, []);
 
   return (
     <>
@@ -157,11 +157,11 @@ export default function LoginForm({ handleSubmit, serverLanguage }) {
               </svg>
             </div>
             {message && <p className="error_message">{message}</p>}
-            <div className={style.forgotPassword}>
-              <Link href={"/forgetpassword"}>
-                {serverLanguage?.forget_password ?? "Forgot Password?"}
-              </Link>
-            </div>
+              <div className={style.forgotPassword}>
+            <Link href={"/forgetpassword"}>
+              {serverLanguage?.forget_password ?? "Forgot Password?"}
+            </Link>
+          </div>
             <div className={style.submit_btn}>
               <button
                 type="submit"

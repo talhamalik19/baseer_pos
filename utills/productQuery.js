@@ -19,6 +19,9 @@ const productQuery = (id, sort) => `
       apply_discount_on
       custom_price
       pos_stock
+        large_cup_additional_price
+        medium_cup_additional_price
+        small_cup_additional_price
             custom_attributes {
             attribute_code
             attribute_label
@@ -70,6 +73,7 @@ const productQuery = (id, sort) => `
   }
   variants {
     product {
+    uid
       sku
     }
     attributes {

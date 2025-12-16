@@ -4,7 +4,7 @@ import { saveViewMode, getViewMode } from "@/lib/indexedDB";
 import styles from "./ViewSelector.module.scss";
 
 const ViewSelector = () => {
-  const [viewMode, setViewMode] = useState("category");
+  const [viewMode, setViewMode] = useState("cards");
 
   useEffect(() => {
     const fetchViewMode = async () => {
@@ -22,7 +22,7 @@ const ViewSelector = () => {
 
   return (
     <div className={`${styles.viewSelector} page_detail section_padding`}>
-      <h3>Select View for Products</h3>
+        <h3>Select View for Products</h3>
       <label className={styles.radioLabel}>
         <input
           type="radio"

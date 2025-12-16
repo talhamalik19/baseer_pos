@@ -274,17 +274,28 @@ export default function SalesCategoryView({
     };
 
     const handleDeleteCartItem = async (cartItem) => {
-        await deleteFromCart(cartItem.product.uid);
+        await deleteFromCart(cartItem.uid);
         const updatedCart = await getCartItems();
 
         // Update the existing cart items list in modal
-        const variantsInCart = updatedCart.filter(item => {
+        // Update the existing cart items list in modal
+        const variantsInCart = updatedCart.filter(cartItem => {
+            const cartProd = cartItem.product;
             if (selectedProduct.__typename === "ConfigurableProduct") {
-                return selectedProduct.variants?.some(variant =>
-                    variant.product.sku === item.product.sku
-                ) || item.product.uid === selectedProduct.uid;
+                const isVariant = selectedProduct.variants?.some(variant =>
+                    variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+                );
+                if (!isVariant) return false;
+                if (cartProd.product_id && selectedProduct.id && cartProd.product_id === selectedProduct.id) {
+                    return true;
+                }
+                // Fallback for older items without product_id: check if options match
+                if (!cartProd.product_id && cartItem.selected_options && selectedProduct.configurable_options) {
+                    return true;
+                }
+                return false;
             }
-            return item.product.uid === selectedProduct.uid;
+            return cartProd.uid === selectedProduct.uid || cartProd.id === selectedProduct.id;
         });
 
         setExistingCartItems(variantsInCart);
@@ -292,6 +303,39 @@ export default function SalesCategoryView({
         // Update parent cart state
         if (setCartItems) {
             setCartItems(updatedCart);
+        }
+    };
+
+    const handleUpdateCartItem = async () => {
+        const updatedCart = await getCartItems();
+        if (setCartItems) {
+            setCartItems(updatedCart);
+        }
+
+        // Also update existingCartItems for the modal
+        if (selectedProduct) {
+            // Also update existingCartItems for the modal
+            if (selectedProduct) {
+                const variantsInCart = updatedCart.filter(cartItem => {
+                    const cartProd = cartItem.product;
+                    if (selectedProduct.__typename === "ConfigurableProduct") {
+                        const isVariant = selectedProduct.variants?.some(variant =>
+                            variant.product.sku === cartProd.sku || variant.product.uid === cartProd.uid
+                        );
+                        if (!isVariant) return false;
+                        if (cartProd.product_id && selectedProduct.id && cartProd.product_id === selectedProduct.id) {
+                            return true;
+                        }
+                        // Fallback for older items without product_id
+                        if (!cartProd.product_id && cartItem.selected_options && selectedProduct.configurable_options) {
+                            return true;
+                        }
+                        return false;
+                    }
+                    return cartProd.uid === selectedProduct.uid || cartProd.id === selectedProduct.id;
+                });
+                setExistingCartItems(variantsInCart);
+            }
         }
     };
 
@@ -348,7 +392,7 @@ export default function SalesCategoryView({
                     <div className="grid_4">
                         {products?.length > 0 ? (
                             products.map((item, index) => {
-                                const isInCart = cartItems.some(cartItem => {
+                                const cartItem = cartItems.find(cartItem => {
                                     const cartProd = cartItem?.product;
                                     if (!cartProd) return false;
 
@@ -397,9 +441,18 @@ export default function SalesCategoryView({
 
                                     return false;
                                 });
+
+                                const isInCart = !!cartItem;
+
                                 return (
                                     <div key={index} onClick={() => handleProductClick(item)} style={{ cursor: 'pointer', border: isInCart ? '2px solid #28a745' : 'none', borderRadius: '8px' }}>
-                                        <Cards item={item} cards={false} currencySymbol={currencySymbol} />
+                                        <Cards
+                                            item={item}
+                                            cards={isInCart}
+                                            record={cartItem}
+                                            setCartItems={setCartItems}
+                                            currencySymbol={currencySymbol}
+                                        />
                                     </div>
                                 )
                             })
@@ -424,6 +477,8 @@ export default function SalesCategoryView({
                     existingCartItem={existingCartItem}
                     existingCartItems={existingCartItems}
                     onDeleteCartItem={handleDeleteCartItem}
+                    onUpdateCartItem={handleUpdateCartItem}
+                    currencySymbol={currencySymbol}
                 />
             )}
         </div>

@@ -1,5 +1,3 @@
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -12,14 +10,18 @@ export async function POST(req) {
 
     const token =
       mode === "development"
-        ? "1298b5eb-b252-3d97-8622-a4a69d5bf818" 
-        : frontendToken || ""; 
+        ? "1298b5eb-b252-3d97-8622-a4a69d5bf818"
+        : frontendToken || "";
 
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // Select URL based on mode
+    // Conditionally disable TLS check only for development/sandbox
+    if (mode === "development") {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    }
+
     const url =
       mode === "development"
         ? "https://esp.fbr.gov.pk:8244/FBR/v1/api/Live/PostData" // sandbox

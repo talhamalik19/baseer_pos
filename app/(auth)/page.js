@@ -37,38 +37,37 @@ export default async function Login() {
         }
 
         // Currency setup using CurrencyProvider
-        if (!cookieStore.get("currency_code")?.value) {
-          const currencyData = await CurrencyProvider();
-          
-          cookieStore.set("currency_code", currencyData.code, {
-            path: "/",
-            maxAge: 60 * 60 * 24 * 30,
-          });
-          cookieStore.set("currency_symbol", currencyData.symbol, {
-            path: "/",
-            maxAge: 60 * 60 * 24 * 30,
-          });
-        }
+        // if (!cookieStore.get("currency_code")?.value) {
+        const currencyData = await CurrencyProvider();
+
+        cookieStore.set("currency_code", currencyData.code, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+        });
+        cookieStore.set("currency_symbol", currencyData.symbol, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+        });
+        // }
 
         // Store / Language setup using LanguageProvider
-        if (!cookieStore.get("store")?.value || !cookieStore.get("store_code")?.value) {
-          const languageData = await LanguageProvider();
-          
-          if (languageData.selectedStore) {
-            cookieStore.set("store", languageData.storeName, {
-              path: "/",
-              maxAge: 60 * 60 * 24 * 30,
-            });
-            cookieStore.set("store_code", languageData.storeCode, {
-              path: "/",
-              maxAge: 60 * 60 * 24 * 30,
-            });
-            cookieStore.set("store_id", languageData.storeId.toString(), {
-              path: "/",
-              maxAge: 60 * 60 * 24 * 30,
-            });
-          }
+        // if (!cookieStore.get("store")?.value || !cookieStore.get("store_code")?.value) {
+        const languageData = await LanguageProvider();
+        if (languageData.selectedStore) {
+          cookieStore.set("store", languageData.storeName, {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+          });
+          cookieStore.set("store_code", languageData.storeCode, {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+          });
+          cookieStore.set("store_id", languageData.storeId.toString(), {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+          });
         }
+        // }
 
         // Role
         try {

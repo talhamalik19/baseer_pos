@@ -73,7 +73,6 @@ export default function POSCartSummary({
   const [consentChangeModal, setConsentChangeModal] = useState(false);
   const [consentTrue, setConsentTrue] = useState(false);
   const [customerDropdown, setCustomerDropdown] = useState(false);
-
   useEffect(() => {
     setConsentStatus(null);
     setConsentChecked(false);
@@ -399,10 +398,13 @@ export default function POSCartSummary({
     };
 
     try {
+    const posId = companyDetail?.fbr_pos_id ?? 817377;
+    const invoiceNumber = orderId;
+    const usin = `POS_${posId}_${invoiceNumber}`;
       const fbrPayload = {
         InvoiceNumber: orderId,
         POSID: companyDetail?.fbr_pos_id ?? 817377,
-        USIN: companyDetail?.usin ?? "USIN0",
+  USIN: usin,
         DateTime: new Date().toISOString().replace("T", " ").slice(0, 19),
         TotalBillAmount: parseFloat(orderData.order_grandtotal),
         TotalQuantity: cartItemsWithTax.reduce(
