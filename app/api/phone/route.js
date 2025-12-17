@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-import twilio from "twilio";
+const twilio = require("twilio");
 import { writeToLogFile } from "../schedule-email/route";
 
 export async function POST(req) {

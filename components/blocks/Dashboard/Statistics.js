@@ -121,7 +121,7 @@ export default async function Statistics({ serverLanguage }) {
             <div className={style.stat_card_text}>
               <div>
                 <p className={style.text}>{item?.text}</p>
-                <p className={style.amount}>{item?.price}</p>
+                <p className={style.amount}>{item?.price ? item?.price : 0.00}</p>
               </div>
               <span>{item?.svg}</span>
             </div>

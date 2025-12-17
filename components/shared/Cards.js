@@ -177,13 +177,13 @@ export default function Cards({
     const steps = Math.round(newQty / step);
     const rounded = steps * step;
     const finalQuantity = Number(rounded.toFixed(2));
-
+    console.log(finalQuantity)
     setQuantityInput(String(finalQuantity));
 
     if (finalQuantity < step) {
       await removeFromCart(item?.uid);
     } else {
-      await updateCartItemQuantity(item?.uid, record?.addedAt, finalQuantity);
+      await updateCartItemQuantity(item?.uid, finalQuantity);
     }
 
     const updatedCart = await getCartItems();

@@ -1,26 +1,3 @@
-// /** @type {import('next').NextConfig} */
-
-// const nextConfig = {
-//   images: {
-//     formats: ['image/avif', 'image/webp'],
-//     remotePatterns: [
-//       {
-//         protocol: 'https',
-//         hostname: 'web.baseer.ca',
-//         pathname: '/media/**',
-//       },
-//       {
-//         protocol: 'https',
-//         hostname: 'web.baseer.ca',
-//         pathname: '/static/**',
-//       },
-//     ],
-//   },
-// };
-
-// module.exports = nextConfig;
-
-
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
@@ -32,22 +9,29 @@ const nextConfig = {
         hostname: 'jazzweb.baseer.ca',
         pathname: '/**',
       },
-        {
+      {
         protocol: 'https',
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
-         {
+      {
         protocol: 'https',
         hostname: 'admin.juicestation.com.pk',
         pathname: '/**',
       },
     ],
   },
-    experimental: {
+  experimental: {
     serverActions: true,
+    serverComponentsExternalPackages: ['twilio'],
   },
   outputFileTracing: true,
+  
+  // Add Twilio to external packages for Turbopack
+  serverExternalPackages: ['twilio'],
+  
+  // Add empty turbopack config to silence the warning
+  turbopack: {},
 };
 
 module.exports = nextConfig;

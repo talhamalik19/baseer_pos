@@ -446,7 +446,6 @@ export default function POSCartSummary({
         }),
       };
       try {
-        console.log("============")
         const res = await fetch("/api/fbr", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -31,7 +31,42 @@ export default function ProductOptionsModal({
 
   const loginDetail = JSON.parse(localStorage.getItem("loginDetail"));
   const adminAcl = loginDetail?.admin_acl;
-
+const getCustomOptionLabels = () => {
+  const labels = [];
+  
+  if (item.options && Object.keys(selectedCustomizable).length > 0) {
+    item.options.forEach(option => {
+      const selectedValue = selectedCustomizable[option.option_id];
+      
+      if (selectedValue !== undefined && selectedValue !== null && selectedValue !== "") {
+        if (Array.isArray(selectedValue)) {
+          // For checkbox options
+          selectedValue.forEach(valueId => {
+            const optionValue = option.checkbox_option?.find(
+              opt => opt.option_type_id == valueId
+            );
+            if (optionValue) {
+              labels.push(optionValue.title);
+            }
+          });
+        } else if (option.radio_option) {
+          // For radio options
+          const optionValue = option.radio_option?.find(
+            opt => opt.option_type_id == selectedValue
+          );
+          if (optionValue) {
+            labels.push(optionValue.title);
+          }
+        } else {
+          // For text input options
+          labels.push(`${option.title}: ${selectedValue}`);
+        }
+      }
+    });
+  }
+  
+  return labels;
+};
   // Add this function to handle real-time cart updates
   const updateCartInRealTime = useCallback(async (quantity, price = null) => {
     if (!isCustomizableComplete()) return;
@@ -341,12 +376,25 @@ export default function ProductOptionsModal({
     return parseFloat(priceMap[variantLabel]) || 0;
   };
 
-  const getProductName = () => {
-    if (selectedVariant) {
-      return `${item.name} - ${selectedVariant.name}`;
-    }
-    return item.name;
-  };
+const getProductName = (variant = null) => {
+  let baseName = item.name;
+  
+  // Use passed variant or fall back to selectedVariant state
+  const currentVariant = variant || selectedVariant;
+  
+  // Add variant name if configurable
+  if (currentVariant) {
+    baseName = `${baseName} - ${currentVariant.name}`;
+  }
+  
+  // Add custom option labels
+  const customLabels = getCustomOptionLabels();
+  if (customLabels.length > 0) {
+    baseName = `${baseName} (${customLabels.join(', ')})`;
+  }
+  
+  return baseName;
+};
 
   const getBasePrice = () => {
     let basePrice = 0;
@@ -414,131 +462,156 @@ export default function ProductOptionsModal({
     }
   }, [selectedConfigurable, selectedCustomizable, selectedVariant]);
 
-  const handleOptionChange = async (selectedUid, attributeCode) => {
-    const optionGroup = item.configurable_options.find(
-      (opt) => opt.attribute_code === attributeCode
+const handleOptionChange = async (selectedUid, attributeCode) => {
+  const optionGroup = item.configurable_options.find(
+    (opt) => opt.attribute_code === attributeCode
+  );
+  const selectedValue = optionGroup?.values.find((val) => val.uid === selectedUid);
+
+  if (!selectedValue) return;
+
+  const newSelectedConfigurable = {
+    ...selectedConfigurable,
+    [optionGroup.attribute_id]: selectedValue.value_index
+  };
+
+  setSelectedConfigurable(newSelectedConfigurable);
+
+  const attributeCodeToId = {};
+  item.configurable_options.forEach(opt => {
+    attributeCodeToId[opt.attribute_code] = opt.attribute_id.toString();
+  });
+
+  const matchedVariant = item.variants?.find(variant =>
+    variant.attributes.every(attr => {
+      const attributeId = attributeCodeToId[attr.code];
+      return newSelectedConfigurable[attributeId] === attr.value_index;
+    })
+  );
+
+  if (matchedVariant?.product?.sku && allProducts) {
+    const variantProduct = allProducts.find(
+      product => product.sku === matchedVariant.product.sku
     );
-    const selectedValue = optionGroup?.values.find((val) => val.uid === selectedUid);
 
-    if (!selectedValue) return;
+    if (variantProduct) {
+      setSelectedVariant(variantProduct);
+      setChildSku(matchedVariant.product.sku);
 
-    const newSelectedConfigurable = {
-      ...selectedConfigurable,
-      [optionGroup.attribute_id]: selectedValue.value_index
-    };
+      if (isCustomizableComplete()) {
+        try {
+          const basePrice = variantProduct.special_price ||
+            variantProduct.price?.regularPrice?.amount?.value ||
+            variantProduct.price_range?.minimum_price?.regular_price?.value ||
+            item.special_price ||
+            item.price?.regularPrice?.amount?.value ||
+            item.price_range?.minimum_price?.regular_price?.value || 0;
 
-    setSelectedConfigurable(newSelectedConfigurable);
-
-    const attributeCodeToId = {};
-    item.configurable_options.forEach(opt => {
-      attributeCodeToId[opt.attribute_code] = opt.attribute_id.toString();
-    });
-
-    const matchedVariant = item.variants?.find(variant =>
-      variant.attributes.every(attr => {
-        const attributeId = attributeCodeToId[attr.code];
-        return newSelectedConfigurable[attributeId] === attr.value_index;
-      })
-    );
-
-    if (matchedVariant?.product?.sku && allProducts) {
-      const variantProduct = allProducts.find(
-        product => product.sku === matchedVariant.product.sku
-      );
-
-      if (variantProduct) {
-        setSelectedVariant(variantProduct);
-        setChildSku(matchedVariant.product.sku);
-
-        if (isCustomizableComplete()) {
-          try {
-            const basePrice = variantProduct.special_price ||
-              variantProduct.price?.regularPrice?.amount?.value ||
-              variantProduct.price_range?.minimum_price?.regular_price?.value ||
-              item.special_price ||
-              item.price?.regularPrice?.amount?.value ||
-              item.price_range?.minimum_price?.regular_price?.value || 0;
-
-            const variantName = variantProduct.name?.toLowerCase() || '';
-            let cupAdditionalPrice = 0;
-            if (variantName.includes('small')) {
-              cupAdditionalPrice = parseFloat(item?.small_cup_additional_price || 0);
-            } else if (variantName.includes('medium')) {
-              cupAdditionalPrice = parseFloat(item?.medium_cup_additional_price || 0);
-            } else if (variantName.includes('large')) {
-              cupAdditionalPrice = parseFloat(item?.large_cup_additional_price || 0);
-            }
-
-            const optionsPrice = getOptionsPrice();
-            const finalPrice = basePrice + cupAdditionalPrice + optionsPrice;
-
-            let currentQuantity = 1;
-            if (existingCartItem) {
-              currentQuantity = parseFloat(quantityInput) || 1;
-            } else {
-              const existingMatch = existingCartItems.find(cartItem =>
-                cartItem.product.sku === variantProduct.sku ||
-                cartItem.product.uid === variantProduct.uid
-              );
-              currentQuantity = existingMatch ? existingMatch.quantity : 1;
-            }
-
-            setQuantityInput(String(currentQuantity));
-
-            const productToAdd = {
-              ...variantProduct,
-              id: item.id,
-              product_id: item.id,
-              sku: variantProduct.sku,
-              product_type: "configurable",
-              price: finalPrice,
-              discounted_price: finalPrice,
-              qty: currentQuantity,
-              name: `${item.name} - ${variantProduct.name}`,
-              image: item.image,
-              small_image: item.small_image,
-              thumbnail: item.thumbnail,
-            };
-
-            const options = {
-              super_attributes: { ...newSelectedConfigurable },
-              custom_attributes: Object.entries(selectedCustomizable).reduce((acc, [key, value]) => {
-                acc[key] = Array.isArray(value) ? value.join(',') : value;
-                return acc;
-              }, {})
-            };
-
-            // If we have a current cart item AND we are in Edit Mode (existingCartItem passed), update it.
-            // If we are in Add Mode (no existingCartItem), we always add a new item when switching variants,
-            // to allow adding multiple different variants (e.g. Small then Medium) quickly.
-            if (existingCartItem && currentCartItemUid) {
-              const { updateWholeProduct } = await import("@/lib/indexedDB");
-              await updateWholeProduct(currentCartItemUid, {
-                product: productToAdd,
-                selected_options: options,
-                quantity: currentQuantity,
-                uid: currentCartItemUid,
-                addedAt: Date.now()
-              });
-            } else {
-              const { addToCart } = await import("@/lib/indexedDB");
-              const newUid = await addToCart(productToAdd, options, currentQuantity, 0);
-              if (newUid) {
-                setCurrentCartItemUid(newUid);
-              }
-            }
-
-            // Trigger parent update
-            if (onUpdateCartItem) {
-              onUpdateCartItem();
-            }
-          } catch (error) {
-            console.error("Error adding variant to cart:", error);
+          const variantName = variantProduct.name?.toLowerCase() || '';
+          let cupAdditionalPrice = 0;
+          if (variantName.includes('small')) {
+            cupAdditionalPrice = parseFloat(item?.small_cup_additional_price || 0);
+          } else if (variantName.includes('medium')) {
+            cupAdditionalPrice = parseFloat(item?.medium_cup_additional_price || 0);
+          } else if (variantName.includes('large')) {
+            cupAdditionalPrice = parseFloat(item?.large_cup_additional_price || 0);
           }
+
+          const optionsPrice = getOptionsPrice();
+          const finalPrice = basePrice + cupAdditionalPrice + optionsPrice;
+
+          // FIRST: Check if this variant already exists in the cart
+          const existingMatch = existingCartItems.find(cartItem =>
+            cartItem.product.sku === variantProduct.sku ||
+            cartItem.product.uid === variantProduct.uid
+          );
+
+          let currentQuantity = 1;
+          
+          if (existingMatch) {
+            // If it exists, increment the existing quantity by 1
+            currentQuantity = existingMatch.quantity + 1;
+          } else if (existingCartItem) {
+            // If we're in edit mode with an existing cart item
+            currentQuantity = parseFloat(quantityInput) || 1;
+          } else {
+            // Otherwise start with 1
+            currentQuantity = 1;
+          }
+
+          setQuantityInput(String(currentQuantity));
+
+          const productToAdd = {
+            ...variantProduct,
+            id: item.id,
+            product_id: item.id,
+            sku: variantProduct.sku,
+            product_type: "configurable",
+            price: finalPrice,
+            discounted_price: finalPrice,
+            qty: currentQuantity,
+           name: getProductName(variantProduct), 
+            image: item.image,
+            small_image: item.small_image,
+            thumbnail: item.thumbnail,
+          };
+
+          const options = {
+            super_attributes: { ...newSelectedConfigurable },
+            custom_attributes: Object.entries(selectedCustomizable).reduce((acc, [key, value]) => {
+              acc[key] = Array.isArray(value) ? value.join(',') : value;
+              return acc;
+            }, {})
+          };
+
+          if (existingMatch && existingCartItem && currentCartItemUid) {
+            // If we have an existing match AND we're in edit mode, update the current item
+            const { updateWholeProduct } = await import("@/lib/indexedDB");
+            await updateWholeProduct(currentCartItemUid, {
+              product: productToAdd,
+              selected_options: options,
+              quantity: currentQuantity,
+              uid: currentCartItemUid,
+              addedAt: Date.now()
+            });
+          } else if (existingMatch) {
+            // If variant already exists in cart (but we're not in edit mode for that specific item)
+            const { updateCartItemQuantity } = await import("@/lib/indexedDB");
+            await updateCartItemQuantity(
+              existingMatch.uid,
+              currentQuantity
+            );
+            setCurrentCartItemUid(existingMatch.uid);
+          } else if (existingCartItem && currentCartItemUid) {
+            // If we're in edit mode but this is a different variant
+            const { updateWholeProduct } = await import("@/lib/indexedDB");
+            await updateWholeProduct(currentCartItemUid, {
+              product: productToAdd,
+              selected_options: options,
+              quantity: currentQuantity,
+              uid: currentCartItemUid,
+              addedAt: Date.now()
+            });
+          } else {
+            // Add as new item
+            const { addToCart } = await import("@/lib/indexedDB");
+            const newUid = await addToCart(productToAdd, options, currentQuantity, 0);
+            if (newUid) {
+              setCurrentCartItemUid(newUid);
+            }
+          }
+
+          // Trigger parent update
+          if (onUpdateCartItem) {
+            onUpdateCartItem();
+          }
+        } catch (error) {
+          console.error("Error adding variant to cart:", error);
         }
       }
     }
-  };
+  }
+};
 
   const handleCustomizableChange = (optionId, value, type = "text") => {
     setSelectedCustomizable(prev => {
@@ -834,7 +907,7 @@ export default function ProductOptionsModal({
             <label className={styles.productNameLabel}>{productName}</label>
           </div>
 
-          <div className={styles.formGroup}>
+          {/* <div className={styles.formGroup}>
             <div className={styles.priceBreakdown}>
               <div className={styles.priceRow}>
                 <span>Base Price:</span>
@@ -853,28 +926,13 @@ export default function ProductOptionsModal({
                 </span>
               </div>
             </div>
-          </div>
+          </div> */}
 
 
 
-          {existingCartItems && existingCartItems.length > 0 && (
-            <div className={styles.formGroup}>
-              <label>Already in Cart:</label>
-              <div className={styles.existingVariants}>
-                {existingCartItems.map((cartItem, index) => (
-                  <CartItemRow
-                    key={cartItem.product.uid + index}
-                    cartItem={cartItem}
-                    onDeleteCartItem={onDeleteCartItem}
-                    onUpdateCartItem={onUpdateCartItem}
-                    adminAcl={adminAcl}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+  
 
-          <div className={styles.formGroup}>
+          {/* <div className={styles.formGroup}>
             <label>Quantity</label>
             <div className={styles.quantityControls}>
               <button
@@ -913,35 +971,14 @@ export default function ProductOptionsModal({
                 {errorMessage}
               </div>
             )}
-          </div>
+          </div> */}
 
           {childSku && (
             <div className={styles.formGroup}>
               <label>Selected Variant: {childSku} (Qty: {quantityInput})</label>
             </div>
           )}
-
-          {item?.configurable_options?.map((option) => (
-            <div key={option.attribute_code} className={styles.formGroup}>
-              <label>{option.label}</label>
-              <div className={styles.variantBoxes}>
-                {option.values.map((value) => {
-                  const isSelected = getSelectedOptionUid(option.attribute_id) === value.uid;
-                  return (
-                    <div
-                      key={value.uid}
-                      className={`${styles.variantBox} ${isSelected ? styles.selected : ""}`}
-                      onClick={() => handleOptionChange(value.uid, option.attribute_code)}
-                    >
-                      {value.label}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-
-          {item?.options?.map((opt) => (
+    {item?.options?.map((opt) => (
             <div key={opt.option_id} className={styles.formGroup}>
               <label>
                 {opt.title} {opt.required && "*"}
@@ -1003,7 +1040,104 @@ export default function ProductOptionsModal({
               )}
             </div>
           ))}
+          {item?.configurable_options?.map((option) => (
+            <div key={option.attribute_code} className={styles.formGroup}>
+              <label>{option.label}</label>
+              <div className={styles.variantBoxes}>
+                {option.values.map((value) => {
+                  const isSelected = getSelectedOptionUid(option.attribute_id) === value.uid;
+                  return (
+                    <div
+                      key={value.uid}
+                      className={`${styles.variantBox} ${isSelected ? styles.selected : ""}`}
+                      onClick={() => handleOptionChange(value.uid, option.attribute_code)}
+                    >
+                      {value.label}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
 
+          {/* {item?.options?.map((opt) => (
+            <div key={opt.option_id} className={styles.formGroup}>
+              <label>
+                {opt.title} {opt.required && "*"}
+              </label>
+
+              {opt.radio_option?.map((val) => {
+                const isChecked = selectedCustomizable[opt.option_id] === val.option_type_id;
+                return (
+                  <label key={val.option_type_id} className={styles.checkboxWrapper}>
+                    <input
+                      type="radio"
+                      className={styles.checkbox}
+                      name={`option-${opt.option_id}`}
+                      value={val.option_type_id}
+                      checked={isChecked}
+                      onChange={(e) =>
+                        handleCustomizableChange(opt.option_id, e.target.value, "radio")
+                      }
+                    />
+                    <span className={styles.customCheck} style={{ borderRadius: '50%' }}></span>
+                    {renderOptionLabelWithPrice(val)}
+                  </label>
+                );
+              })}
+              {opt.checkbox_option?.map((val) => {
+                const isChecked = (selectedCustomizable[opt.option_id] || []).includes(val.option_type_id);
+                return (
+                  <label key={val.option_type_id} className={styles.checkboxWrapper}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      value={val.option_type_id}
+                      checked={isChecked}
+                      onChange={(e) =>
+                        handleCustomizableChange(opt.option_id, val.option_type_id, "checkbox")
+                      }
+                    />
+                    <span className={styles.customCheck}></span>
+                    {renderOptionLabelWithPrice(val)}
+                  </label>
+                );
+              })}
+
+              {!opt.radio_option && !opt.checkbox_option && (
+                <input
+                  type="text"
+                  className={styles.formControl}
+                  value={selectedCustomizable[opt.option_id] || ""}
+                  onChange={(e) =>
+                    handleCustomizableChange(opt.option_id, e.target.value, "text")
+                  }
+                  onBlur={() => {
+                    if (isConfigurableComplete() && isCustomizableComplete()) {
+                      updateCartInRealTime(parseFloat(quantityInput));
+                    }
+                  }}
+                  placeholder={`Enter ${opt.title}`}
+                />
+              )}
+            </div>
+          ))} */}
+        {existingCartItems && existingCartItems.length > 0 && (
+            <div className={styles.formGroup}>
+              <label>Already in Cart:</label>
+              <div className={styles.existingVariants}>
+                {existingCartItems.map((cartItem, index) => (
+                  <CartItemRow
+                    key={cartItem.product.uid + index}
+                    cartItem={cartItem}
+                    onDeleteCartItem={onDeleteCartItem}
+                    onUpdateCartItem={onUpdateCartItem}
+                    adminAcl={adminAcl}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           <div className={styles.formFooter}>
             {isUpdateMode && (
               <button
@@ -1019,16 +1153,16 @@ export default function ProductOptionsModal({
                 Delete
               </button>
             )}
-            <button onClick={onClose} className={styles.btnSecondary}>
-              Cancel
+            <button onClick={onClose} className={styles.btnPrimary}>
+              Close
             </button>
-            <button
+            {/* <button
               onClick={handleConfirm}
               className={styles.btnPrimary}
             // disabled={isDisabled}
             >
               {isUpdateMode ? `Update Cart - Rs${parseFloat(priceInput || totalPrice).toFixed(2)}` : `Add to Cart - Rs${parseFloat(priceInput || totalPrice).toFixed(2)}`}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

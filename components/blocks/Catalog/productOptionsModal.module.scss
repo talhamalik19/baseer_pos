@@ -136,7 +136,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-top: 5px;
+        margin-top: 5px; justify-content: center;
 
         .variantBox {
           padding: 10px 15px;
@@ -147,6 +147,11 @@
           font-size: 14px;
           color: #495057;
           transition: all 0.2s ease;
+          width: 50px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
           &:hover {
             border-color: #4FACB8;

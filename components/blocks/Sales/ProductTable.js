@@ -182,8 +182,18 @@ const validateDiscount = (index) => {
 
 
 const triggerUpdate = async (index) => {
-  if (!validateDiscount(index)) {
-    return;
+  // For quantity-only updates, skip discount validation
+  const currentPrice = inputs[index].price;
+  const currentItemPrice = cartItems[index]?.product?.discounted_price || 
+                           cartItems[index]?.product?.price?.regularPrice?.amount?.value ||
+                           cartItems[index]?.product?.price_range?.minimum_price?.regular_price?.value ||
+                           0;
+  
+  // Only validate discount if price has changed
+  if (parseFloat(currentPrice) !== parseFloat(currentItemPrice)) {
+    if (!validateDiscount(index)) {
+      return;
+    }
   }
 
   const qtyStep = inputs[index].qtyIncrementStep || 1;
@@ -198,21 +208,22 @@ const triggerUpdate = async (index) => {
   // 3️⃣ always 2 decimals
   const finalQuantity = Number(rounded.toFixed(2));
 
-  // 4️⃣ also fix price to 2 decimals
-  const fixedPrice = Number(parseFloat(inputs[index].price || 0).toFixed(2));
+  // 4️⃣ Get the current discounted price (don't update it unless it was changed)
+  const currentDiscountedPrice = cartItems[index]?.product?.discounted_price;
+  const fixedPrice = currentDiscountedPrice || 
+                     Number(parseFloat(inputs[index].price || 0).toFixed(2));
 
   const updatedItem = {
     ...cartItems[index],
     quantity: finalQuantity,
     product: {
       ...cartItems[index].product,
-      discounted_price: fixedPrice,
+      discounted_price: fixedPrice, // Keep existing discounted price
     },
   };
 
   await updateWholeProduct(
     updatedItem?.product?.uid,
-    updatedItem?.addedAt,
     updatedItem
   );
 
