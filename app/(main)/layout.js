@@ -2,6 +2,7 @@ import { Inter, Wix_Madefor_Display } from "next/font/google";
 import "@/styles/global.scss";
 import { ContextProvider } from "@/context/SidebarContext";
 import SideBar from "@/components/blocks/SideBar";
+import SyncHandler from "@/components/SyncHandler";
 import "@/styles/theme.scss"
 
 
@@ -33,18 +34,19 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-      <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
+        <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
       </head>
       <body className={`${inter?.className} body`}>
         <ContextProvider>
+          <SyncHandler />
           <div className="main_container">
-          <div className="page_content">
-          <SideBar />
-          <div className="main_section">
-        {children}
-        </div>
-        </div>
-        </div>
+            <div className="page_content">
+              <SideBar />
+              <div className="main_section">
+                {children}
+              </div>
+            </div>
+          </div>
         </ContextProvider>
       </body>
     </html>

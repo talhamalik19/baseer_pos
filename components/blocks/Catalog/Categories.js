@@ -106,7 +106,7 @@ export default function Categories({
     try {
       let productsData = productItems;
       let shouldUpdateIDB = false;
-       await saveProducts(productsData);
+      await saveProducts(productsData);
 
       // If no fresh data or offline, use IndexedDB
       if (productsData.length === 0) {
@@ -117,7 +117,7 @@ export default function Categories({
       // Update state and IndexedDB if needed
       setProducts(productsData);
       setInitialProducts(productsData);
-      
+
     } catch (err) {
       console.error("Error loading products:", err);
     } finally {
@@ -146,18 +146,18 @@ export default function Categories({
         const offlineCategories = await getIDBCategories();
         if (offlineCategories?.length > 0) {
           allCategories = offlineCategories;
-        } 
+        }
       }
 
       // Update state and IndexedDB if needed
       const groupedCategories = groupCategories(allCategories);
       setCategories(groupedCategories);
-      
+
       // Set the first category as selected initially
       if (groupedCategories.length > 0 && !selectedItem) {
         setSelectedItem(groupedCategories[0]);
       }
-      
+
     } catch (err) {
       console.error("Error loading categories:", err);
     }
@@ -166,7 +166,7 @@ export default function Categories({
   useEffect(() => {
     loadProducts();
     loadCategories();
-    
+
   }, []);
 
   const handleCategoryClick = useCallback(async (category) => {
@@ -216,11 +216,56 @@ export default function Categories({
   };
 
   const getProducts = async () => {
-    // Pass the selected category ID instead of empty string
-    const res = await fetchProductsAction(selectedItem?.id || '', sort, currency);
-    const fetchedProducts = res?.items || [];
-    setProducts(fetchedProducts);
-    setDisplayedProducts(fetchedProducts);
+    // Check network status
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        let offlineProducts = await getIDBProducts();
+
+        // Filter by category if selected
+        if (selectedItem?.id) {
+          offlineProducts = offlineProducts.filter(p =>
+            p.categories?.some(c => c.id === selectedItem.id || c.name === selectedItem.name)
+          );
+        }
+
+        // Apply Sorting Locally
+        if (sort) {
+          const [field, direction] = sort.replace("sort: { ", "").replace(" }", "").split(": ");
+          offlineProducts.sort((a, b) => {
+            let valA = a[field];
+            let valB = b[field];
+
+            if (field === 'price') {
+              valA = a.price?.regularPrice?.amount?.value || 0;
+              valB = b.price?.regularPrice?.amount?.value || 0;
+            }
+
+            if (direction === 'ASC') return valA > valB ? 1 : -1;
+            return valA < valB ? 1 : -1;
+          });
+        }
+
+        setProducts(offlineProducts);
+        setDisplayedProducts(offlineProducts);
+        return;
+      } catch (err) {
+        console.error("Error fetching offline products:", err);
+      }
+    }
+
+    // Online: Fetch from API
+    try {
+      const res = await fetchProductsAction(selectedItem?.id || '', sort, currency);
+      const fetchedProducts = res?.items || [];
+      setProducts(fetchedProducts);
+      setDisplayedProducts(fetchedProducts);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      // Fallback to offline if API fails even if navigator says online
+      const offlineProducts = await getIDBProducts();
+      setProducts(offlineProducts);
+      setDisplayedProducts(offlineProducts);
+    }
   };
 
   // Update useEffect to include selectedItem.id as dependency
@@ -249,12 +294,11 @@ export default function Categories({
               return (
                 <div className={style.dropdown_container} key={item.id}>
                   <div
-                    className={`${style.dropdown_button} ${
-                      item.id === selectedItem?.id ||
-                      item.id === selectedParent?.id
+                    className={`${style.dropdown_button} ${item.id === selectedItem?.id ||
+                        item.id === selectedParent?.id
                         ? style.active
                         : ""
-                    }`}
+                      }`}
                     onClick={() => handleCategoryClick(item)}
                   >
                     {item.name}
@@ -287,28 +331,28 @@ export default function Categories({
               );
             })}
           </div>
-           <div className="search_row">
-        <Search
-          isProduct={true}
-          handleAddToCart={handleAddToCart}
-          products={products} 
-          placeholder={language?.search_products ?? "Search Products"}
-          setProducts={handleSearch}
-        />
+          <div className="search_row">
+            <Search
+              isProduct={true}
+              handleAddToCart={handleAddToCart}
+              products={products}
+              placeholder={language?.search_products ?? "Search Products"}
+              setProducts={handleSearch}
+            />
 
-        <div className="sort-button section_padding">
-        <p className="sort">Sort by:</p>
-          <div className="sort-dropdown">
-            <select onChange={handleSelectChange}>
-              <option value="">{language?.default ?? 'Default'}</option>
-              <option value="sort: { name: ASC }">{language?.name_asc ?? 'Name (ASC)'}</option>
-               <option value="sort: { name: DESC }">{language?.name_desc ?? 'Name (DESC)'}</option>
-              <option value="sort: { price: ASC }">{language?.price_asc ?? 'Price (ASC)'}</option>
-              <option value="sort: { price: DESC }">{language?.price_desc ?? 'Price (DESC)'}</option>
-            </select>
+            <div className="sort-button section_padding">
+              <p className="sort">Sort by:</p>
+              <div className="sort-dropdown">
+                <select onChange={handleSelectChange}>
+                  <option value="">{language?.default ?? 'Default'}</option>
+                  <option value="sort: { name: ASC }">{language?.name_asc ?? 'Name (ASC)'}</option>
+                  <option value="sort: { name: DESC }">{language?.name_desc ?? 'Name (DESC)'}</option>
+                  <option value="sort: { price: ASC }">{language?.price_asc ?? 'Price (ASC)'}</option>
+                  <option value="sort: { price: DESC }">{language?.price_desc ?? 'Price (DESC)'}</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
           <Products
             products={products}

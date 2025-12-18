@@ -102,8 +102,8 @@ export default function OrderListing({
       return category === "POS"
         ? isPosOrder
         : category === "Mobile"
-        ? isMobOrder
-        : isWebOrder;
+          ? isMobOrder
+          : isWebOrder;
     });
   };
 
@@ -136,11 +136,11 @@ export default function OrderListing({
       setPagination(undefined);
       setPage(1);
     }
-    
+
     // Apply category filter and pagination
     const categoryFilteredOrders = filterByCategory(combinedOrders, category);
     const paginatedOrders = getPaginatedOrders(categoryFilteredOrders, 1, pageSize);
-    
+
     setSelectedCategory(category);
     setFilteredOrders(paginatedOrders);
     setPagination(categoryFilteredOrders.length);
@@ -171,8 +171,8 @@ export default function OrderListing({
         setCombinedOrders(orders);
         // Apply pagination to initial orders
         const paginatedOrders = getPaginatedOrders(
-          filterByCategory(orders, selectedCategory), 
-          1, 
+          filterByCategory(orders, selectedCategory),
+          1,
           pageSize
         );
         setFilteredOrders(paginatedOrders);
@@ -228,15 +228,15 @@ export default function OrderListing({
   const handleSearchResults = async (searchTerm, currentPage = 1, currentPageSize = 10) => {
     setIsSearching(true);
     setSearchTerm(searchTerm);
-    
+
     if (!searchTerm.trim()) {
       // If search is empty, show initial orders with pagination
       setSelectedCategory("All Orders");
       setFiltersApplied(false);
-      
+
       const allOrders = filterByCategory(combinedOrders, "All Orders");
       const paginatedOrders = getPaginatedOrders(allOrders, currentPage, currentPageSize);
-      
+
       setFilteredOrders(paginatedOrders);
       setPagination(allOrders.length);
       setPage(currentPage);
@@ -261,8 +261,10 @@ export default function OrderListing({
         dateTo: "",
       };
 
-      const response = await getOrderDetailsAction(searchFilters, currentPageSize, currentPage);
-      
+      const response = isOnline
+        ? await getOrderDetailsAction(searchFilters, currentPageSize, currentPage)
+        : { status: 200, data: searchLocalOrders(searchTerm), total_count: searchLocalOrders(searchTerm).length }; // Mock response for offline
+
       if (response?.status === 200) {
         setFilteredOrders(response?.data || []);
         setPagination(response?.total_count || 0);
@@ -283,6 +285,17 @@ export default function OrderListing({
     }
   };
 
+  // Helper for offline search
+  const searchLocalOrders = (term) => {
+    const lowerTerm = term.toLowerCase();
+    return combinedOrders.filter(order =>
+      order.increment_id?.toLowerCase().includes(lowerTerm) ||
+      order.customer_email?.toLowerCase().includes(lowerTerm) ||
+      order.customer_firstname?.toLowerCase().includes(lowerTerm) ||
+      order.customer_lastname?.toLowerCase().includes(lowerTerm)
+    );
+  };
+
   // Apply advanced filters
   const handleApplyFilters = async (appliedFilters) => {
     setSelectedCategory("All Orders");
@@ -290,11 +303,9 @@ export default function OrderListing({
     setFiltersApplied(true);
     setSearchTerm("");
     try {
-      const response = await getOrderDetailsAction(
-        appliedFilters,
-        pageSize,
-        page
-      );
+      const response = isOnline
+        ? await getOrderDetailsAction(appliedFilters, pageSize, page)
+        : { status: 200, data: combinedOrders, total_count: combinedOrders.length }; // Fallback to all orders offline (filtering logic can be added if needed)
       if (response?.status == 200) {
         setFilteredOrders(response?.data);
         setPagination(response?.total_count);
@@ -343,7 +354,7 @@ export default function OrderListing({
           } else {
             response = await getOrderDetailsAction(filters, pageSize, page);
           }
-          
+
           if (response?.status == 200) {
             setFilteredOrders(response?.data);
             setPagination(response?.total_count);
@@ -378,7 +389,7 @@ export default function OrderListing({
     setFilters(clearedFilters);
     setSelectedCategory("All Orders");
     setSearchTerm("");
-    
+
     // Reset to paginated local data
     const allOrders = filterByCategory(combinedOrders, "All Orders");
     const paginatedOrders = getPaginatedOrders(allOrders, 1, pageSize);
@@ -416,16 +427,15 @@ export default function OrderListing({
             loginDetail?.allow_web_orders == 1 && (serverLanguage?.web ?? "WEB"),
             loginDetail?.allow_mob_orders == 1 && (serverLanguage?.mobile ?? "Mobile"),
             (loginDetail?.allow_web_orders == 1 || loginDetail?.allow_mob_orders == 1) &&
-              (serverLanguage?.all_orders ?? "All Orders"),
+            (serverLanguage?.all_orders ?? "All Orders"),
           ]
             // remove false values
             .filter(Boolean)
             .map((category) => (
               <li
                 key={category}
-                className={`${style.orders_tab_item} ${
-                  category === selectedCategory ? style.active : ""
-                }`}
+                className={`${style.orders_tab_item} ${category === selectedCategory ? style.active : ""
+                  }`}
                 onClick={() => handleCategorySelect(category)}
               >
                 {category}

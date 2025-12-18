@@ -1,5 +1,6 @@
 "use client";
 import { getCustomers } from '@/lib/Magento';
+import { getCustomers as getIDBCustomers } from '@/lib/indexedDB';
 import React, { useState, useEffect } from 'react';
 import employeeStyles from '../Employees/employeeDetail.module.scss';
 import dashboardStyles from '../Dashboard/dashboard.module.scss';
@@ -22,7 +23,7 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
   // Fetch customers when page changes
   useEffect(() => {
     if (totalCount <= pageSize) return; // Don't fetch if all data is already loaded
-    
+
     const fetchCustomers = async () => {
       setIsLoading(true);
       try {
@@ -34,6 +35,15 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
         }
       } catch (error) {
         console.error("Failed to fetch customers:", error);
+        // Offline Fallback
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          const offlineCustomers = await getIDBCustomers();
+          if (offlineCustomers.length > 0) {
+            setDisplayedCustomers(offlineCustomers);
+            setOriginalCustomers(offlineCustomers);
+            setTotalCount(offlineCustomers.length);
+          }
+        }
       } finally {
         setIsLoading(false);
       }
@@ -51,86 +61,86 @@ export default function EmployeeDetail({ jwt, customer, total_count, serverLangu
 
   return (
     <>
-    <div className='customer_search'>
-      <Search 
-  placeholder={serverLanguage?.search_customer ?? 'Search Customer'} 
-  isCustomer={true} 
-  customer={originalCustomers} 
-  setCustomer={handleCustomerSearch}
-  setPagination={setTotalCount}
-  originalCustomers={originalCustomers}  // Add this
-  total_count={totalCount}  // Add this
-/>
-</div>
-    <div className="page_detail">
-      <p>{responseMessage}</p>
-      
-      <div className={dashboardStyles.orders}>
-        <div className={dashboardStyles.order_head}>
-          <h2 className={dashboardStyles.title}>
-            {serverLanguage?.customer_details ?? 'Customer Details'}
-          </h2>
-        </div>
-        
-        <div className={dashboardStyles.table_block}>
-          {isLoading ? (
-            <div className={dashboardStyles.loading}>{serverLanguage?.loading_customers ?? 'Loading customers...'}</div>
-          ) : (
-            <>
-              <table className={dashboardStyles.table}>
-                <thead>
-                  <tr>
-                    <th>{serverLanguage?.customer_id ?? 'CustomerID'}</th>
-                    <th>{serverLanguage?.first_name ?? 'First Name'}</th>
-                    <th>{serverLanguage?.last_name ?? 'Last Name'}</th>
-                    <th>{serverLanguage?.email ?? 'Email'}</th>
-                    <th>{serverLanguage?.phone_number ?? 'Phone Number'}</th>
-                    <th>{serverLanguage?.actions ?? 'Actions'}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedCustomers.length > 0 ? (
-                    displayedCustomers.map((cust) => (
-                      <tr key={cust?.customer_id}>
-                        <td>{cust?.customer_id}</td>
-                        <td className={dashboardStyles.name}>{cust?.firstname}</td>
-                        <td>{cust?.lastname}</td>
-                        <td>{cust?.email}</td>
-                        <td>{cust?.orders?.[0]?.billing_address?.telephone || ""}</td>
-                        <CustomerAction
-                          customer={cust}
-                          jwt={jwt}
-                          responseMessage={responseMessage}
-                          styles={dashboardStyles}
-                          serverLanguage={serverLanguage}
-                        />
-                      </tr>
-                    ))
-                  ) : (
+      <div className='customer_search'>
+        <Search
+          placeholder={serverLanguage?.search_customer ?? 'Search Customer'}
+          isCustomer={true}
+          customer={originalCustomers}
+          setCustomer={handleCustomerSearch}
+          setPagination={setTotalCount}
+          originalCustomers={originalCustomers}  // Add this
+          total_count={totalCount}  // Add this
+        />
+      </div>
+      <div className="page_detail">
+        <p>{responseMessage}</p>
+
+        <div className={dashboardStyles.orders}>
+          <div className={dashboardStyles.order_head}>
+            <h2 className={dashboardStyles.title}>
+              {serverLanguage?.customer_details ?? 'Customer Details'}
+            </h2>
+          </div>
+
+          <div className={dashboardStyles.table_block}>
+            {isLoading ? (
+              <div className={dashboardStyles.loading}>{serverLanguage?.loading_customers ?? 'Loading customers...'}</div>
+            ) : (
+              <>
+                <table className={dashboardStyles.table}>
+                  <thead>
                     <tr>
-                      <td className={dashboardStyles.no_results} colSpan="5">
-                        {serverLanguage?.no_customers_found ?? 'No customers found'}
-                      </td>
+                      <th>{serverLanguage?.customer_id ?? 'CustomerID'}</th>
+                      <th>{serverLanguage?.first_name ?? 'First Name'}</th>
+                      <th>{serverLanguage?.last_name ?? 'Last Name'}</th>
+                      <th>{serverLanguage?.email ?? 'Email'}</th>
+                      <th>{serverLanguage?.phone_number ?? 'Phone Number'}</th>
+                      <th>{serverLanguage?.actions ?? 'Actions'}</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-              {
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  serverLanguage={serverLanguage}
-                  pageSize={pageSize}
-                  setPageSize={setPageSize}
-                  totalItems={total_count}
-                />
-              }
-            </>
-          )}
+                  </thead>
+                  <tbody>
+                    {displayedCustomers.length > 0 ? (
+                      displayedCustomers.map((cust) => (
+                        <tr key={cust?.customer_id}>
+                          <td>{cust?.customer_id}</td>
+                          <td className={dashboardStyles.name}>{cust?.firstname}</td>
+                          <td>{cust?.lastname}</td>
+                          <td>{cust?.email}</td>
+                          <td>{cust?.orders?.[0]?.billing_address?.telephone || ""}</td>
+                          <CustomerAction
+                            customer={cust}
+                            jwt={jwt}
+                            responseMessage={responseMessage}
+                            styles={dashboardStyles}
+                            serverLanguage={serverLanguage}
+                          />
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td className={dashboardStyles.no_results} colSpan="5">
+                          {serverLanguage?.no_customers_found ?? 'No customers found'}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                {
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    serverLanguage={serverLanguage}
+                    pageSize={pageSize}
+                    setPageSize={setPageSize}
+                    totalItems={total_count}
+                  />
+                }
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 }

@@ -7,6 +7,7 @@ import {
   saveOrders,
   addItemsToSuspend,
   getCartItems,
+  addToSyncQueue,
 } from "@/lib/indexedDB";
 import { generateOrderId } from "@/lib/generateOrderId";
 import { printReceipt } from "@/lib/printReceipt";
@@ -397,14 +398,57 @@ export default function POSCartSummary({
       order_tax_amount: taxAmount.toFixed(2),
     };
 
+
+
+    // OFFLINE HANDLING
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      try {
+        await saveOrder(orderData);
+        await saveOrders(orderData);
+        await addToSyncQueue("order", orderData);
+
+        if (thermalPrint) {
+          await printReceipt(
+            currencySymbol,
+            cartItemsWithTax,
+            total,
+            amount,
+            balance,
+            customerDetails,
+            pdfResponse,
+            orderId,
+            orderData?.order_key,
+            warehouseId,
+            null, // No FBR invoice ID in offline
+            discountPercent
+          );
+        }
+
+        await clearCart();
+        setCartItems([]);
+        setAmount("");
+        setPhone("");
+        setEmail("");
+        setCustomerDropdown(false);
+        setDiscountPercent('');
+
+        showAlert("Offline Order", "Order saved offline. It will sync when online.");
+        return;
+      } catch (error) {
+        console.error("Error saving offline order:", error);
+        showAlert("Error", "Failed to save offline order.");
+        return;
+      }
+    }
+
     try {
-    const posId = companyDetail?.fbr_pos_id ?? 817377;
-    const invoiceNumber = orderId;
-    const usin = `POS_${posId}_${invoiceNumber}`;
+      const posId = companyDetail?.fbr_pos_id ?? 817377;
+      const invoiceNumber = orderId;
+      const usin = `POS_${posId}_${invoiceNumber}`;
       const fbrPayload = {
         InvoiceNumber: orderId,
         POSID: companyDetail?.fbr_pos_id ?? 817377,
-  USIN: usin,
+        USIN: usin,
         DateTime: new Date().toISOString().replace("T", " ").slice(0, 19),
         TotalBillAmount: parseFloat(orderData.order_grandtotal),
         TotalQuantity: cartItemsWithTax.reduce(

@@ -10,7 +10,7 @@ import {
   submitCancelAction,
   submitRefundAction,
 } from "@/lib/Magento/actions";
-import { getAllOrders } from "@/lib/indexedDB";
+import { getAllOrders, addToSyncQueue } from "@/lib/indexedDB";
 import { printOrderDetail } from "@/lib/printOrderDetail";
 import { printReceipt } from "@/lib/printReceipt";
 
@@ -31,7 +31,7 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
     const detail = JSON.parse(localStorage.getItem("loginDetail")) || {};
     setLoginDetail(detail);
   }, []);
-  
+
   const [email, setEmail] = useState(false)
   const [emailStatus, setEmailStatus] = useState(null) // 'success', 'error', or null
 
@@ -79,12 +79,11 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
-    return `${date.getDate()}/${
-      date.getMonth() + 1
-    }/${date.getFullYear()} ${date.getHours()}:${date
-      .getMinutes()
-      .toString()
-      .padStart(2, "0")}`;
+    return `${date.getDate()}/${date.getMonth() + 1
+      }/${date.getFullYear()} ${date.getHours()}:${date
+        .getMinutes()
+        .toString()
+        .padStart(2, "0")}`;
   };
 
   const openModal = (actionType) => {
@@ -108,6 +107,17 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
   };
 
   const handleActionSubmit = async (actionData, entity_id, pos_code) => {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const queued = await addToSyncQueue("refund", { actionData, entity_id, pos_code });
+      if (queued) {
+        setResponseMessage("Refund queued offline. It will be processed when online.");
+        closeModal();
+      } else {
+        setResponseMessage("Failed to queue offline refund.");
+      }
+      return;
+    }
+
     const res = await submitRefundAction(actionData, entity_id, pos_code);
     if (res && !res.message) {
       setResponseMessage("Order Refunded Successfully.");
@@ -122,15 +132,15 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
     setEmail(true)
     setEmailStatus(null)
     setResponseMessage("")
-    
+
     try {
       const res = await sendOrderInvoiceAction(id);
-      
+
       // Check for success
       if (res === true || res?.status === 200) {
         setResponseMessage("Email Sent Successfully");
         setEmailStatus('success')
-      } 
+      }
       // Check for error status codes
       else if (res?.status === 400) {
         setResponseMessage(res?.message || "Unable to send email");
@@ -145,14 +155,14 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
         setResponseMessage(res?.message || "Failed to send email");
         setEmailStatus('error')
       }
-      
+
     } catch (error) {
       console.error("Email error:", error)
       setResponseMessage("An error occurred while sending the email");
       setEmailStatus('error')
     } finally {
       setEmail(false)
-      
+
       // Clear message after 5 seconds
       setTimeout(() => {
         setResponseMessage("")
@@ -234,9 +244,8 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
       name:
         order.customer_firstname && order.customer_lastname
           ? `${order.customer_firstname} ${order.customer_lastname}`
-          : `${order.shipping_address?.firstname || ""} ${
-              order.shipping_address?.lastname || ""
-            }`,
+          : `${order.shipping_address?.firstname || ""} ${order.shipping_address?.lastname || ""
+          }`,
       email: order.customer_email,
       phone: order.shipping_address?.telephone,
       city: order.shipping_address?.city,
@@ -282,24 +291,23 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
   return (
     <div className="page_detail">
       <div className={styles.pageWrapper}>
-           {responseMessage && (
-            <div className={`${styles.responseMessage} ${
-              emailStatus === 'success' ? styles.responseSuccess : 
-              emailStatus === 'error' ? styles.responseError : ''
+        {responseMessage && (
+          <div className={`${styles.responseMessage} ${emailStatus === 'success' ? styles.responseSuccess :
+            emailStatus === 'error' ? styles.responseError : ''
             }`}>
-              {emailStatus === 'success' && (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-2 15l-5-5 1.41-1.41L8 12.17l7.59-7.59L17 6l-9 9z" fill="currentColor"/>
-                </svg>
-              )}
-              {emailStatus === 'error' && (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor"/>
-                </svg>
-              )}
-              <span>{responseMessage}</span>
-            </div>
-          )}
+            {emailStatus === 'success' && (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-2 15l-5-5 1.41-1.41L8 12.17l7.59-7.59L17 6l-9 9z" fill="currentColor" />
+              </svg>
+            )}
+            {emailStatus === 'error' && (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm1 15H9v-2h2v2zm0-4H9V5h2v6z" fill="currentColor" />
+              </svg>
+            )}
+            <span>{responseMessage}</span>
+          </div>
+        )}
         <div className={styles.pageHeader}>
           <Link href="/order" className={styles.backButton}>
             <svg
@@ -380,7 +388,7 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
               >
                 {email ? 'Sending...' : 'Email Invoice'}
               </button>
-             
+
             </div>
           </div>
 
@@ -405,9 +413,8 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
                 <div className={styles.cardColumn}>
                   <span className={styles.cardLabel}>Customer:</span>
                   <span className={styles.cardValue}>
-                    {`${order.shipping_address?.firstname || ""} ${
-                      order.shipping_address?.lastname || ""
-                    }`}
+                    {`${order.shipping_address?.firstname || ""} ${order.shipping_address?.lastname || ""
+                      }`}
                   </span>
                 </div>
 
@@ -591,9 +598,8 @@ export default function OrderDetail({ jwt, orderResponse, onBack, adminId }) {
               </h3>
 
               <div className={styles.addressContent}>
-                <div>{`${order.shipping_address?.firstname || ""} ${
-                  order.shipping_address?.lastname || ""
-                }`}</div>
+                <div>{`${order.shipping_address?.firstname || ""} ${order.shipping_address?.lastname || ""
+                  }`}</div>
 
                 <div>{order.shipping_address?.street || ""}</div>
 

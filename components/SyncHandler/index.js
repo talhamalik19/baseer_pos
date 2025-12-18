@@ -1,6 +1,7 @@
 "use client"
 
-import { clearCart, clearOrders, getCartItems, getOrders, saveMultipleOrders, saveOrder } from "@/lib/indexedDB";
+import { clearCart, clearOrders, getCartItems, getOrders, saveMultipleOrders, saveOrder, getSyncQueue, removeFromSyncQueue, saveProducts, saveCategories, saveCustomers } from "@/lib/indexedDB";
+import { submitRefundAction, fetchProductsAction, getCategoriesAction, getCustomerAction } from "@/lib/Magento/actions";
 import { useEffect, useState } from "react";
 
 async function syncData() {
@@ -25,6 +26,50 @@ async function syncData() {
       await saveMultipleOrders(result.order);
     } else {
     }
+
+    // Cache Global Data (Products & Categories)
+    try {
+      // Fetch all products (passing empty ID to get all)
+      const productsRes = await fetchProductsAction("", "", "USD");
+      if (productsRes?.items) {
+        await saveProducts(productsRes.items);
+      }
+
+      // Fetch categories
+      const categoriesRes = await getCategoriesAction();
+      if (categoriesRes?.data) {
+        // Categories are handled by Categories.js usually, but let's leave it for now as per previous step.
+      }
+
+      // Fetch Customers
+      const customersRes = await getCustomerAction("", 1000, 1); // Fetch first 1000 customers for cache
+      if (customersRes?.data) {
+        await saveCustomers(customersRes.data);
+      }
+    } catch (cacheErr) {
+      console.error("Error caching global data:", cacheErr);
+    }
+
+    // Process Sync Queue
+    const queue = await getSyncQueue();
+    for (const item of queue) {
+      try {
+        if (item.type === 'refund') {
+          const res = await submitRefundAction(item.payload.actionData, item.payload.entity_id, item.payload.pos_code);
+          if (res && !res.message) {
+            await removeFromSyncQueue(item.id);
+          }
+        } else if (item.type === 'order') {
+          // Orders are handled by the main sync block above (via ORDERS_STORE)
+          // We can remove it from queue to avoid buildup, or keep it as a log.
+          // For now, let's remove it to keep the queue clean.
+          await removeFromSyncQueue(item.id);
+        }
+      } catch (err) {
+        console.error("Error processing sync item:", item, err);
+      }
+    }
+
   } catch (error) {
     console.error("❌ Error syncing data:", error);
   }
