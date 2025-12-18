@@ -1,10 +1,12 @@
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
-const twilio = require("twilio");
+// const twilio = require("twilio");
 import { writeToLogFile } from "../schedule-email/route";
 
 export async function POST(req) {
+    const twilio = (await import("twilio")).default;
+
   writeToLogFile("Inside phone route");
   try {
     const { currencySymbol, phone, orderId, order_key, total, sid, auth_token, auth_phone, warehouseId } = await req.json();

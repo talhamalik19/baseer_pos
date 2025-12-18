@@ -1,5 +1,5 @@
 const CACHE_NAME = "pos-cache-v1";
-const urlsToCache = ["/dashboard", "/product", "/order"];
+const urlsToCache = ["/dashboard", "/product", "/order", "/sale", "/suspend"];
 
 // Install Service Worker and Cache Files
 self.addEventListener("install", (event) => {

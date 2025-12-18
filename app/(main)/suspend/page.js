@@ -6,6 +6,8 @@ import Suspend from '@/components/blocks/suspend';
 import CurrencyProvider from '@/components/global/CurrencyProvider';
 import LanguageProvider from '@/components/global/LanguageProvider';
 import ProtectedRoute from '@/components/shared/ProtectedRoute';
+import SyncHandler from '@/components/SyncHandler';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister/ServiceWorkerRegister';
 
 export default async function SuspendedOrders({ params, searchParams }) {
     const cookieStore = await cookies();
@@ -34,6 +36,8 @@ export default async function SuspendedOrders({ params, searchParams }) {
            serverLanguage={serverLanguage}
          />
     <Suspend serverLanguage={serverLanguage?.csvTranslations}/>
+     <SyncHandler />
+          <ServiceWorkerRegister />
     </ProtectedRoute>
     </>
   );
