@@ -5,6 +5,7 @@ import "@/styles/global.scss";
 import LanguageProvider from "@/components/global/LanguageProvider";
 import "@/styles/theme.scss";
 import Logo from "@/components/global/Logo";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister/ServiceWorkerRegister";
 
 const wixMadeForDisplay = Wix_Madefor_Display({
   weight: ["400", "500", "600", "700"],
@@ -20,8 +21,9 @@ export const metadata = {
   title: "Baseer POS",
   description:
     "Streamline your sales with our advanced Point of Sale (POS) system. Track inventory, manage transactions, and enhance customer experience with seamless, secure, and efficient POS software.",
+  manifest: "/manifest.json",
 };
-  const setInitialTheme = `
+const setInitialTheme = `
     (function() {
       try {
         const savedTheme = localStorage.getItem('theme');
@@ -36,16 +38,17 @@ export default async function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
-                        <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
+        <script dangerouslySetInnerHTML={{ __html: setInitialTheme }} />
 
       </head>
       <body className={inter?.className}>
+        <ServiceWorkerRegister />
         <div className={style.page}>
           <div className={style.header}>
-              <Logo
-                lightSrc={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`}
-                darkSrc={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/baseer_logo_dark.png`}
-              />
+            <Logo
+              lightSrc={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/desktop_logo.png`}
+              darkSrc={`${process.env.NEXT_PUBLIC_API_URL}/media/.thumbswysiwyg/baseer_logo_dark.png`}
+            />
           </div>
           {children}
         </div>

@@ -3,6 +3,7 @@ import "@/styles/global.scss";
 import { ContextProvider } from "@/context/SidebarContext";
 import SideBar from "@/components/blocks/SideBar";
 import SyncHandler from "@/components/SyncHandler";
+import ServiceWorkerRegister from "@/components/ServiceWorkerRegister/ServiceWorkerRegister";
 import "@/styles/theme.scss"
 
 
@@ -19,6 +20,7 @@ const inter = Inter({
 export const metadata = {
   title: 'Baseer POS',
   description: 'Streamline your sales with our advanced Point of Sale (POS) system. Track inventory, manage transactions, and enhance customer experience with seamless, secure, and efficient POS software.',
+  manifest: '/manifest.json',
 }
 
 const setInitialTheme = `
@@ -39,6 +41,7 @@ export default async function RootLayout({ children }) {
       <body className={`${inter?.className} body`}>
         <ContextProvider>
           <SyncHandler />
+          <ServiceWorkerRegister />
           <div className="main_container">
             <div className="page_content">
               <SideBar />
